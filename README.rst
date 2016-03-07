@@ -23,7 +23,12 @@ Minke is a Python package to produce Mock Data Challenge data sets for LIGO inte
 Features
 --------
 
-* TODO
+* Produces burst MDCs with Gaussian, SineGaussian, and White Noise Burst ad-hoc waveforms
+* Produces numerical relativity burst MDCs for supernovae
+* Produces GWF frame files for MDCs
+* Produces GravEn-format log files for MDCs
+* TODO Produces SimBurstTable XML files for MDCs
+
 
 Credits
 ---------

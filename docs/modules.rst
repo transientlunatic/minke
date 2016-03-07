@@ -1,7 +1,7 @@
-minki
+minke
 =====
 
 .. toctree::
    :maxdepth: 4
 
-   minki
+   minke
