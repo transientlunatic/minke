@@ -12,6 +12,8 @@ Minke: The Burst MDC Factory
         :target: https://readthedocs.org/projects/minki/?badge=latest
         :alt: Documentation Status
 
+.. image:: ./minke.png
+	   :alt: Project Minke Logo
 
 Minke is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.
 
