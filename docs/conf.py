@@ -42,7 +42,7 @@ import sphinx_bootstrap_theme
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'numpydoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -147,7 +147,6 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # static files, so a file named "default.css" will overwrite the builtin
 # "default.css".
 html_static_path = ['_static']
-
 templates_path = ['_templates']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page
