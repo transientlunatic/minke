@@ -14,6 +14,7 @@ from pylal import Fr
 import numpy as np
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
 
 
 def mkdir(path):
@@ -51,7 +52,7 @@ class MDCSet():
     }
 
 
-    def __init__(self, detectors, simtable, name=None):
+    def __init__(self, detectors, simtable, name=None, full=True):
         """
         Represents an MDC set, stored in an XML SimBurstTable file.
         
@@ -75,9 +76,10 @@ class MDCSet():
                 sim_burst_table.waveform = "Dimmelmeier+08"
 
             self.waveforms.append(sim_burst_table)
-            self._generate_burst(sim_burst_table)
-            self._measure_hrss()
-            self._measure_egw_rsq()
+            if full:
+                self._generate_burst(sim_burst_table)
+                self._measure_hrss()
+                self._measure_egw_rsq()
             self.times.append(sim_burst_table.time_geocent_gps)
             if sim_burst_table.next is None: break
             sim_burst_table = sim_burst_table.next
@@ -347,7 +349,7 @@ class MDCSet():
         Returns
         -------
         matplotlib figure
-        """
+        """           
         fig = plt.figure()
         prms = [getattr(s, parameter) for s in self.waveforms]
         ax2 = plt.subplot(111)
