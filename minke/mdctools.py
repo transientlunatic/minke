@@ -7,6 +7,7 @@ from pylal.antenna import response
 from pylal.date import XLALTimeDelayFromEarthCenter
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from pylal import inject 
+from glue.ligolw.utils import process
 
 import lal, lalframe
 from pylal import Fr
@@ -53,23 +54,93 @@ class MDCSet():
 
     waveforms = []
 
-    def __init__(self, detectors, simtable, name=None, full=True):
+    def __init__(self, detectors, name='MDC Set'):
         """
         Represents an MDC set, stored in an XML SimBurstTable file.
         
         Parameters
         ----------
         detectors : list 
-            A list of detector names where the injections should be made
-        simtable : str
-            The filepath to a simbursttable xml file.
+            A list of detector names where the injections should be made.
+
+        name : str
+            A name for the MDC Set. Defaults to 'MDC Set'.
         """
         self.detectors = detectors
-        sim_burst_table = lalburst.SimBurstTableFromLIGOLw(simtable, None, None)
+        
         self.waveforms = []
         self.strains = []
         self.egw = []
         self.times = []
+        self.name = name
+            
+        self.times = np.array(self.times)
+
+    def __add__(self, waveform):
+        """
+        Handle a waveform being added to the MDC set.
+
+        Parameters
+        ----------
+        waveform : Waveform object
+           The waveform which should be added to the MDC set.
+
+        """
+        self.waveforms.append(waveform)
+        self.times = np.append(self.times, waveform.time)
+
+    def save_xml(self, filename):
+        """
+        Save the MDC set as an XML SimBurstTable.
+
+        Parameters
+        ----------
+        filename : str
+           The location to save the xml file. The output is gzipped, so ending it with 
+           a ".gz" would stick with convention.
+        """
+        xmldoc = ligolw.Document()
+        lw = xmldoc.appendChild(ligolw.LIGO_LW())
+        sim = lsctables.New(lsctables.SimBurstTable)
+        lw.appendChild(sim)
+        # This needs to be given the proper metadata once the package has the maturity to
+        # write something sensible.
+        procrow = process.register_to_xmldoc(xmldoc, "pyburst_binj", {})
+        for waveform in self.waveforms:
+            sim.append(waveform._row(sim))
+        # Write out the xml and gzip it.
+        utils.write_filename(xmldoc, filename, gz=True)
+
+    def load_xml(self, filename, full=True, start=None, stop=None):
+        """Load the MDC Set from an XML file containing the SimBurstTable.
+
+        Parameters
+        ----------
+        filename : str
+           The filename of the XML file.
+
+        full : bool 
+           If this is true (which is the default) then all of
+           the calculated parameters are computed from the waveform
+           definintion.
+
+        start : float 
+           The time at which the xml read-in should
+           start. The default is "None", in which case the xml file
+           will be read-in from the start.
+
+        end : float
+           The last time to be read from the xml file. The default is None, 
+           which causes the xml to be read right-up to the last time in the 
+           file.
+
+        To Do
+        -----
+        A the moment this loads the information in to the object, but it 
+        doesn't produce waveform objects for each of the injections in the
+        file. This should be fixed so that the object works symmetrically.
+        """
+        sim_burst_table = lalburst.SimBurstTableFromLIGOLw(filename, start, stop)
         while True:
             # This is an ugly kludge to get around the poor choice of wavform name in the xmls, and
             if sim_burst_table.waveform[:3]=="s15": 
@@ -84,29 +155,9 @@ class MDCSet():
             self.times.append(sim_burst_table.time_geocent_gps)
             if sim_burst_table.next is None: break
             sim_burst_table = sim_burst_table.next
-        if name: 
-            self.name = name
-        else:
-            self.name = self._simID(0)
+       
+        del(sim_burst_table)
             
-        self.times = np.array(self.times)
-
-    def __add__(self, waveform):
-        """
-        Handle a waveform being added to the MDC set.
-
-        Parameters
-        ----------
-        waveform : Waveform object
-           The waveform which should be added to the MDC set.
-
-        """
-        self.waveforms += waveform
-        self.times += waveform.time_geocent_gps()
-
-    def save_xml(self):
-        pass
-        
     def _generate_burst(self, row,rate=16384.0):
         """
         Generate the burst described in a given row, so that it can be 
@@ -114,8 +165,8 @@ class MDCSet():
         
         Parameters
         ----------
-        row : int
-            The row number of the waveforms to be measured
+        row : SimBurst Row
+            The row of the waveform to be measured
         rate : float
             The sampling rate of the signal, in Hz. Defaults to 16384.0Hz
             
@@ -140,7 +191,10 @@ class MDCSet():
                 print a, getattr(row,a)
                 continue # the structure is different than the TableRow
         #print row.numrel_data
-        self.swig_row.numrel_data = row.numrel_data
+        try:
+            self.swig_row.numrel_data = row.numrel_data
+        except:
+            pass
         hp, hx = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
         # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
         # DW: I tried that, and it doesn't seem to work :/

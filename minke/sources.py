@@ -20,6 +20,7 @@ import lalsimulation
 
 from minke.distribution import *
 
+import matplotlib.pyplot as plt
 
 class Waveform(object):
     """
@@ -108,6 +109,15 @@ class Waveform(object):
 
         return pol_ellipse_e, pol_ellipse_angle
 
+    def plot(self):
+        """
+        Produce a plot of the injection.
+        """
+        self._generate()
+        plt.plot(self.hp.data.data, label="+ polarisation")
+        plt.plot(self.hx.data.data, label="x polarisation")
+        
+    
     def uniform_time(self):
         """
         Get a set of randomized (integer) event times.
@@ -121,18 +131,22 @@ class Waveform(object):
         Todo
         ----
         This can currently only make injections on a uniform sky. This should be fixed to take a generic distribution function.
+
+        We also need to add the process_id back in.
         """
         self.row = sim.RowType()
+        
         # Required columns not defined makes ligolw unhappy
         for a in lsctables.SimBurstTable.validcolumns.keys():
             setattr(self.row, a, None)
         self.row.waveform = self.waveform
-        self.row.set_time_geocent(self.time)
+        self.row.set_time_geocent(GPS(float(self.time)))
         # Right now this only does uniform sky distributions, but we should provide a way to do /any/ distribution.
         self.row.ra, self.row.dec, self.row.psi = self.uniform_sky()
         self.row.simulation_id = sim.get_next_id()
         self.row.waveform_number = random.randint(0,int(2**32)-1)
-        self.row.process_id = procrow.process_id
+        ### !! This needs to be updated.
+        self.row.process_id = "process:process_id:0" #procrow.process_id
         self.row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % options.time_slide_id)
 
 
@@ -199,9 +213,13 @@ class SineGaussian(Waveform):
             self.tstart, self.tstop = time[0], time[1]
             self.seed = seed
             random.seed(seed)
-            self.time = random.randint(self.tstart, self.tstop, 1) + random.rand(1)
+            self.time = (random.randint(self.tstart, self.tstop, 1) + random.rand(1))[0]
         else:
             self.time = time
+
+        self.polarisation = polarisation
+            
+        self.q, self.frequency, self.hrss = self.draw_params()
 
     def draw_params(self):
         """
@@ -237,26 +255,75 @@ class SineGaussian(Waveform):
 
         return q, f, h
 
-    def _row(self, sim):
+    def _generate(self, rate=16384.0):
+        """
+        Generate the burst described in a given row, so that it can be 
+        measured.
+        
+        Parameters
+        ----------
+        rate : float
+            The sampling rate of the signal, in Hz. Defaults to 16384.0Hz
+            
+        Returns
+        -------
+        hp : 
+            The strain in the + polarisation
+        hx : 
+            The strain in the x polarisation
+        hp0 : 
+            A copy of the strain in the + polarisation
+        hx0 : 
+            A copy of the strain in the x polarisation
+        """
+        row = self._row()
+        self.swig_row = lalburst.CreateSimBurst()
+        for a in lsctables.SimBurstTable.validcolumns.keys():
+            try:
+                setattr(self.swig_row, a, getattr( row, a ))
+            except AttributeError: continue # we didn't define it
+            except TypeError: 
+                #print a, getattr(row,a)
+                continue # the structure is different than the TableRow
+        #print row.numrel_data
+        try:
+            self.swig_row.numrel_data = row.numrel_data
+        except:
+            pass
+        hp, hx = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
+        # DW: I tried that, and it doesn't seem to work :/
+        hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+        self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
+    
+    def _row(self, sim=None):
         """
         Produce a simburst table row for this waveform.
+
+        Parameters
+        ----------
+        sim : lsctable
+           The sim table for this row.
 
         Todo
         ----
         This can currently only make injections on a uniform sky. This should be fixed to take a generic distribution function.
+        Need to make sure that the correct process ID is used.
         """
+        if not sim:
+            sim = lsctables.New(lsctables.SimBurstTable)
         self.row = sim.RowType()
         # Required columns not defined makes ligolw unhappy
         for a in lsctables.SimBurstTable.validcolumns.keys():
             setattr(self.row, a, None)
         self.row.waveform = self.waveform
-        self.row.set_time_geocent(self.time)
+        self.row.set_time_geocent(GPS(float(self.time)))
         # Right now this only does uniform sky distributions, but we should provide a way to do /any/ distribution.
         self.row.ra, self.row.dec, self.row.psi = self.uniform_sky()
         self.row.simulation_id = sim.get_next_id()
         self.row.waveform_number = random.randint(0,int(2**32)-1)
-        self.row.process_id = procrow.process_id
-        self.row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % options.time_slide_id)
+        self.row.process_id = "process:process_id:0" #procrow.process_id
+        self.row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % 1)#options.time_slide_id)
 
         self.row.q, self.row.frequency, self.row.hrss = self.draw_params()
         self.row.pol_ellipse_e, self.row.pol_ellipse_angle = self.parse_polarisation(self.polarisation)
