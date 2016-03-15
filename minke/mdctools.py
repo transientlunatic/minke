@@ -51,6 +51,7 @@ class MDCSet():
         "Dimmelmeier+08": ['hrss', 'ra', 'dec']
     }
 
+    waveforms = []
 
     def __init__(self, detectors, simtable, name=None, full=True):
         """
@@ -89,6 +90,22 @@ class MDCSet():
             self.name = self._simID(0)
             
         self.times = np.array(self.times)
+
+    def __add__(self, waveform):
+        """
+        Handle a waveform being added to the MDC set.
+
+        Parameters
+        ----------
+        waveform : Waveform object
+           The waveform which should be added to the MDC set.
+
+        """
+        self.waveforms += waveform
+        self.times += waveform.time_geocent_gps()
+
+    def save_xml(self):
+        pass
         
     def _generate_burst(self, row,rate=16384.0):
         """
@@ -220,8 +237,12 @@ class MDCSet():
         elif row.waveform == "SineGaussian":
             if row.pol_ellipse_e==1.0: 
                 pol="linear"
-            else: 
+            elif row.pol_ellipse_e==0.0:
+                pol="circular"
+            elif 0.0<row.pol_ellipse_e<1.0: 
                 pol = "elliptical"
+            else:
+                pol = "inclined"
             numberspart = "f{:.0f}_q{:.0f}_{}".format(row.frequency, row.q, pol)
         elif row.waveform == "BTLWNB":
             numberspart = "{}b{}tau{}".format(row.frequency, row.bandwidth, row.duration)
