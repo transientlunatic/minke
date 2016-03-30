@@ -1,32 +1,84 @@
-# Config file for automatic testing at travis-ci.org
-# This file will be regenerated if you run travis_pypi_setup.py
-
 language: python
-python: 3.5
 
-env:
-  - TOXENV=py35
-  - TOXENV=py34
-  - TOXENV=py33
-  - TOXENV=py27
-  - TOXENV=py26
-  - TOXENV=pypy
+addons:
+  apt:
+    packages:
+      # generic packages
+      - gcc
+      - gfortran
+      - libblas-dev
+      - liblapack-dev
+      # lal dependencies
+      - pkg-config
+      - zlib1g-dev
+      - libgsl0-dev
+      - swig
+      - bc
+      # nds2 dependencies
+      - libsasl2-2
+      # misc python dependencies
+      - libhdf5-serial-dev
+      # awkward python packages
+      #- python-numpy 
+      #- python-scipy
+      #- python-matplotlib
+      
+virtualenv:
+  system_site_packages: true
 
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -U tox
+matrix:
+  include:
+    - python: 2.6
+      env: STRICT=false
+    - python: 2.7
+      env: STRICT=false
+    - python: 3.5
+      env: STRICT=false
+    - python: 2.7
+      env: STRICT=true PRE="--pre"
+  allow_failures:
+    - python: 2.7
+      env: STRICT=true PRE="--pre"
+    - python: 3.5
+      env: STRICT=false
+  fast_finish: true
 
-# command to run tests, e.g. python setup.py test
-script: tox
+before_install:
+  # update pip
+  - pip install -q ${PRE} --upgrade pip
 
-# After you create the Github repo and add it to Travis, run the
-# travis_pypi_setup.py script to finish PyPI deployment setup
-deploy:
-  provider: pypi
-  distributions: sdist bdist_wheel
-  user: transientlunatic
-  password:
-    secure: PLEASE_REPLACE_ME
-  on:
-    tags: true
-    repo: transientlunatic/minki
-    condition: $TOXENV == py27
+  # build and install numpy first
+  # this is installed by apt for speed atm
+   - pip install -q ${PRE} "numpy>=1.9.1"
+
+  # build src packages
+  - source .travis/setup_environment.sh
+
+  # install cython to speed up scipy build
+   - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
+
+  # install testing dependencies
+  # This is a sub-optimal way to do this!
+  - pip install  ${PRE} -r requirements_dev.txt # coveralls "pytest>=2.8" unittest2
+
+install:
+  - pip install ${PRE} -r requirements.txt
+  - python setup.py build
+
+script:
+  - . .travis/run-tests.sh
+  - pip install .
+
+after_success:
+  - coveralls
+
+cache:
+  apt: true
+  pip: true
+  ccache: true
+  directories:
+    # cache src builds
+    - ${VIRTUAL_ENV}/bin
+    - ${VIRTUAL_ENV}/lib
+    - ${VIRTUAL_ENV}/opt
+    - ${VIRTUAL_ENV}/etc
