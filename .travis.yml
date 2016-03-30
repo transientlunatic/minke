@@ -18,10 +18,6 @@ addons:
       - libsasl2-2
       # misc python dependencies
       - libhdf5-serial-dev
-      # awkward python packages
-      #- python-numpy 
-      #- python-scipy
-      #- python-matplotlib
       
 virtualenv:
   system_site_packages: true
@@ -48,7 +44,6 @@ before_install:
   - pip install -q ${PRE} --upgrade pip
 
   # build and install numpy first
-  # this is installed by apt for speed atm
    - pip install -q ${PRE} "numpy>=1.9.1"
 
   # build src packages
@@ -59,7 +54,7 @@ before_install:
 
   # install testing dependencies
   # This is a sub-optimal way to do this!
-  - pip install  ${PRE} -r requirements_dev.txt # coveralls "pytest>=2.8" unittest2
+  - pip install  ${PRE} -r requirements_dev.txt 
 
 install:
   - pip install ${PRE} -r requirements.txt
