@@ -39,12 +39,12 @@ matrix:
       env: STRICT=false
   fast_finish: true
 
+
 before_install:
   # update pip
   - pip install -q ${PRE} --upgrade pip
-
   # build and install numpy first
-   - pip install -q ${PRE} "numpy>=1.9.1"
+  - pip install -q ${PRE} "numpy>=1.9.1"
 
   # build src packages
   - source .travis/setup_environment.sh
