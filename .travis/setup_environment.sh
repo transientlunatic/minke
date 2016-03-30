@@ -1,5 +1,5 @@
 #! /bin/bash
-
+STARTLOC=$(pwd)
 LIBFRAME_VER=v8r26
 LALBRANCH=sim_burst_numrel
 mkdir .local
@@ -108,3 +108,5 @@ cd ${LALSUITE_SRCDIR}/lalsuite/glue
 rm -rf build
 python setup.py install --prefix=${LALSUITE_PREFIX}
 source ${LALSUITE_PREFIX}/etc/glue-user-env.sh
+
+cd ${STARTLOC}

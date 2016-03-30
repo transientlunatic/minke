@@ -42,8 +42,6 @@ before_install:
   - sudo add-apt-repository ppa:dns/gnu -y
   - sudo apt-get update -q
   - sudo apt-get install --only-upgrade autoconf
-  # switch back to the main dir
-  - cd -
   # update pip
   - pip install -q ${PRE} --upgrade pip
   # build and install numpy first
