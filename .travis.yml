@@ -39,23 +39,18 @@ matrix:
       env: STRICT=false
   fast_finish: true
 
-
 before_install:
   # update pip
   - pip install -q ${PRE} --upgrade pip
   # build and install numpy first
   - pip install -q ${PRE} "numpy>=1.9.1"
-
   # build src packages
   - source .travis/setup_environment.sh
-
   # install cython to speed up scipy build
-   - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
-
+  - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
   # install testing dependencies
   # This is a sub-optimal way to do this!
   - pip install  ${PRE} -r requirements_dev.txt 
-
 install:
   - pip install ${PRE} -r requirements.txt
   - python setup.py build
