@@ -13,8 +13,8 @@ from pylal import Fr
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import os
+import matplotlib.pyplot as plt
 
 
 def mkdir(path):
@@ -38,7 +38,8 @@ class MDCSet():
 
     inj_families_names = {'ga' : 'Gaussian',
                           'sg' : 'SineGaussian',
-                          'wnb': 'BTLWNB'
+                          'wnb': 'BTLWNB',
+                          'd08' : 'Dimmelmeier+08'
                           }
 
     inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
@@ -46,11 +47,12 @@ class MDCSet():
     hist_parameters = {
         "SineGaussian": ["hrss", "psi", "ra", "dec"],
         "Gaussian": ["hrss", "psi", "ra", "dec"],
-        "BTLWNB": ["hrss", "ra", "dec"]
+        "BTLWNB": ["hrss", "ra", "dec"],
+        "Dimmelmeier+08": ['hrss', 'ra', 'dec']
     }
 
 
-    def __init__(self, detectors, simtable, name=None):
+    def __init__(self, detectors, simtable, name=None, full=True):
         """
         Represents an MDC set, stored in an XML SimBurstTable file.
         
@@ -68,10 +70,16 @@ class MDCSet():
         self.egw = []
         self.times = []
         while True:
+            # This is an ugly kludge to get around the poor choice of wavform name in the xmls, and
+            if sim_burst_table.waveform[:3]=="s15": 
+                self.numrel_file = str(sim_burst_table.waveform)
+                sim_burst_table.waveform = "Dimmelmeier+08"
+
             self.waveforms.append(sim_burst_table)
-            self._generate_burst(sim_burst_table)
-            self._measure_hrss()
-            self._measure_egw_rsq()
+            if full:
+                self._generate_burst(sim_burst_table)
+                self._measure_hrss()
+                self._measure_egw_rsq()
             self.times.append(sim_burst_table.time_geocent_gps)
             if sim_burst_table.next is None: break
             sim_burst_table = sim_burst_table.next
@@ -114,6 +122,8 @@ class MDCSet():
             except TypeError: 
                 print a, getattr(row,a)
                 continue # the structure is different than the TableRow
+        #print row.numrel_data
+        self.swig_row.numrel_data = row.numrel_data
         hp, hx = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
         # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
         # DW: I tried that, and it doesn't seem to work :/
@@ -181,7 +191,8 @@ class MDCSet():
            the folder structure
         """
         name = self._simID(0)
-        return "{}/{}".format(name[:2], name)
+        abb = self.inj_families_abb[self.waveforms[0].waveform].lower()
+        return "{}/{}".format(abb, name)
         
         
     def _simID(self, row):
@@ -200,6 +211,9 @@ class MDCSet():
         """
         row = self.waveforms[row]
         name = ''
+        numberspart = ''
+        if row.waveform == "Dimmelmeier+08":
+            numberspart = self.numrel_file
 
         if row.waveform == "Gaussian":
             numberspart = "{:.3f}".format(row.duration * 1e3)
@@ -211,7 +225,6 @@ class MDCSet():
             numberspart = "f{:.0f}_q{:.0f}_{}".format(row.frequency, row.q, pol)
         elif row.waveform == "BTLWNB":
             numberspart = "{}b{}tau{}".format(row.frequency, row.bandwidth, row.duration)
-        
         name += '{}_{}'.format(self.inj_families_abb[row.waveform].lower(), numberspart).replace('.','d')
 
         return name
@@ -336,7 +349,7 @@ class MDCSet():
         Returns
         -------
         matplotlib figure
-        """
+        """           
         fig = plt.figure()
         prms = [getattr(s, parameter) for s in self.waveforms]
         ax2 = plt.subplot(111)

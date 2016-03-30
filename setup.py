@@ -23,23 +23,23 @@ test_requirements = [
 ]
 
 setup(
-    name='minki',
+    name='minke',
     version='0.1.0',
-    description="Minki is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.",
+    description="Minke is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.",
     long_description=readme + '\n\n' + history,
     author="Daniel Williams",
     author_email='d.williams.2@research.gla.ac.uk',
-    url='https://github.com/transientlunatic/minki',
+    url='https://github.com/transientlunatic/minke',
     packages=[
-        'minki',
+        'minke',
     ],
-    package_dir={'minki':
-                 'minki'},
+    package_dir={'minke':
+                 'minke'},
     include_package_data=True,
     install_requires=requirements,
     license="ISCL",
     zip_safe=False,
-    keywords='minki',
+    keywords='minke',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
