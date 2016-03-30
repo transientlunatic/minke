@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+	<Table Name="sim_burst:table">
+		<Column Type="real_8" Name="sim_burst:hrss"/>
+		<Column Type="int_4s" Name="sim_burst:time_geocent_gps"/>
+		<Column Type="real_8" Name="sim_burst:psi"/>
+		<Column Type="real_8" Name="sim_burst:amplitude"/>
+		<Column Type="real_8" Name="sim_burst:egw_over_rsquared"/>
+		<Column Type="int_8u" Name="sim_burst:waveform_number"/>
+		<Column Type="real_8" Name="sim_burst:pol_ellipse_angle"/>
+		<Column Type="ilwd:char" Name="sim_burst:simulation_id"/>
+		<Column Type="real_8" Name="sim_burst:q"/>
+		<Column Type="lstring" Name="sim_burst:waveform"/>
+		<Column Type="real_8" Name="sim_burst:bandwidth"/>
+		<Column Type="ilwd:char" Name="sim_burst:process_id"/>
+		<Column Type="real_8" Name="sim_burst:frequency"/>
+		<Column Type="real_8" Name="sim_burst:ra"/>
+		<Column Type="real_8" Name="sim_burst:time_geocent_gmst"/>
+		<Column Type="real_8" Name="sim_burst:pol_ellipse_e"/>
+		<Column Type="real_8" Name="sim_burst:duration"/>
+		<Column Type="ilwd:char" Name="sim_burst:time_slide_id"/>
+		<Column Type="real_8" Name="sim_burst:dec"/>
+		<Column Type="int_4s" Name="sim_burst:time_geocent_gps_ns"/>
+		<Stream Delimiter="," Type="Local" Name="sim_burst:table">
+			9.999999999999999e-22,124,1.557528106952393,,,401800614,0,"sim_burst:simulation_id:1",3,"SineGaussian",,"Minke",100,0.1177972124912689,,0,,"time_slide:time_slide_id:1",-1.164873832285312,708147822
+		</Stream>
+	</Table>
+	<Table Name="process:table">
+		<Column Type="lstring" Name="process:comment"/>
+		<Column Type="lstring" Name="process:node"/>
+		<Column Type="lstring" Name="process:domain"/>
+		<Column Type="int_4s" Name="process:unix_procid"/>
+		<Column Type="int_4s" Name="process:start_time"/>
+		<Column Type="ilwd:char" Name="process:process_id"/>
+		<Column Type="int_4s" Name="process:is_online"/>
+		<Column Type="lstring" Name="process:ifos"/>
+		<Column Type="int_4s" Name="process:jobid"/>
+		<Column Type="lstring" Name="process:username"/>
+		<Column Type="lstring" Name="process:program"/>
+		<Column Type="int_4s" Name="process:end_time"/>
+		<Column Type="lstring" Name="process:version"/>
+		<Column Type="lstring" Name="process:cvs_repository"/>
+		<Column Type="int_4s" Name="process:cvs_entry_time"/>
+		<Stream Delimiter="," Type="Local" Name="process:table">
+			,"pallas",,19667,1142101088,"process:process_id:0",0,,0,"daniel","pyburst_binj",,,,,
+		</Stream>
+	</Table>
+	<Table Name="process_params:table">
+		<Column Type="ilwd:char" Name="process_params:process_id"/>
+		<Column Type="lstring" Name="process_params:program"/>
+		<Column Type="lstring" Name="process_params:type"/>
+		<Column Type="lstring" Name="process_params:value"/>
+		<Column Type="lstring" Name="process_params:param"/>
+		<Stream Delimiter="," Type="Local" Name="process_params:table">
+		</Stream>
+	</Table>
+</LIGO_LW>
