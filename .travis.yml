@@ -24,8 +24,6 @@ virtualenv:
 
 matrix:
   include:
-    - python: 2.6
-      env: STRICT=false
     - python: 2.7
       env: STRICT=false
     - python: 3.5
@@ -49,7 +47,6 @@ before_install:
   # install cython to speed up scipy build
   - travis_retry pip install -q ${PRE} --install-option="--no-cython-compile" Cython
   # install testing dependencies
-  # This is a sub-optimal way to do this!
   - pip install  ${PRE} -r requirements_dev.txt 
 install:
   - pip install ${PRE} -r requirements.txt
