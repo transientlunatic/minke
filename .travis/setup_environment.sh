@@ -65,7 +65,7 @@ cd metaio
 
 ./00boot
 ./configure --prefix=${METAIO_PREFIX} --enable-swig-python
-make
+yes "\n" | make
 make install
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${METAIO_PREFIX}/lib
 
