@@ -63,10 +63,10 @@ git clone git://versions.ligo.org/metaio.git
 # Configure make and install
 cd metaio
 
-./00boot
-./configure --prefix=${METAIO_PREFIX} --enable-swig-python
-yes "\n" | make
-make install
+yes "\n" | ./00boot
+yes "\n" | ./configure --enable-silent-rules --prefix=${METAIO_PREFIX} --enable-swig-python
+make -j 2 --silent || make --silent
+make install --silent
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${METAIO_PREFIX}/lib
 
 #
