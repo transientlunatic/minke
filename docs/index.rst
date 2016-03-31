@@ -31,7 +31,21 @@ User Guide
    readme
    installation
    usage
+
+Developer Guide
+===============
+
+.. toctree::
+   :maxdepth: 2
+
    contributing
+
+Credits and Information
+=======================
+
+.. toctree::
+   :maxdepth: 2
+	   
    authors
    history
 
