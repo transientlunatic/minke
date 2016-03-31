@@ -152,7 +152,9 @@ class MDCSet():
                 self._generate_burst(sim_burst_table)
                 self._measure_hrss()
                 self._measure_egw_rsq()
-            self.times.append(sim_burst_table.time_geocent_gps)
+            
+            self.times = np.append(self.times, float(sim_burst_table.time_geocent_gps))
+            #np.insert(self.times, len(self.times), sim_burst_table.time_geocent_gps)
             if sim_burst_table.next is None: break
             sim_burst_table = sim_burst_table.next
        

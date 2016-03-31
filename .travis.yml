@@ -15,6 +15,7 @@ addons:
       - libgsl0-dev
       - swig
       - bc
+      - fftw-dev
       # nds2 dependencies
       - libsasl2-2
       # misc python dependencies
