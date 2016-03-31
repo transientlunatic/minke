@@ -22,7 +22,8 @@ the moment you'll need to have the `simburst-rel` branch of it
 installed specifically, so that you can make supernova (and other
 numerical relativity) injections.
 
-Contents:
+User Guide
+==========
 
 .. toctree::
    :maxdepth: 2
