@@ -22,6 +22,16 @@ the moment you'll need to have the `simburst-rel` branch of it
 installed specifically, so that you can make supernova (and other
 numerical relativity) injections.
 
+If you're looking to make MDC injection sets for a burst analysis, but
+you aren't concerned with contributing new code take a look at the
+User Guide. If you need a feature which isn't currently implemented
+then please have a look at the "Contributing" section of the Developer
+Guide.
+
+The Minke framework aims to be flexible, and easily extended to
+include new waveform morphologies, and signal distributions, so if you
+find something lacking feel free to make a pull request!
+
 User Guide
 ==========
 
