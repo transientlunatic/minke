@@ -105,9 +105,11 @@ class MDCSet():
         lw.appendChild(sim)
         # This needs to be given the proper metadata once the package has the maturity to
         # write something sensible.
-        procrow = process.register_to_xmldoc(xmldoc, "pyburst_binj", {})
+        procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc", {})
         for waveform in self.waveforms:
-            sim.append(waveform._row(sim))
+            waveform_row = waveform._row(sim)
+            waveform_row.process_id = procrow.process_id
+            sim.append()
         # Write out the xml and gzip it.
         utils.write_filename(xmldoc, filename, gz=True)
 
