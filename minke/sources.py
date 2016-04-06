@@ -91,7 +91,7 @@ class Waveform(object):
         ax[0].plot(times, self.hx.data.data, label="x polarisation")
         ax[1].plot(self.hp.data.data, self.hx.data.data)
 
-    def _generate(self, rate=16384.0):
+    def _generate(self, rate=16384.0, half=False):
         """
         Generate the burst described in a given row, so that it can be 
         measured.
@@ -101,6 +101,10 @@ class Waveform(object):
         rate : float
             The sampling rate of the signal, in Hz. Defaults to 16384.0Hz
             
+        half : bool
+           Only compute the hp and hx once if this is true; 
+           these are only required if you need to compute the 
+           cross products. Defaults to False.
         Returns
         -------
         hp : 
@@ -127,8 +131,12 @@ class Waveform(object):
         hp, hx = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
         # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
         # DW: I tried that, and it doesn't seem to work :/
-        hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+        if not half :
+            hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+        else:
+            hp0, hx0 = hp, hx
         self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
+        return hp, hx, hp0, hx0
 
     def _row(self, sim=None, slide_id=1):
         """
@@ -268,9 +276,8 @@ class WhiteNoiseBurst(Waveform):
 
     waveform = "BTLWNB"
 
-    def __init__(self, duration, bandwidth, frequency, hrss, time, polarisation, sky_dist=uniform_sky, seed=0):
-        """
-        A class to represent a white-noise burst ad-hoc waveform.
+    def __init__(self, duration, bandwidth, frequency, time, hrss=None, egw=None, sky_dist=uniform_sky, seed=0):
+        """A class to represent a white-noise burst ad-hoc waveform.
 
         Parameters
         ----------
@@ -283,14 +290,16 @@ class WhiteNoiseBurst(Waveform):
         frequency : float or list
            The frequency, in hertz, of the WNB.
 
-        hrss : float or list
+        hrss : float or list 
            The strain magnitude of the injection.
-           If a float is provided then the hrss will be fixed, 
-           if a list is provided then this will be the 
-           minimum and maximum hrss.
+           If a float is provided then the hrss will be fixed, if a
+           list is provided then this will be the minimum and maximum
+           hrss. If the hrss is not provided then you should provide
+           an EGW value instead.
 
-        polarisation : str {'linear', 'elliptical', 'circular'}
-           The type of polarisation of the waveform.
+        egw : float
+           The gravitational wave energy. 
+           You should provide this if you do not provide the Hrss.
 
         time : float or list 
            The time period over which the injection should be made. If
@@ -319,11 +328,19 @@ class WhiteNoiseBurst(Waveform):
         for what this calls "under the hood" in LALSuite. There are some important considerations here
         with respect to the differing sample rates used at LIGO and VIRGO, and so when creating the WNB it's important that the 
         burst is created at a single sampel rate, and then resampled appropriately, so that the same waveform is used.
+
         """
         self._clear_params()
         self.sky_dist = sky_dist
-        self.params['hrss'] = hrss
-        self.params['frequency'] = frequency
+        if hrss:
+            self.params['hrss'] = hrss
+        elif egw:
+            self.params['egw'] = egw
+        else:
+            raise valueError('You need to provide either an hrss or an egw to produce a WNB waveform')
+        # The burst group describes WNBs by their lowest frequency, but LALInference wants them at the central frequency,
+        # so add half the bandwidth to get the central freq
+        self.params['frequency'] = frequency + bandwidth / 2.0
         # We need a minimum window size so that the whole burst can be contained within it,
         # so expand the duration if it's too small.
         min_len =  np.sqrt( 4 * (np.pi**(-2) / bandwidth**2) )
@@ -333,10 +350,15 @@ class WhiteNoiseBurst(Waveform):
             self.params['duration'] = duration
         self.params['bandwidth'] = bandwidth
         self.time = time
-        self.polarisation = polarisation
-        self.params['pol_ellipse_e'], self.params['pol_ellipse_angle'] = 0.0, 0.0#self.parse_polarisation(self.polarisation) 
+        self.params['pol_ellipse_e'], self.params['pol_ellipse_angle'] = 0.0, 0.0
         self.params['egw_over_rsquared'] = hrss**2 * np.pi**2 * frequency**2 * lal.C_SI / lal.G_SI / lal.MSUN_SI * lal.PC_SI**2
-
+        # I'm really not sure if we need to do this, but apparently the 
+        # hrss of the actual waveform is not exactly what we ask for
+        # the old pyBurst code measured this by generating the waveform
+        # which seems wasteful, but I'll replicate it here anyway, for
+        # consistency with the method used for O1.
+        hp, hx, _, _ = self._generate(half=True)
+        self.params['hrss'] =  lalsimulation.MeasureHrss(hp, hx)
 
 
 class Supernova(Waveform):
