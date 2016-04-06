@@ -38,8 +38,9 @@ User Guide
 .. toctree::
    :maxdepth: 2
 
-   readme
+   
    installation
+   tutorial
    usage
 
 Developer Guide
