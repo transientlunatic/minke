@@ -203,6 +203,7 @@ class SineGaussian(Waveform):
         self._clear_params()
         self.sky_dist = sky_dist
         self.params['hrss'] = hrss
+        self.params['seed'] = seed
         self.params['frequency'] = frequency
         self.params['q'] = q
         self.time = time
