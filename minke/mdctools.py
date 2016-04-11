@@ -109,7 +109,7 @@ class MDCSet():
             procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc", waveform.params)
             waveform_row = waveform._row(sim)
             waveform_row.process_id = procrow.process_id
-            sim.append()
+            sim.append(waveform_row)
         # Write out the xml and gzip it.
         utils.write_filename(xmldoc, filename, gz=True)
 
