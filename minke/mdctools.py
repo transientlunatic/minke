@@ -106,7 +106,7 @@ class MDCSet():
         # This needs to be given the proper metadata once the package has the maturity to
         # write something sensible.
         for waveform in self.waveforms:
-            procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc", waveform.params)
+            procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc", {}) # waveform.params)
             waveform_row = waveform._row(sim)
             waveform_row.process_id = procrow.process_id
             sim.append(waveform_row)
