@@ -42,12 +42,6 @@ class Waveform(object):
     waveform = "Generic"
     expnum = 1
 
-    def __del__(self):
-        del(self.hp)
-        del(self.hx)
-        del(self.hp0)
-        del(self.hx0)
-    
     def _clear_params(self):
         self.params = {}
         for a in lsctables.SimBurstTable.validcolumns.keys():
