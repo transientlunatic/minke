@@ -149,7 +149,6 @@ class Waveform(object):
             hp0, hx0 = hp, hx
         self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
         lalburst.DestroySimBurst(self.swig_row)
-        #return hp, hx, hp0, hx0
 
     def _row(self, sim=None, slide_id=1):
         """
