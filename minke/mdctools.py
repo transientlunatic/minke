@@ -194,7 +194,6 @@ class MDCSet():
             except TypeError: 
                 print a, getattr(row,a)
                 continue # the structure is different than the TableRow
-        #print row.numrel_data
         try:
             self.swig_row.numrel_data = row.numrel_data
         except:
@@ -461,8 +460,8 @@ class MDCSet():
         output.append(strains[0])                 # SimHrss
         output.append(energy)                     # SimEgwR2
         output.append(strains[0])                 # GravEn_Ampl
-        output.append(0)                          # Internal_x (currently not implemented)
-        output.append(0)                          # Intenal_phi ('')
+        output.append(row.incl)                          # Internal_x (currently not implemented)
+        output.append(row.phi)                          # Intenal_phi ('')
         output.append(np.cos(row.ra))                     # cos(External_x)
         output.append(row.dec)                    # External_phi
         output.append(row.psi)            # External_psi
