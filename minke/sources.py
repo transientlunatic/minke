@@ -46,11 +46,14 @@ class Waveform(object):
         try:
             lal.DestroyREAL8Sequence(self.hp)
             lal.DestroyREAL8Sequence(self.hx)
+        except:
+            print "Failed to destroy hp and hx"
+        try:
             lal.DestroyREAL8Sequence(self.hp0)
             lal.DestroyREAL8Sequence(self.hx0)
         except:
-            pass
-    
+            print "Failed to destroy hp0 and hx0"
+            
     def _clear_params(self):
         self.params = {}
         for a in lsctables.SimBurstTable.validcolumns.keys():
