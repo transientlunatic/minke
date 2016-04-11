@@ -359,6 +359,7 @@ class WhiteNoiseBurst(Waveform):
         # consistency with the method used for O1.
         hp, hx, _, _ = self._generate(half=True)
         self.params['hrss'] =  lalsimulation.MeasureHrss(hp, hx)
+        del(hp), del(hx)
 
 
 class Supernova(Waveform):
