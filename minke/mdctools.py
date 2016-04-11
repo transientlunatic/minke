@@ -203,6 +203,7 @@ class MDCSet():
         # DW: I tried that, and it doesn't seem to work :/
         hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
         self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
+        lalburst.DestroySimBurst(self.swig_row)
     
     def _getDetector(self, det):
         """

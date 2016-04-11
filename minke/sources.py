@@ -42,6 +42,15 @@ class Waveform(object):
     waveform = "Generic"
     expnum = 1
 
+    def __del__(self):
+        try:
+            lal.DestroyREAL8Sequence(self.hp)
+            lal.DestroyREAL8Sequence(self.hx)
+            lal.DestroyREAL8Sequence(self.hp0)
+            lal.DestroyREAL8Sequence(self.hx0)
+        except:
+            pass
+    
     def _clear_params(self):
         self.params = {}
         for a in lsctables.SimBurstTable.validcolumns.keys():
@@ -136,7 +145,8 @@ class Waveform(object):
         else:
             hp0, hx0 = hp, hx
         self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
-        return hp, hx, hp0, hx0
+        lalburst.DestroySimBurst(self.swig_row)
+        #return hp, hx, hp0, hx0
 
     def _row(self, sim=None, slide_id=1):
         """
@@ -357,8 +367,8 @@ class WhiteNoiseBurst(Waveform):
         # the old pyBurst code measured this by generating the waveform
         # which seems wasteful, but I'll replicate it here anyway, for
         # consistency with the method used for O1.
-        #hp, hx, _, _ = self._generate(half=True)
-        #self.params['hrss'] =  lalsimulation.MeasureHrss(hp, hx)
+        self._generate(half=True)
+        self.params['hrss'] =  lalsimulation.MeasureHrss(self.hp, self.hx)
 
 
 class Supernova(Waveform):
