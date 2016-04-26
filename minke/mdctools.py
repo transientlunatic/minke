@@ -110,6 +110,7 @@ class MDCSet():
             waveform_row = waveform._row(sim)
             waveform_row.process_id = procrow.process_id
             sim.append(waveform_row)
+            del waveform_row
         # Write out the xml and gzip it.
         utils.write_filename(xmldoc, filename, gz=True)
 
@@ -186,10 +187,10 @@ class MDCSet():
             A copy of the strain in the x polarisation
         """
         #row = self.waveforms[row]
-        self.swig_row = lalburst.CreateSimBurst()
+        swig_row = lalburst.CreateSimBurst()
         for a in lsctables.SimBurstTable.validcolumns.keys():
             try:
-                setattr(self.swig_row, a, getattr( row, a ))
+                setattr(swig_row, a, getattr( row, a ))
             except AttributeError: continue # we didn't define it
             except TypeError: 
                 print a, getattr(row,a)
@@ -198,12 +199,12 @@ class MDCSet():
             self.swig_row.numrel_data = row.numrel_data
         except:
             pass
-        hp, hx = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
         # DW: I tried that, and it doesn't seem to work :/
-        hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+        hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
-        lalburst.DestroySimBurst(self.swig_row)
+        lalburst.DestroySimBurst(swig_row)
     
     def _getDetector(self, det):
         """
@@ -347,10 +348,10 @@ class MDCSet():
         # |H+Hx|
         hphx = (lalsimulation.MeasureHrss(hp, hx0)**2 - hrss**2)/2
         self.strains.append([hrss, hphp, hxhx, hphx])
-        lal.DestroyREAL8Sequence(hp)
-        lal.DestroyREAL8Sequence(hx)
-        lal.DestroyREAL8Sequence(hp0)
-        lal.DestroyREAL8Sequence(hx0)
+        #lal.DestroyREAL8Sequence(hp)
+        #lal.DestroyREAL8Sequence(hx)
+        #lal.DestroyREAL8Sequence(hp0)
+        #lal.DestroyREAL8Sequence(hx0)
     
     def _measure_egw_rsq(self, rate=16384.0):
         """

@@ -1,7 +1,7 @@
 #! /bin/bash
 STARTLOC=$(pwd)
 LIBFRAME_VER=v8r26
-LALBRANCH=sim_burst_numrel
+LALBRANCH=minke
 mkdir .local
 # CHECK IF WE'RE INSTALLING INTO A VIRTUALENV
 if [ -n "$VIRTUAL_ENV" ]; then 
