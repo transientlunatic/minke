@@ -84,7 +84,7 @@ class Waveform(object):
         """
         Produce a plot of the injection.
         """
-        hp, hx = self._generate(half=True)
+        hp, hx, _, _ = self._generate(half=True)
         f, ax = plt.subplots(1,2)
         times = np.arange(0, self.hp.deltaT*len(self.hp.data.data), self.hp.deltaT)
         ax[0].plot(times, self.hp.data.data, label="+ polarisation")
