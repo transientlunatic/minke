@@ -362,7 +362,7 @@ class WhiteNoiseBurst(Waveform):
         # the old pyBurst code measured this by generating the waveform
         # which seems wasteful, but I'll replicate it here anyway, for
         # consistency with the method used for O1.
-        hp, hx = self._generate(half=True)
+        hp, hx, _, _ = self._generate(half=True)
         self.params['hrss'] =  lalsimulation.MeasureHrss(hp, hx)
 
 
