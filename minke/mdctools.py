@@ -86,7 +86,7 @@ class MDCSet():
            The waveform which should be added to the MDC set.
 
         """
-        del waveform.row
+        
         self.waveforms.append(waveform)
         self.times = np.append(self.times, waveform.time)
 
