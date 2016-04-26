@@ -158,21 +158,21 @@ class Waveform(object):
            The timeslide id. Defaults to 1.
         """
         if not sim: sim = self.sim
-        self.row = sim.RowType()
+        row = sim.RowType()
 
         for a in lsctables.SimBurstTable.validcolumns.keys():
-            setattr(self.row, a, self.params[a])
+            setattr(row, a, self.params[a])
         
-        self.row.waveform = self.waveform
+        row.waveform = self.waveform
         # Fill in the time
-        self.row.set_time_geocent(GPS(float(self.time)))
+        row.set_time_geocent(GPS(float(self.time)))
         # Get the sky locations
-        self.row.ra, self.row.dec, self.row.psi = self.sky_dist()
-        self.row.simulation_id = sim.get_next_id()
-        self.row.waveform_number = random.randint(0,int(2**32)-1)
+        row.ra, row.dec, row.psi = self.sky_dist()
+        row.simulation_id = sim.get_next_id()
+        row.waveform_number = random.randint(0,int(2**32)-1)
         ### !! This needs to be updated.
-        self.row.process_id = "process:process_id:0" #procrow.process_id
-        self.row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % slide_id)
+        row.process_id = "process:process_id:0" #procrow.process_id
+        row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % slide_id)
 
         return self.row
 
