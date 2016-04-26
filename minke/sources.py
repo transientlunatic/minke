@@ -174,7 +174,7 @@ class Waveform(object):
         row.process_id = "process:process_id:0" #procrow.process_id
         row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % slide_id)
 
-        return self.row
+        return row
 
 
 
