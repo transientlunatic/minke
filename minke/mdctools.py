@@ -347,11 +347,8 @@ class MDCSet():
         hp.data.data = numpy.abs(hx.data.data) + numpy.abs(hp.data.data)
         # |H+Hx|
         hphx = (lalsimulation.MeasureHrss(hp, hx0)**2 - hrss**2)/2
+        print hrss
         self.strains.append([hrss, hphp, hxhx, hphx])
-        #lal.DestroyREAL8Sequence(hp)
-        #lal.DestroyREAL8Sequence(hx)
-        #lal.DestroyREAL8Sequence(hp0)
-        #lal.DestroyREAL8Sequence(hx0)
     
     def _measure_egw_rsq(self, rate=16384.0):
         """

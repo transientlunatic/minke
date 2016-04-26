@@ -140,6 +140,7 @@ class Waveform(object):
         else:
             hp0, hx0 = hp, hx
         self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
+        del(self.swig_row)
 
 
     def _row(self, sim=None, slide_id=1):
