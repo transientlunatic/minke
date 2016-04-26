@@ -42,18 +42,6 @@ class Waveform(object):
     waveform = "Generic"
     expnum = 1
 
-    # def __del__(self):
-    #     try:
-    #         lal.DestroyREAL8Sequence(self.hp)
-    #         lal.DestroyREAL8Sequence(self.hx)
-    #     except:
-    #         print "Failed to destroy hp and hx"
-    #     try:
-    #         lal.DestroyREAL8Sequence(self.hp0)
-    #         lal.DestroyREAL8Sequence(self.hx0)
-    #     except:
-    #         print "Failed to destroy hp0 and hx0"
-            
     def _clear_params(self):
         self.params = {}
         for a in lsctables.SimBurstTable.validcolumns.keys():
@@ -152,12 +140,7 @@ class Waveform(object):
         else:
             hp0, hx0 = hp, hx
         self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
-        # try:
-        print "Destroy simburst"
-        lalburst.DestroySimBurst(self.swig_row)
-        # except:
-        #     pass
-        print "end_generate"
+
 
     def _row(self, sim=None, slide_id=1):
         """
