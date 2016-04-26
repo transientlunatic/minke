@@ -153,7 +153,6 @@ class MDCSet():
 
             self.waveforms.append(sim_burst_table)
             if full:
-                self._generate_burst(sim_burst_table)
                 self._measure_hrss()
                 self._measure_egw_rsq()
             
@@ -204,7 +203,7 @@ class MDCSet():
         # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
         # DW: I tried that, and it doesn't seem to work :/
         hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
+        return hp, hx, hp0, hx0
         #lalburst.DestroySimBurst(swig_row)
         del swig_row
         
@@ -336,7 +335,7 @@ class MDCSet():
         hphx : float
             The hrss of |HpHx| 
         """
-        hp, hx, hp0, hx0 = self.hp, self.hx, self.hp0, self.hx0
+        hp, hx, hp0, hx0 = self._generate_burst()# self.hp, self.hx, self.hp0, self.hx0
         hp0.data.data *= 0
         hx0.data.data *= 0
 
@@ -373,7 +372,7 @@ class MDCSet():
             The energy emitted in gravitational waves divided 
             by the distance squared in M_solar / pc^2.
         """
-        hp, hx = self.hp, self.hx
+        hp, hx, _, _ =  self._generate_burst()
         self.egw.append(lalsimulation.MeasureEoverRsquared(hp, hx))
     
     def _responses(self, row):

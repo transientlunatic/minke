@@ -84,7 +84,7 @@ class Waveform(object):
         """
         Produce a plot of the injection.
         """
-        self._generate()
+        hp, hx = self._generate(half=True)
         f, ax = plt.subplots(1,2)
         times = np.arange(0, self.hp.deltaT*len(self.hp.data.data), self.hp.deltaT)
         ax[0].plot(times, self.hp.data.data, label="+ polarisation")
@@ -139,7 +139,7 @@ class Waveform(object):
             hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
         else:
             hp0, hx0 = hp, hx
-        self.hp, self.hx, self.hp0, self.hx0 = hp, hx, hp0, hx0
+        return hp, hx, hp0, hx0
         del(self.swig_row)
 
 
@@ -362,8 +362,8 @@ class WhiteNoiseBurst(Waveform):
         # the old pyBurst code measured this by generating the waveform
         # which seems wasteful, but I'll replicate it here anyway, for
         # consistency with the method used for O1.
-        self._generate(half=True)
-        self.params['hrss'] =  lalsimulation.MeasureHrss(self.hp, self.hx)
+        hp, hx = self._generate(half=True)
+        self.params['hrss'] =  lalsimulation.MeasureHrss(hp, hx)
 
 
 class Supernova(Waveform):
