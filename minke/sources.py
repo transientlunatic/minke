@@ -130,12 +130,11 @@ class Waveform(object):
             self.swig_row.numrel_data = row.numrel_data
         except:
             pass
-        print "Make hp,hx"
+        
         hp, hx = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
         # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
         # DW: I tried that, and it doesn't seem to work :/
         if not half :
-            print "Make hp0, h0"
             hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
         else:
             hp0, hx0 = hp, hx

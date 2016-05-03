@@ -144,6 +144,7 @@ class MDCSet():
         doesn't produce waveform objects for each of the injections in the
         file. This should be fixed so that the object works symmetrically.
         """
+        i = 0
         sim_burst_table = lalburst.SimBurstTableFromLIGOLw(filename, start, stop)
         while True:
             # This is an ugly kludge to get around the poor choice of wavform name in the xmls, and
@@ -153,14 +154,14 @@ class MDCSet():
 
             self.waveforms.append(sim_burst_table)
             if full:
-                self._measure_hrss()
-                self._measure_egw_rsq()
+                self._measure_hrss(i)
+                self._measure_egw_rsq(i)
             
             self.times = np.append(self.times, float(sim_burst_table.time_geocent_gps))
             #np.insert(self.times, len(self.times), sim_burst_table.time_geocent_gps)
             if sim_burst_table.next is None: break
             sim_burst_table = sim_burst_table.next
-       
+            i += 1
         del(sim_burst_table)
             
     def _generate_burst(self, row,rate=16384.0):
@@ -311,7 +312,7 @@ class MDCSet():
 
         return name
     
-    def _measure_hrss(self, rate=16384.0):
+    def _measure_hrss(self, row, rate=16384.0):
         """
         Measure the various components of hrss (h+^2, hx^2, hphx) for a given 
         input row. This is accomplished by generating the burst and calling 
@@ -335,7 +336,7 @@ class MDCSet():
         hphx : float
             The hrss of |HpHx| 
         """
-        hp, hx, hp0, hx0 = self._generate_burst()# self.hp, self.hx, self.hp0, self.hx0
+        hp, hx, hp0, hx0 = self._generate_burst(row)# self.hp, self.hx, self.hp0, self.hx0
         hp0.data.data *= 0
         hx0.data.data *= 0
 
@@ -349,10 +350,10 @@ class MDCSet():
         hp.data.data = numpy.abs(hx.data.data) + numpy.abs(hp.data.data)
         # |H+Hx|
         hphx = (lalsimulation.MeasureHrss(hp, hx0)**2 - hrss**2)/2
-        print hrss
+        #print hrss
         self.strains.append([hrss, hphp, hxhx, hphx])
     
-    def _measure_egw_rsq(self, rate=16384.0):
+    def _measure_egw_rsq(self, row,  rate=16384.0):
         """
         Measure the energy emitted in gravitational waves divided 
         by the distance squared in M_solar / pc^2. This is accomplished 
@@ -372,7 +373,7 @@ class MDCSet():
             The energy emitted in gravitational waves divided 
             by the distance squared in M_solar / pc^2.
         """
-        hp, hx, _, _ =  self._generate_burst()
+        hp, hx, _, _ =  self._generate_burst(row)
         self.egw.append(lalsimulation.MeasureEoverRsquared(hp, hx))
     
     def _responses(self, row):
