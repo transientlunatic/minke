@@ -86,10 +86,10 @@ class Waveform(object):
         """
         hp, hx, _, _ = self._generate(half=True)
         f, ax = plt.subplots(1,2)
-        times = np.arange(0, self.hp.deltaT*len(self.hp.data.data), self.hp.deltaT)
-        ax[0].plot(times, self.hp.data.data, label="+ polarisation")
-        ax[0].plot(times, self.hx.data.data, label="x polarisation")
-        ax[1].plot(self.hp.data.data, self.hx.data.data)
+        times = np.arange(0, hp.deltaT*len(hp.data.data), hp.deltaT)
+        ax[0].plot(times, hp.data.data, label="+ polarisation")
+        ax[0].plot(times, hx.data.data, label="x polarisation")
+        ax[1].plot(hp.data.data, hx.data.data)
 
     def _generate(self, rate=16384.0, half=False):
         """
@@ -117,29 +117,27 @@ class Waveform(object):
             A copy of the strain in the x polarisation
         """
         row = self._row()
-        print "_generate"
-        print "Make row"
-        self.swig_row = lalburst.CreateSimBurst()
+        swig_row = lalburst.CreateSimBurst()
         for a in lsctables.SimBurstTable.validcolumns.keys():
             try:
-                setattr(self.swig_row, a, getattr( row, a ))
+                setattr(swig_row, a, getattr( row, a ))
             except AttributeError: continue
             except TypeError: 
                 continue
         try:
-            self.swig_row.numrel_data = row.numrel_data
+            swig_row.numrel_data = row.numrel_data
         except:
             pass
         
-        hp, hx = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
         # DW: I tried that, and it doesn't seem to work :/
         if not half :
-            hp0, hx0 = lalburst.GenerateSimBurst(self.swig_row, 1.0/rate)
+            hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         else:
             hp0, hx0 = hp, hx
         return hp, hx, hp0, hx0
-        del(self.swig_row)
+        del(swig_row)
 
 
     def _row(self, sim=None, slide_id=1):
@@ -445,7 +443,7 @@ class Supernova(Waveform):
         Ixx, Ixy, Ixz, Iyy, Iyz, Izz = data[5:]
 
         # Make the new time vector for the requried sample rate
-        target_times = np.arange(0, times[-1], 1.0/sample_rate)
+        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
 
         # Prepare the output matrix
         output = np.zeros((len(target_times), 11))
@@ -515,7 +513,7 @@ class Scheidegger2010(Supernova):
         if not os.path.isfile(decomposed_path) :
             decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
             
-            np.savetxt(decomposed_path, decomposed, header="# time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
+            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
         
         self.params['numrel_data'] = decomposed_path
         
@@ -556,9 +554,9 @@ class Dimmelmeier08(Supernova):
         if not decomposed_path : decomposed_path = filepath+".dec"
         if not os.path.isfile(decomposed_path) :
             decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
-            
-            np.savetxt(decomposed_path, decomposed, header="# time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
-        
+            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
+        self.params['phi']=0
+        self.params['incl']=90
         self.params['numrel_data'] = decomposed_path
         
     def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3):
@@ -578,7 +576,7 @@ class Dimmelmeier08(Supernova):
            The amount of time, in seconds, of the data which should be included
            before the peak amplitude. Defaults to 0.01 sec.
 
-        distance : float
+        distance : fllal.MTSUN_SIoat
            The distance, in megaparsecs, from the observer at which the NR waveforms were
            simulated. Defaults to 10 kpc (i.e. 10e-3 Mpc).
 
@@ -591,20 +589,19 @@ class Dimmelmeier08(Supernova):
         # Load the times from the file
         data = np.loadtxt(numrel_file)
         data = data.T
-        times = data[0]
+        times = data[0]*1e-3
         times -= times[0]
         
         # Load the hp components   
         strain = data[1]
-
         # Make the new time vector for the requried sample rate
-        target_times = np.arange(0, times[-1], 1.0/sample_rate)
+        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
 
         # Prepare the output matrix
         output = np.zeros((len(target_times), 11))
 
         # Add the times in to the first column of said matrix
-        output[:, 0] = target_times
+        output[:, 0] = target_times #/ lal.MTSUN_SI
         #
         # Resample to uniform spacing at 16384 kHz
         #
@@ -612,6 +609,6 @@ class Dimmelmeier08(Supernova):
         #
         # Make the output, and rescale it into dimensionless strain values
         #
-        output[:,5] = strain_new # * np.sqrt(lal.G_SI / lal.C_SI**4) #/lal.MRSUN_SI / ( distance * lal.PC_SI * 1e6)
+        output[:,5] = strain_new #/  lal.MRSUN_SI #/ ( extract_dist * lal.PC_SI * 1.0e6) )
 
         return output
