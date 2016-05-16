@@ -91,7 +91,7 @@ class Waveform(object):
         ax[0].plot(times, hx.data.data, label="x polarisation")
         ax[1].plot(hp.data.data, hx.data.data)
 
-    def _generate(self, rate=16384.0, half=False):
+    def _generate(self, rate=16384.0, half=False, distance=None):
         """
         Generate the burst described in a given row, so that it can be 
         measured.
@@ -105,6 +105,10 @@ class Waveform(object):
            Only compute the hp and hx once if this is true; 
            these are only required if you need to compute the 
            cross products. Defaults to False.
+
+        distance : float
+           The distance, in megaparsecs, at which the injection should be made.
+           Currently only applies to supernova injections.
         Returns
         -------
         hp : 
@@ -136,6 +140,12 @@ class Waveform(object):
             hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         else:
             hp0, hx0 = hp, hx
+        
+        # Rescale for a given distance
+        if distance and if hasattr(self, supernova):
+            rescale = 1.0 / (self.file_distance / distance)
+            hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale, hx0 * rescale
+
         return hp, hx, hp0, hx0
         del(swig_row)
 
@@ -372,6 +382,9 @@ class Supernova(Waveform):
     """
 
     waveform = "Supernova" # We shouldn't ever use this anyway
+    supernova = True
+    file_distance = 10e-3
+    
 
     def construct_Hlm(self, Ixx, Ixy, Ixz, Iyy, Iyz, Izz, l=2, m=2):
         """
@@ -585,7 +598,7 @@ class Dimmelmeier08(Supernova):
         decomposition : ndarray
            The l=2 mode spherical decompositions of the waveform. 
         """
-
+        extract_dist = 10e-3
         # Load the times from the file
         data = np.loadtxt(numrel_file)
         data = data.T
@@ -609,6 +622,6 @@ class Dimmelmeier08(Supernova):
         #
         # Make the output, and rescale it into dimensionless strain values
         #
-        output[:,5] = strain_new #/  lal.MRSUN_SI #/ ( extract_dist * lal.PC_SI * 1.0e6) )
+        output[:,5] = strain_new #/*  ( extract_dist * lal.PC_SI * 1.0e6) 
 
         return output
