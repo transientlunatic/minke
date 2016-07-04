@@ -142,7 +142,7 @@ class Waveform(object):
             hp0, hx0 = hp, hx
         
         # Rescale for a given distance
-        if distance and if hasattr(self, supernova):
+        if distance and hasattr(self, supernova):
             rescale = 1.0 / (self.file_distance / distance)
             hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale, hx0 * rescale
 
