@@ -111,7 +111,7 @@ class MDCSet():
             waveform_row = waveform._row(sim)
             waveform_row.process_id = procrow.process_id
             sim.append(waveform_row)
-            del waveform_row
+            #del waveform_row
         # Write out the xml and gzip it.
         utils.write_filename(xmldoc, filename, gz=True)
 
@@ -187,7 +187,7 @@ class MDCSet():
         hx0 : 
             A copy of the strain in the x polarisation
         """
-        #row = self.waveforms[row]
+        row = self.waveforms[row]
         swig_row = lalburst.CreateSimBurst()
         for a in lsctables.SimBurstTable.validcolumns.keys():
             try:
@@ -197,6 +197,7 @@ class MDCSet():
                 print a, getattr(row,a)
                 continue # the structure is different than the TableRow
         try:
+        #print swig_row
             swig_row.numrel_data = row.numrel_data
         except:
             pass
@@ -292,7 +293,7 @@ class MDCSet():
         name = ''
         numberspart = ''
         if row.waveform == "Dimmelmeier+08":
-            numberspart = self.numrel_file
+            numberspart = self.numrel_data
 
         if row.waveform == "Gaussian":
             numberspart = "{:.3f}".format(row.duration * 1e3)
