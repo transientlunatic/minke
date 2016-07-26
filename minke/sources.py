@@ -488,7 +488,7 @@ class Scheidegger2010(Supernova):
 
     waveform = "Scheidegger+10"
 
-    def __init__(self, phi, incl, time, sky_dist=uniform_sky, filepath="R0E1CA.txt", decomposed_path=None):
+    def __init__(self, theta, phi, time, sky_dist=uniform_sky, filepath=None, family="R1E1CA_L", decomposed_path=None):
         """
 
         Parameters
@@ -496,7 +496,7 @@ class Scheidegger2010(Supernova):
         phi : float
            The internal phi parameter of the supernova injection.
         
-        incl : float
+        theta : float
            The internal inclination parameter of the supernova injection.
 
         time : float or list 
@@ -511,7 +511,10 @@ class Scheidegger2010(Supernova):
            should be made over. Defaults to a uniform sky.
 
         filepath : str
-           The filepath to the numerical relativity waveform.
+           The filepath to the folder containing the pre-rotated numerical relativity waveforms.
+
+        family : str
+           The family of waveforms which are to be used for the injection set.
 
         decomposed_path : str
            The location where the decomposed waveform file should be stored. Optional.
@@ -522,14 +525,21 @@ class Scheidegger2010(Supernova):
         self.params['phi'] = phi
         self.params['incl'] = incl
         self.sky_dist = sky_dist
-        if not decomposed_path : decomposed_path = filepath+".dec"
-        if not os.path.isfile(decomposed_path) :
-            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
-            
-            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
+    
+        self.numrel_data = glob.glob(filepath + "/" + family + "*")
+
+        # Parse the file names to get the theta, phi tuples 
+        self.combinations = []
+        for file in self.numrel_data:
+            self.combinations.append(re.match(r".*theta([\d.]*)_phi([\d.]*)", file).groups())
+        # Find all the unique entries
+        self.combinations = set(self.combinations)
+        if not (theta, phi) in self.combinations:
+            raise IOError("There is no file for this combination of rotations.")
+
         
-        self.params['numrel_data'] = decomposed_path
-        
+
+    
         
 class Dimmelmeier08(Supernova):
     """
