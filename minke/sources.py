@@ -523,19 +523,21 @@ class Scheidegger2010(Supernova):
         self._clear_params()
         self.time = time
         self.params['phi'] = phi
-        self.params['incl'] = incl
+        self.params['incl'] = theta
         self.sky_dist = sky_dist
     
-        self.numrel_data = glob.glob(filepath + "/" + family + "*")
+        self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
+
+        #self.numrel_data = glob.glob(filepath + "/" + family + "*")
 
         # Parse the file names to get the theta, phi tuples 
-        self.combinations = []
-        for file in self.numrel_data:
-            self.combinations.append(re.match(r".*theta([\d.]*)_phi([\d.]*)", file).groups())
+        #self.combinations = []
+        #for file in self.numrel_data:
+        #    self.combinations.append(re.match(r".*theta([\d.]*)_phi([\d.]*)", file).groups())
         # Find all the unique entries
-        self.combinations = set(self.combinations)
-        if not (theta, phi) in self.combinations:
-            raise IOError("There is no file for this combination of rotations.")
+        #self.combinations = set(self.combinations)
+        #if not (theta, phi) in self.combinations:
+        #    raise IOError("There is no file for this combination of rotations.")
 
         
 
