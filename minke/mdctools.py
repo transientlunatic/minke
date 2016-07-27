@@ -41,7 +41,7 @@ class MDCSet():
                           'sg' : 'SineGaussian',
                           'wnb': 'BTLWNB',
                           # Supernova families
-                          'd08' : 'Dimmelmeier+08'
+                          'd08' : 'Dimmelmeier+08',
                           's10' : 'Scheidegger+10',
                           'm12' : 'Mueller+12',
                           'o13' : 'Ott+13',
