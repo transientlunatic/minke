@@ -293,7 +293,7 @@ class MDCSet():
         name = ''
         numberspart = ''
         if row.waveform == "Dimmelmeier+08":
-            numberspart = self.numrel_data
+            numberspart = row.numrel_data.split('.')[0]
 
         if row.waveform == "Gaussian":
             numberspart = "{:.3f}".format(row.duration * 1e3)
@@ -550,7 +550,7 @@ class Frame():
 
         head_date = str(self.start)[:5]
         frameloc = directory+"/"+mdc.directory_path()+"/"+head_date+"/"
-
+        #print frameloc, filename
         if not os.path.isfile(frameloc + filename) or force:
             data = []
             # Define the start point of the time series top be generated for the injection
