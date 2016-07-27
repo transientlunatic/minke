@@ -480,6 +480,99 @@ class Supernova(Waveform):
 
         return output
 
+class Ott2013(Supernova):
+    """
+    The Ott+2013 supernova waveform
+    """
+    waveform = "Ott+13"
+    def __init__(self, theta, phi, time, sky_dist=uniform_sky, filepath=None, family="s27fheat1p05", decomposed_path=None):
+        """
+
+        Parameters
+        ----------
+        phi : float
+           The internal phi parameter of the supernova injection.
+        
+        theta : float
+           The internal inclination parameter of the supernova injection.
+
+        time : float or list 
+           The time period over which the injection should be made. If
+           a list is given they should be the start and end times, and
+           the waveform will be produced at some random point in that
+           time range. If a float is given then the injection will be
+           made at that specific time.
+
+        sky_dist : func
+           The function describing the sky distribution which the injections
+           should be made over. Defaults to a uniform sky.
+
+        filepath : str
+           The filepath to the folder containing the pre-rotated numerical relativity waveforms.
+
+        family : str
+           The family of waveforms which are to be used for the injection set.
+
+        decomposed_path : str
+           The location where the decomposed waveform file should be stored. Optional.
+        """
+        
+        self._clear_params()
+        self.time = time
+        self.params['phi'] = phi
+        self.params['incl'] = theta
+        self.sky_dist = sky_dist
+    
+        self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
+
+
+class Mueller2012(Supernova):
+    """
+    The Mueller2012 waveform.
+    """
+
+    waveform = "Mueller+12"
+    def __init__(self, theta, phi, time, sky_dist=uniform_sky, filepath=None, family="L15-3", decomposed_path=None):
+        """
+
+        Parameters
+        ----------
+        phi : float
+           The internal phi parameter of the supernova injection.
+        
+        theta : float
+           The internal inclination parameter of the supernova injection.
+
+        time : float or list 
+           The time period over which the injection should be made. If
+           a list is given they should be the start and end times, and
+           the waveform will be produced at some random point in that
+           time range. If a float is given then the injection will be
+           made at that specific time.
+
+        sky_dist : func
+           The function describing the sky distribution which the injections
+           should be made over. Defaults to a uniform sky.
+
+        filepath : str
+           The filepath to the folder containing the pre-rotated numerical relativity waveforms.
+
+        family : str
+           The family of waveforms which are to be used for the injection set.
+
+        decomposed_path : str
+           The location where the decomposed waveform file should be stored. Optional.
+        """
+        
+        self._clear_params()
+        self.time = time
+        self.params['phi'] = phi
+        self.params['incl'] = theta
+        self.sky_dist = sky_dist
+    
+        self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
+
+
 
 class Scheidegger2010(Supernova):
     """
