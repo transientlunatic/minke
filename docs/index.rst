@@ -42,6 +42,7 @@ User Guide
    installation
    tutorial
    tutorial-editing
+   tutorial-supernova
    usage
 
 Developer Guide
