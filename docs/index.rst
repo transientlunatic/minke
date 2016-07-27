@@ -41,6 +41,7 @@ User Guide
    
    installation
    tutorial
+   tutorial-editing
    usage
 
 Developer Guide
