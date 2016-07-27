@@ -39,8 +39,8 @@ def supernova_angle(num, divisions = 10):
     phi = numpy.linspace(0, numpy.pi*2, divisions)
     out_t =  numpy.random.choice(theta, num, replace = True)
     out_p =  numpy.random.choice(phi, num, replace = True)
-    out_t =  [float("%.3f" % angle) for angle in out_t]
-    out_p =  [float("%.3f" % angle) for angle in out_p]
+    #out_t =  [float("%.3f" % angle) for angle in out_t]
+    #out_p =  [float("%.3f" % angle) for angle in out_p]
     return zip(out_t, out_p)
 
 def uniform_sky(number=1):
