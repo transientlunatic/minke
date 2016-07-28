@@ -644,7 +644,7 @@ class Scheidegger2010(Supernova):
         injected waveform's h+ and hx values.
 
         """
-        theta, phi = self.params['theta'], self.params['phi']
+        theta, phi = self.params['incl'], self.params['phi']
         numrel_file_hp = self.numrel_data + "theta{.3f}_phi{.3f}-plus.txt".format(theta, phi)
         numrel_file_hx = self.numrel_data + "theta{.3f}_phi{.3f}-cross.txt".format(theta, phi)
 
