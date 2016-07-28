@@ -91,63 +91,52 @@ class Waveform(object):
         ax[0].plot(times, hx.data.data, label="x polarisation")
         ax[1].plot(hp.data.data, hx.data.data)
 
-    def _generate(self, rate=16384.0, half=False, distance=None):
+    def _generate(self, rate=16384.0, half=False, distance=None): 
         """
-        Generate the burst described in a given row, so that it can be 
+        Generate the burst described in a given row, so that it can be
         measured.
         
-        Parameters
-        ----------
-        rate : float
-            The sampling rate of the signal, in Hz. Defaults to 16384.0Hz
+        Parameters ---------- rate : float The sampling rate of the
+        signal, in Hz. Defaults to 16384.0Hz
             
-        half : bool
-           Only compute the hp and hx once if this is true; 
-           these are only required if you need to compute the 
-           cross products. Defaults to False.
+        half : bool Only compute the hp and hx once if this is true;
+           these are only required if you need to compute the cross
+           products. Defaults to False.
 
-        distance : float
-           The distance, in megaparsecs, at which the injection should be made.
-           Currently only applies to supernova injections.
-        Returns
-        -------
-        hp : 
-            The strain in the + polarisation
-        hx : 
-            The strain in the x polarisation
-        hp0 : 
-            A copy of the strain in the + polarisation
-        hx0 : 
-            A copy of the strain in the x polarisation
-        """
-        row = self._row()
-        swig_row = lalburst.CreateSimBurst()
-        for a in lsctables.SimBurstTable.validcolumns.keys():
+        distance : float The distance, in megaparsecs, at which the
+           injection should be made.  Currently only applies to
+           supernova injections.  Returns ------- hp : The strain in
+           the + polarisation hx : The strain in the x polarisation
+           hp0 : A copy of the strain in the + polarisation hx0 : A
+           copy of the strain in the x polarisation 
+        """ 
+        row = self._row() 
+        swig_row = lalburst.CreateSimBurst() 
+        for a in lsctables.SimBurstTable.validcolumns.keys(): 
             try:
-                setattr(swig_row, a, getattr( row, a ))
-            except AttributeError: continue
+                setattr(swig_row, a, getattr( row, a )) 
+            except AttributeError: 
+                continue 
             except TypeError: 
-                continue
-        try:
-            swig_row.numrel_data = row.numrel_data
-        except:
-            pass
+                continue 
+            try:
+                swig_row.numrel_data = row.numrel_data 
+            except: pass
         
-        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
+        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate) 
+        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?  
         # DW: I tried that, and it doesn't seem to work :/
         if not half :
-            hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        else:
+            hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate) 
+        else: 
             hp0, hx0 = hp, hx
         
-        # Rescale for a given distance
-        if distance and hasattr(self, supernova):
+        # Rescale for a given distance 
+        if distance and hasattr(self, supernova): 
             rescale = 1.0 / (self.file_distance / distance)
-            hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale, hx0 * rescale
-
-        return hp, hx, hp0, hx0
-        del(swig_row)
+            hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale,hx0 * rescale
+            
+        return hp, hx, hp0, hx0 
 
 
     def _row(self, sim=None, slide_id=1):
@@ -182,6 +171,13 @@ class Waveform(object):
         row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % slide_id)
 
         return row
+    
+    def interpolate(self, x_old, y_old, x_new):
+        """
+        Convenience funtion to avoid repeated code
+        """
+        interpolator = interp.interp1d(x_old, y_old)
+        return interpolator(x_new)
 
 
 
@@ -619,7 +615,7 @@ class Scheidegger2010(Supernova):
         self.params['incl'] = theta
         self.sky_dist = sky_dist
     
-        self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
+        self.numrel_data = filepath + "/" + family #"theta{}_phi{}".format(theta, phi)
 
         #self.numrel_data = glob.glob(filepath + "/" + family + "*")
 
@@ -631,9 +627,41 @@ class Scheidegger2010(Supernova):
         #self.combinations = set(self.combinations)
         #if not (theta, phi) in self.combinations:
         #    raise IOError("There is no file for this combination of rotations.")
+        
+    def _generate(self):
+        """
+
+        Generate the Scheidegger waveforms. This must be performed
+        differently to other waveform morphologies, since we require
+        the use of pre-generated text files.
+
+        The filepath and the start of the filenames should be provided in
+        the numrel_data column of the SimBurstTable, so we need to contruct
+        the rest of the filename from the theta and phi angles, and then load 
+        that file.
+        
+        The file will then need to be resampled and used to form the 
+        injected waveform's h+ and hx values.
+
+        """
+        theta, phi = self.params['theta'], self.params['phi']
+        numrel_file_hp = self.numrel_data + "theta{.3f}_phi{.3f}-plus.txt".format(theta, phi)
+        numrel_file_hx = self.numrel_data + "theta{.3f}_phi{.3f}-cross.txt".format(theta, phi)
+
+        data_hp = np.loadtxt(numrel_file_hp)
+        data_hx = np.loadtxt(numrel_file_hx)
+        data_hp = data_hp.T
+        data_hx = data_hx.T
+        times = data_hp[0]
+        times -= times[0]
+
+        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
+        hp = self.interpolate(times, data_hp, target_times)
+        hx = self.interpolate(times, data_hx, target_times)
+
+        return hp, hx, hp, hx
 
         
-
     
         
 class Dimmelmeier08(Supernova):
