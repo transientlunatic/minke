@@ -158,7 +158,7 @@ class Waveform(object):
 
         for a in lsctables.SimBurstTable.validcolumns.keys():
             setattr(row, a, self.params[a])
-        
+
         row.waveform = self.waveform
         # Fill in the time
         row.set_time_geocent(GPS(float(self.time)))
@@ -520,7 +520,7 @@ class Ott2013(Supernova):
         self.sky_dist = sky_dist
     
         self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
-
+        self.params['numrel_data'] = self.numrel_data
 
 class Mueller2012(Supernova):
     """
@@ -567,7 +567,7 @@ class Mueller2012(Supernova):
         self.sky_dist = sky_dist
     
         self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
-
+        self.params['numrel_data'] = self.numrel_data
 
 
 class Scheidegger2010(Supernova):
@@ -614,8 +614,10 @@ class Scheidegger2010(Supernova):
         self.params['phi'] = phi
         self.params['incl'] = theta
         self.sky_dist = sky_dist
-    
-        self.numrel_data = filepath + "/" + family #"theta{}_phi{}".format(theta, phi)
+
+        self.numrel_data = filepath + "/" + family
+        self.params['numrel_data'] = self.numrel_data
+        #"theta{}_phi{}".format(theta, phi)
 
         #self.numrel_data = glob.glob(filepath + "/" + family + "*")
 
