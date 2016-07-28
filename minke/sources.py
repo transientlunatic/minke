@@ -647,8 +647,8 @@ class Scheidegger2010(Supernova):
 
         """
         theta, phi = self.params['incl'], self.params['phi']
-        numrel_file_hp = self.numrel_data + "theta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-        numrel_file_hx = self.numrel_data + "theta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+        numrel_file_hp = self.numrel_data + "_theta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+        numrel_file_hx = self.numrel_data + "_theta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
 
         data_hp = np.loadtxt(numrel_file_hp)
         data_hx = np.loadtxt(numrel_file_hx)
