@@ -151,7 +151,7 @@ class Waveform(object):
             h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx, row.ra[0], row.dec[0], row.psi[0], det)
             # Inject the waveform into the overall timeseries
             lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
-            return h_resp
+            return h_tot
 
 
     def _row(self, sim=None, slide_id=1):
