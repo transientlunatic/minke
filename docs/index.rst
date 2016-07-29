@@ -42,6 +42,7 @@ User Guide
    installation
    tutorial
    tutorial-editing
+   tutorial-SNR-threshold
    tutorial-supernova
    usage
 
