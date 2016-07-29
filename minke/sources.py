@@ -138,6 +138,20 @@ class Waveform(object):
             
         return hp, hx, hp0, hx0 
 
+    def _generate_for_detector(self, ifos, sample_rate = 16384.0, nsamp = 2000):
+        data = []
+        # Loop through each interferometer
+        for ifo in ifos:
+            # Make the timeseries
+            h_resp = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/sample_rate, lal.StrainUnit, nsamp)
+            hp, hx = self._generate(half=True)[:2]
+            # Get and apply detector response
+            det = lalsimulation.DetectorPrefixToLALDetector(ifo)
+            h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx, self.params['ra'], self.params['dec'], self.params['psi'], det)
+            # Inject the waveform into the overall timeseries
+            lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
+            return h_resp
+
 
     def _row(self, sim=None, slide_id=1):
         """
@@ -630,6 +644,9 @@ class Scheidegger2010(Supernova):
         #if not (theta, phi) in self.combinations:
         #    raise IOError("There is no file for this combination of rotations.")
         
+
+
+
     def _generate(self):
         """
 
@@ -652,8 +669,8 @@ class Scheidegger2010(Supernova):
 
         data_hp = np.loadtxt(numrel_file_hp)
         data_hx = np.loadtxt(numrel_file_hx)
-        data_hp = data_hp.T
-        data_hx = data_hx.T
+        #data_hp = data_hp.T
+        #data_hx = data_hx.T
         times = data_hp[0]
         times -= times[0]
 
