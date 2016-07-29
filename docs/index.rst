@@ -32,6 +32,17 @@ The Minke framework aims to be flexible, and easily extended to
 include new waveform morphologies, and signal distributions, so if you
 find something lacking feel free to make a pull request!
 
+Tutorials
+=========
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorial
+   tutorial-editing
+   tutorial-SNR-threshold
+   tutorial-supernova
+
 User Guide
 ==========
 
@@ -40,10 +51,6 @@ User Guide
 
    
    installation
-   tutorial
-   tutorial-editing
-   tutorial-SNR-threshold
-   tutorial-supernova
    usage
 
 Developer Guide

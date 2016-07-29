@@ -1,5 +1,5 @@
-Tutorial: Making Software MDCs
-==============================
+Tutorial: Making Burst MDCs
+===========================
 
 Minke is currently capable of producing software injections for mock
 data challenges for a large number of waveforms, including all of the
