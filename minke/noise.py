@@ -24,6 +24,32 @@ class PSD():
         lalsimulation.SimNoisePSDFromFile(self.psd, fmin, filename)
 
         
+    def SNR(self, waveform, detectors):
+        """
+        Calculate the SNR for a given waveform compared to this SNR.
+
+        Parameters
+        ==========
+        waveform : minke source object
+           The waveform which should have its snr measured
+        detectors : list
+           A list of detector names in the format "L1" for the Livingston 4km detector, etc.
+
+        Returns
+        =======
+        network snr : float
+           The SNR over the whole network described by the detector list
+        SNRs : list
+           A list of SNRs for each detector
+        """
+        snrs = []
+        for detector in detectors:
+            snrs.append(lalsimulation.MeasureSNR(waveform._generate_for_detector([detector]), self.psd))
+
+        snrs_r = np.array(snrs)
+        snrs_r = snrs_r**2
+        return np.sqrt(snrs_r.sum()), snrs
+        
 
     def plot(self):
         """
