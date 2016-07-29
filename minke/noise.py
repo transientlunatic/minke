@@ -24,7 +24,7 @@ class PSD():
         lalsimulation.SimNoisePSDFromFile(self.psd, fmin, filename)
 
         
-    def SNR(self, waveform, detectors):
+    def SNR(self, waveform, detectors, fmin=0, fmax=-1):
         """
         Calculate the SNR for a given waveform compared to this SNR.
 
@@ -34,6 +34,11 @@ class PSD():
            The waveform which should have its snr measured
         detectors : list
            A list of detector names in the format "L1" for the Livingston 4km detector, etc.
+        fmin : float
+           The minimum frequency at which to evaluate the SNR. If 0 the lower frequency is unbounded.
+        fmax : float
+           The maximum frequency at which the SNR is evaluated. If negative the upper frequency is unbounded.
+
 
         Returns
         =======
@@ -44,7 +49,7 @@ class PSD():
         """
         snrs = []
         for detector in detectors:
-            snrs.append(lalsimulation.MeasureSNR(waveform._generate_for_detector([detector]), self.psd))
+            snrs.append(lalsimulation.MeasureSNR(waveform._generate_for_detector([detector]), self.psd, fmin, fmax))
 
         snrs_r = np.array(snrs)
         snrs_r = snrs_r**2
