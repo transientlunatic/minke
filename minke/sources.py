@@ -143,11 +143,12 @@ class Waveform(object):
         # Loop through each interferometer
         for ifo in ifos:
             # Make the timeseries
+            row = self._row()
             h_resp = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/sample_rate, lal.StrainUnit, nsamp)
             hp, hx = self._generate(half=True)[:2]
             # Get and apply detector response
             det = lalsimulation.DetectorPrefixToLALDetector(ifo)
-            h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx, self._row.ra, self._row.dec, self._row.psi, det)
+            h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx, row.ra, row.dec, row.psi, det)
             # Inject the waveform into the overall timeseries
             lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
             return h_resp
