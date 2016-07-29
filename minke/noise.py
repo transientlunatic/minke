@@ -1,8 +1,6 @@
 import numpy as np
 import lal, lalsimulation
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+
 
 class PSD():
     """
@@ -31,7 +29,9 @@ class PSD():
         """
         Plot the PSD
         """
-
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
         fmin = self.psd.f0
         length = len(self.psd.data.data)
         df = self.psd.deltaF
