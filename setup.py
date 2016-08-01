@@ -16,10 +16,10 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     
-    'numpy',
-    'matplotlib',
-    'pandas',
-    'scipy',
+#    'numpy',
+#    'matplotlib',
+#    'pandas',
+#    'scipy',
 ]
 
 test_requirements = [
