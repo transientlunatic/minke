@@ -20,7 +20,6 @@ requirements = [
     'matplotlib',
     'pandas',
     'scipy',
-    'pylal',    
 ]
 
 test_requirements = [
