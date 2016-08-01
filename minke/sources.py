@@ -537,6 +537,28 @@ class Ott2013(Supernova):
         self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
         self.params['numrel_data'] = self.numrel_data
 
+    def _generate(self):
+        """
+
+        Generate the Scheidegger waveforms. This must be performed
+        differently to other waveform morphologies, since we require
+        the use of pre-generated text files.
+
+        The filepath and the start of the filenames should be provided in
+        the numrel_data column of the SimBurstTable, so we need to contruct
+        the rest of the filename from the theta and phi angles, and then load 
+        that file.
+
+        """
+        theta, phi = self.params['incl'], self.params['phi']
+        numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+        numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+
+        data_hp = np.loadtxt(numrel_file_hp)
+        data_hx = np.loadtxt(numrel_file_hx)
+
+        return data_hp, data_hx, data_hp, data_hx
+
 class Mueller2012(Supernova):
     """
     The Mueller2012 waveform.
@@ -584,6 +606,27 @@ class Mueller2012(Supernova):
         self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
         self.params['numrel_data'] = self.numrel_data
 
+    def _generate(self):
+        """
+
+        Generate the Mueller waveforms. This must be performed
+        differently to other waveform morphologies, since we require
+        the use of pre-generated text files.
+
+        The filepath and the start of the filenames should be provided in
+        the numrel_data column of the SimBurstTable, so we need to contruct
+        the rest of the filename from the theta and phi angles, and then load 
+        that file.
+
+        """
+        theta, phi = self.params['incl'], self.params['phi']
+        numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+        numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+
+        data_hp = np.loadtxt(numrel_file_hp)
+        data_hx = np.loadtxt(numrel_file_hx)
+
+        return data_hp, data_hx, data_hp, data_hx
 
 class Scheidegger2010(Supernova):
     """
@@ -665,21 +708,13 @@ class Scheidegger2010(Supernova):
 
         """
         theta, phi = self.params['incl'], self.params['phi']
-        numrel_file_hp = self.numrel_data + "_theta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-        numrel_file_hx = self.numrel_data + "_theta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+        numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+        numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
 
         data_hp = np.loadtxt(numrel_file_hp)
         data_hx = np.loadtxt(numrel_file_hx)
-        #data_hp = data_hp.T
-        #data_hx = data_hx.T
-        times = data_hp[0]
-        times -= times[0]
 
-        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
-        hp = self.interpolate(times, data_hp, target_times)
-        hx = self.interpolate(times, data_hx, target_times)
-
-        return hp, hx, hp, hx
+        return data_hp, data_hx, data_hp, data_hx
 
         
     
