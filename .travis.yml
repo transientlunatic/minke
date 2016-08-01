@@ -75,3 +75,11 @@ cache:
     - ${VIRTUAL_ENV}/lib
     - ${VIRTUAL_ENV}/opt
     - ${VIRTUAL_ENV}/etc
+
+notifications:
+  webhooks:
+    urls:
+      - https://chat.ligo.org/hooks/wknq4kn5c38yurauidajqt8bse
+    on_success: always#[always|never|change] # default: always
+    on_failure: always#[always|never|change] # default: always
+    on_start: always#[always|never|change] # default: never
