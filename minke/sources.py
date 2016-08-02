@@ -534,13 +534,13 @@ class Ott2013(Supernova):
         self.params['incl'] = theta
         self.sky_dist = sky_dist
     
-        self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
+        self.numrel_data = filepath + "/" + family
         self.params['numrel_data'] = self.numrel_data
 
     def _generate(self):
         """
 
-        Generate the Scheidegger waveforms. This must be performed
+        Generate the Ott waveforms. This must be performed
         differently to other waveform morphologies, since we require
         the use of pre-generated text files.
 
