@@ -217,7 +217,7 @@ class MDCSet():
             # This is the second half of the numrel kludge.
             theta, phi = swig_row.incl, swig_row.phi
             numrel_file_hp = swig_row.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-            numrel_file_hx = dwig_row.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+            numrel_file_hx = swig_row.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
             data_hp = np.loadtxt(numrel_file_hp)
             data_hx = np.loadtxt(numrel_file_hx)
             return data_hp, data_hx, data_hp, data_hx
