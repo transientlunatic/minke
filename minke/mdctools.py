@@ -193,6 +193,11 @@ class MDCSet():
         hx0 : 
             A copy of the strain in the x polarisation
         """
+        # This is a temporary kludge to allow LALSimulation to
+        # be bypassed for pre-calculated waveforms.
+        # A more robust solution should be considered.
+        exceptions = ["Ott+13", "Mueller+12", "Scheidegger+10"]
+
         row = self.waveforms[row]
         swig_row = lalburst.CreateSimBurst()
         for a in lsctables.SimBurstTable.validcolumns.keys():
@@ -207,13 +212,22 @@ class MDCSet():
             swig_row.numrel_data = row.numrel_data
         except:
             pass
-        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
-        # DW: I tried that, and it doesn't seem to work :/
-        hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        return hp, hx, hp0, hx0
-        #lalburst.DestroySimBurst(swig_row)
-        del swig_row
+
+        if swig_row.waveform in exceptions:
+            # This is the second half of the numrel kludge.
+            theta, phi = swig_row.incl, swig_row.phi
+            numrel_file_hp = swig_row.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+            numrel_file_hx = dwig_row.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+            data_hp = np.loadtxt(numrel_file_hp)
+            data_hx = np.loadtxt(numrel_file_hx)
+            return data_hp, data_hx, data_hp, data_hx
+
+        else:
+            hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
+            # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
+            # DW: I tried that, and it doesn't seem to work :/
+            hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
+            return hp, hx, hp0, hx0
         
     
     def _getDetector(self, det):

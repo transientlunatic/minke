@@ -603,7 +603,7 @@ class Mueller2012(Supernova):
         self.params['incl'] = theta
         self.sky_dist = sky_dist
     
-        self.numrel_data = filepath + "/" + family + "theta{}_phi{}".format(theta, phi)
+        self.numrel_data = filepath + "/" + family
         self.params['numrel_data'] = self.numrel_data
 
     def _generate(self):
