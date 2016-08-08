@@ -533,9 +533,14 @@ class Ott2013(Supernova):
         self.params['phi'] = phi
         self.params['incl'] = theta
         self.sky_dist = sky_dist
-    
-        self.numrel_data = filepath + "/" + family
-        self.params['numrel_data'] = self.numrel_data
+
+        if not decomposed_path : decomposed_path = filepath+".dec"
+        if not os.path.isfile(decomposed_path) :
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
+            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
+        
+        #self.numrel_data = filepath + "/" + family
+        self.params['numrel_data'] = decomposed_path #self.numrel_data
 
     def _generate(self):
         """
@@ -602,9 +607,76 @@ class Mueller2012(Supernova):
         self.params['phi'] = phi
         self.params['incl'] = theta
         self.sky_dist = sky_dist
-    
-        self.numrel_data = filepath + "/" + family
-        self.params['numrel_data'] = self.numrel_data
+        if not decomposed_path : decomposed_path = filepath+".dec"
+        if not os.path.isfile(decomposed_path) :
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
+            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
+        
+        #self.numrel_data = filepath + "/" + family
+        self.params['numrel_data'] = decomposed_path #self.numrel_data
+
+    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3):
+        """
+        Produce the spherial harmonic decompositions of a numerical
+        waveform.
+        
+        Parameters
+        ----------
+        numrel_file : str
+           The location of the numerical relativity waveform file.
+        
+        sample_rate : float
+           The sample rate of the NR file. Defaults to 16384.0 Hz.
+        
+        step_back : float
+           The amount of time, in seconds, of the data which should be included
+           before the peak amplitude. Defaults to 0.01 sec.
+
+        distance : float
+           The distance, in megaparsecs, from the observer at which the NR waveforms were
+           simulated. Defaults to 10 kpc (i.e. 10e-3 Mpc).
+
+        Returns
+        -------
+        decomposition : ndarray
+           The l=2 mode spherical decompositions of the waveform. 
+        """
+
+        # Load the times from the file
+        data = np.loadtxt(numrel_file)
+        data = data.T
+        times = data[1]
+        times -= times[0]
+
+        # Load the I components from the file        
+        Ixx, Iyy, Izz, Ixy, Ixz, Iyz = data[6:]
+
+        # Make the new time vector for the requried sample rate
+        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
+
+        # Prepare the output matrix
+        output = np.zeros((len(target_times), 11))
+
+        # Add the times in to the first column of said matrix
+        output[:, 0] = target_times
+
+        
+        for i, m in enumerate([-2,-1,0,1,2]):
+            Hlm = self.construct_Hlm(Ixx, Ixy, Ixz, Iyy, Iyz, Izz, l=2, m=m)
+            #
+            # Resample to uniform spacing at 16384 kHz
+            #
+            Hlm_real = self.interpolate(times, Hlm.real, target_times)
+            Hlm_imag = self.interpolate(times, Hlm.imag, target_times)
+            #
+            # Make the output, and rescale it into dimensionless strain values
+            #
+            output[:,2*(i+1)-1] = Hlm_real * np.sqrt(lal.G_SI / lal.C_SI**4) #/lal.MRSUN_SI / ( distance * lal.PC_SI * 1e6)
+            output[:,2*(i+1)] =   -Hlm_imag * np.sqrt(lal.G_SI / lal.C_SI**4)#/lal.MRSUN_SI / ( distance * lal.PC_SI * 1e6)
+
+        return output
+
+
 
     def _generate(self):
         """
@@ -673,48 +745,41 @@ class Scheidegger2010(Supernova):
         self.params['incl'] = theta
         self.sky_dist = sky_dist
 
-        self.numrel_data = filepath + "/" + family
-        self.params['numrel_data'] = self.numrel_data
-        #"theta{}_phi{}".format(theta, phi)
 
-        #self.numrel_data = glob.glob(filepath + "/" + family + "*")
-
-        # Parse the file names to get the theta, phi tuples 
-        #self.combinations = []
-        #for file in self.numrel_data:
-        #    self.combinations.append(re.match(r".*theta([\d.]*)_phi([\d.]*)", file).groups())
-        # Find all the unique entries
-        #self.combinations = set(self.combinations)
-        #if not (theta, phi) in self.combinations:
-        #    raise IOError("There is no file for this combination of rotations.")
+        if not decomposed_path : decomposed_path = filepath+".dec"
+        if not os.path.isfile(decomposed_path) :
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
+            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
         
+        #self.numrel_data = filepath + "/" + family
+        self.params['numrel_data'] = decomposed_path #self.numrel_data
 
 
 
-    def _generate(self):
-        """
+    # def _generate(self):
+    #     """
 
-        Generate the Scheidegger waveforms. This must be performed
-        differently to other waveform morphologies, since we require
-        the use of pre-generated text files.
+    #     Generate the Scheidegger waveforms. This must be performed
+    #     differently to other waveform morphologies, since we require
+    #     the use of pre-generated text files.
 
-        The filepath and the start of the filenames should be provided in
-        the numrel_data column of the SimBurstTable, so we need to contruct
-        the rest of the filename from the theta and phi angles, and then load 
-        that file.
+    #     The filepath and the start of the filenames should be provided in
+    #     the numrel_data column of the SimBurstTable, so we need to contruct
+    #     the rest of the filename from the theta and phi angles, and then load 
+    #     that file.
         
-        The file will then need to be resampled and used to form the 
-        injected waveform's h+ and hx values.
+    #     The file will then need to be resampled and used to form the 
+    #     injected waveform's h+ and hx values.
 
-        """
-        theta, phi = self.params['incl'], self.params['phi']
-        numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-        numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+    #     """
+    #     theta, phi = self.params['incl'], self.params['phi']
+    #     numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+    #     numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
 
-        data_hp = np.loadtxt(numrel_file_hp)
-        data_hx = np.loadtxt(numrel_file_hx)
+    #     data_hp = np.loadtxt(numrel_file_hp)
+    #     data_hx = np.loadtxt(numrel_file_hx)
 
-        return data_hp, data_hx, data_hp, data_hx
+    #     return data_hp, data_hx, data_hp, data_hx
 
         
     

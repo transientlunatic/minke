@@ -18,7 +18,8 @@ import os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
+import re
+#import namedtuple
 
 def mkdir(path):
     """
@@ -198,6 +199,9 @@ class MDCSet():
         # A more robust solution should be considered.
         exceptions = ["Ott+13", "Mueller+12", "Scheidegger+10"]
 
+
+        
+
         row = self.waveforms[row]
         swig_row = lalburst.CreateSimBurst()
         for a in lsctables.SimBurstTable.validcolumns.keys():
@@ -207,27 +211,25 @@ class MDCSet():
             except TypeError: 
                 print a, getattr(row,a)
                 continue # the structure is different than the TableRow
-        try:
-        #print swig_row
-            swig_row.numrel_data = row.numrel_data
-        except:
-            pass
+        #try:
+        theta, phi = np.cos(swig_row.incl), swig_row.phi            
+         
+        #if swig_row.waveform in exceptions:
+        #    # This is nasty and shouldn't be a long-term fix!!!
+        #    swig_row.numrel_data =  row.numrel_data.split('\0')[0]+ "_costheta{:.3f}_phi{:.3f}-full.txt".format(theta, phi)
+        #    print swig_row.numrel_data
+        #else:
+        swig_row.numrel_data = row.numrel_data
 
-        if swig_row.waveform in exceptions:
-            # This is the second half of the numrel kludge.
-            theta, phi = swig_row.incl, swig_row.phi
-            numrel_file_hp = swig_row.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-            numrel_file_hx = swig_row.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
-            data_hp = np.loadtxt(numrel_file_hp)
-            data_hx = np.loadtxt(numrel_file_hx)
-            return data_hp, data_hx, data_hp, data_hx
+        #for a in lsctables.SimBurstTable.validcolumns.keys():
+        #    print a, getattr(swig_row,a)
 
-        else:
-            hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-            # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
-            # DW: I tried that, and it doesn't seem to work :/
-            hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-            return hp, hx, hp0, hx0
+        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
+        
+        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
+        # DW: I tried that, and it doesn't seem to work :/
+        hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
+        return hp, hx, hp0, hx0
         
     
     def _getDetector(self, det):
@@ -358,9 +360,10 @@ class MDCSet():
             The hrss of |HpHx| 
         """
         hp, hx, hp0, hx0 = self._generate_burst(row)# self.hp, self.hx, self.hp0, self.hx0
+
         hp0.data.data *= 0
         hx0.data.data *= 0
-
+        
         # H+ hrss only
         hphp = lalsimulation.MeasureHrss(hp, hx0)**2
         # Hx hrss only
