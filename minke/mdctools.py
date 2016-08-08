@@ -314,7 +314,7 @@ class MDCSet():
         row = self.waveforms[row]
         name = ''
         numberspart = ''
-        if row.waveform == "Dimmelmeier+08":
+        if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13"):
             numberspart = row.numrel_data.split('.')[0]
 
         if row.waveform == "Gaussian":

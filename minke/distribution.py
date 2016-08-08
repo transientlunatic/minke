@@ -33,14 +33,13 @@ def uniform_phi(num):
 
 def supernova_angle(num, divisions = 10):
     """
-    Draw from a discrete distribution of angles. Returned with 3dp precision.
+    Draw from a discrete distribution of angles. 
     """
-    theta = numpy.linspace(0, numpy.pi, divisions)
+    theta = numpy.linspace(-1, 1, divisions)
+    ctheta = numpy.arccos(theta)
     phi = numpy.linspace(0, numpy.pi*2, divisions)
-    out_t =  numpy.random.choice(theta, num, replace = True)
+    out_t =  numpy.random.choice(ctheta, num, replace = True)
     out_p =  numpy.random.choice(phi, num, replace = True)
-    #out_t =  [float("%.3f" % angle) for angle in out_t]
-    #out_p =  [float("%.3f" % angle) for angle in out_p]
     return zip(out_t, out_p)
 
 def uniform_sky(number=1):
