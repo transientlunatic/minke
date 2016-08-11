@@ -154,7 +154,7 @@ class Waveform(object):
             return h_tot
 
 
-    def _row(self, sim=None, slide_id=1):
+    def _row(self, sim=None, slide_id=0):
         """
         Produce a simburst table row for this waveform.
 
@@ -166,7 +166,7 @@ class Waveform(object):
            sim_burst_table.
 
         slide_id : int
-           The timeslide id. Defaults to 1.
+           The timeslide id. Defaults to 0.
         """
         if not sim: sim = self.sim
         row = sim.RowType()
