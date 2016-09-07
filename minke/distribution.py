@@ -150,3 +150,16 @@ def even_time(start, stop, rate, jitter=0):
     interval = (stop - start) / expnum_exact
     time = numpy.array(map(lambda i: start + i*interval + jitter *(random.rand()-0.5), range(1,int(expnum_exact)+1)))
     return time
+
+def burst_dist(minimum, maximum):
+    """
+    Generate an hrss drawn from the distribution
+    \[ r + 50/r \]
+    as desired by the Burst group for observing MDCs
+    """
+    #extent = numpy.log10(maximum) - numpy.log10(minimum)
+    a = minimum**2 / (minimum**2 + 50)**2
+    b = maximum**2 / (maximum**2 + 50)**2
+    rnd = numpy.random.uniform(a,b)
+    #print numpy.sqrt(1.0/rnd)
+    return numpy.sqrt(1.0/rnd)
