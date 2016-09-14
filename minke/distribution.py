@@ -158,8 +158,11 @@ def burst_dist(minimum, maximum):
     as desired by the Burst group for observing MDCs
     """
     #extent = numpy.log10(maximum) - numpy.log10(minimum)
-    a = minimum**2 / (minimum**2 + 50)**2
-    b = maximum**2 / (maximum**2 + 50)**2
+    # Convert hrss to distance
+    minimum, maximum = 1/minimum, 1/maximum
+    #Set-up the distributions limits
+    a = (minimum + 50.0/minimum)**2
+    b = (maximum + 50.0/maximum)**2
     rnd = numpy.random.uniform(a,b)
-    #print numpy.sqrt(1.0/rnd)
-    return numpy.sqrt(1.0/rnd)
+    # Convert back to an hrss
+    return 1.0/numpy.sqrt(rnd)

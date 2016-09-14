@@ -31,7 +31,7 @@ Features
 * Produces numerical relativity burst MDCs for supernovae
 * Produces GWF frame files for MDCs
 * Produces GravEn-format log files for MDCs
-* TODO Produces SimBurstTable XML files for MDCs
+* Produces SimBurstTable XML files for MDCs
 
 
 Credits

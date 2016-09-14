@@ -28,7 +28,7 @@ test_requirements = [
 
 setup(
     name='minke',
-    version='0.1.0',
+    version='1.0.0',
     description="Minke is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.",
     long_description=readme + '\n\n' + history,
     author="Daniel Williams",
@@ -45,8 +45,8 @@ setup(
     zip_safe=False,
     keywords='minke',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: ISC License (ISCL)',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
