@@ -151,7 +151,7 @@ def even_time(start, stop, rate, jitter=0):
     time = numpy.array(map(lambda i: start + i*interval + jitter *(random.rand()-0.5), range(1,int(expnum_exact)+1)))
     return time
 
-def burst_dist(minimum, maximum):
+def burst_dist(minimum, maximum, size=1):
     """
     Generate an hrss drawn from the distribution
     \[ r + 50/r \]
@@ -163,6 +163,6 @@ def burst_dist(minimum, maximum):
     #Set-up the distributions limits
     a = (minimum + 50.0/minimum)**2
     b = (maximum + 50.0/maximum)**2
-    rnd = numpy.random.uniform(a,b)
+    rnd = numpy.random.uniform(a,b, size)
     # Convert back to an hrss
     return 1.0/numpy.sqrt(rnd)
