@@ -628,7 +628,7 @@ class HWInj(Frame):
 
     
     """
-    def __init__(self, start, duration, ifo):
+    def __init__(self, ifo):
         """We'll need to know the start-time, the duration, and the ifo
         for each which is to be used for hardware injections in order
         to keep consistency with the data in the xml file, and so that the 
@@ -636,17 +636,10 @@ class HWInj(Frame):
 
         Parameters
         ----------
-        start : float
-           The GPS start-time of the injection frame.
-        duration : float
-           The time, in seconds, that the frame lasts for.
         ifo : str
            The name of the interferometer, e.g. "L1" for the Livingston, LA LIGO detector.
 
         """
-        self.start = start
-        self.duration = duration
-        self.end = self.start + self.duration
         self.ifo = ifo
 
     def __repr__(self):
@@ -656,7 +649,7 @@ class HWInj(Frame):
         out = ""
         out += "Hardware MDC Frame \n"
         for ifo in self.ifos:
-            out += "{} {} {} \n".format(ifo, self.start, self.duration)
+            out += "{} \n".format(ifo)
         return out
 
     def generate_pcal(self, mdc, directory, force = False):
@@ -686,10 +679,7 @@ class HWInj(Frame):
         
         family = mdc.waveforms[0].waveform
 
-        # The injections are nested in a directory structure which uses the first
-        # five digits of the GPS time to group the files
-        head_date = str(self.start)[:5]
-        frameloc = os.path.join(directory, (mdc.directory_path(), head_date))
+        frameloc = os.path.join(directory, (mdc.directory_path()))
 
         # Unlike with a conventional frame, we need to produce a separate file
         # for each IFO.
@@ -716,7 +706,50 @@ class HWInj(Frame):
                     data = np.array(h_resp.data.data)
                     np.savetxt(filename, data)
 
+class HWFrameSet():
+    def __init__(self, frame_list):
+        """
+        A collection of hardware injection frames.
 
+        Parameters
+        ----------
+        frame_list : str
+            The filespath of a CSV file containing the list of frames, 
+            and the parameters required to produce them: the start and 
+            duration times, and the interferometers they describe.
+        """
+    
+        self.frames = []
+        self.frame_list = frame_list = pd.read_csv(frame_list)
+        for frame in frame_list.iterrows():
+            frame = frame[1]
+            ifos = frame['ifo'].replace("['",'').replace("']",'').replace("'",'').split(' ')
+            frame = HWInj(frame['start time'],frame['duration'],ifos)
+            self.frames.append(frame)
+
+    def full_frameset(self, mdc, directory, force=False):
+        """
+        Produce the gwf files which corresponds to the MDC set over the period of the frames in this collection.
+
+        Parameters
+        ----------
+        mdc : MDCSet object
+           The MDC set which should be used to produce this frame.
+        directory : str
+           The root directory where all of the frames are to be stored, for example
+           "/home/albert.einstein/data/mdc/frames/"
+           would cause the SineGaussian injections to be made in the directories under
+           "/home/albert.einstein/data/mdc/frames/sg"
+        force : bool
+           If true this forces the recreation of a GWF file even if it already exists.
+
+        Outputs
+        -------
+        ascii files
+           The ASCII files for these hardware injections.
+        """
+        for frame in self.frames:
+            frame.generate_pcal(mdc, directory, force)
 
 class FrameSet():
 
