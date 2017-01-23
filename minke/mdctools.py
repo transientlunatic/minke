@@ -688,11 +688,14 @@ class HWInj(Frame):
                 #sim_burst = mdc.waveforms[row]
                 # Check if the file exists, or if we're forcing the creation
                 filename = "{}_{}_{}.txt".format(family, 
-                                                 sim_burst.time_geocent.gpsSeconds, 
+                                                 sim_burst.time_geocent_gps, 
                                                  ifo)
                 if not os.path.isfile(frameloc + filename) or force:
                     data = []
-                   
+                    epoch = lal.LIGOTimeGPS(sim_burst.time_geocent_gps)
+                    duration = 10
+                    nsamp = duration*16384
+                    h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/16384, lal.StrainUnit, nsamp)
                     # Produce the time domain waveform for this injection
                     hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/16384);
                     # Apply detector response
