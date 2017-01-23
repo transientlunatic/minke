@@ -680,7 +680,7 @@ class HWInj(Frame):
         family = mdc.waveforms[0].waveform
 
         frameloc = os.path.join(directory, (mdc.directory_path()))
-
+        rowlist = self.get_rowlist(mdc)
         # Unlike with a conventional frame, we need to produce a separate file
         # for each IFO.
         for ifo in self.ifos:
