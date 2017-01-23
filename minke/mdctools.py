@@ -707,7 +707,7 @@ class HWInj(Frame):
                     np.savetxt(filename, data)
 
 class HWFrameSet():
-    def __init__(self, frame_list):
+    def __init__(self):
         """
         A collection of hardware injection frames.
 
@@ -720,12 +720,8 @@ class HWFrameSet():
         """
     
         self.frames = []
-        self.frame_list = frame_list = pd.read_csv(frame_list)
-        for frame in frame_list.iterrows():
-            frame = frame[1]
-            ifos = frame['ifo'].replace("['",'').replace("']",'').replace("'",'').split(' ')
-            frame = HWInj(frame['start time'],frame['duration'],ifos)
-            self.frames.append(frame)
+        self.frames = [HWInj(ifos)]
+        #self.frames.append(frame)
 
     def full_frameset(self, mdc, directory, force=False):
         """
