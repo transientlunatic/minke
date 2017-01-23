@@ -688,7 +688,7 @@ class HWInj(Frame):
                 #sim_burst = mdc.waveforms[row]
                 # Check if the file exists, or if we're forcing the creation
                 filename = "{}_{}_{}.txt".format(family, 
-                                                 self.time_geocent.gpsSeconds, 
+                                                 sim_burst.time_geocent.gpsSeconds, 
                                                  ifo)
                 if not os.path.isfile(frameloc + filename) or force:
                     data = []
