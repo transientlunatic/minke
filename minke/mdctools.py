@@ -684,8 +684,8 @@ class HWInj(Frame):
         # Unlike with a conventional frame, we need to produce a separate file
         # for each IFO.
         for ifo in self.ifos:
-            for row in rowlist:
-                sim_burst = mdc.waveforms[row]
+            for sim_burst in mdc.waveforms:
+                #sim_burst = mdc.waveforms[row]
                 # Check if the file exists, or if we're forcing the creation
                 filename = "{}_{}_{}.txt".format(family, 
                                                  self.time_geocent.gpsSeconds, 
