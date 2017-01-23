@@ -714,7 +714,7 @@ class HWInj(Frame):
                     lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
                     
                     data = np.array(h_resp.data.data)
-                    np.savetxt(filename)
+                    np.savetxt(filename, data)
 
 
 
