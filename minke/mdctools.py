@@ -523,7 +523,7 @@ class Frame():
     
     def get_rowlist(self,mdcs):
         """
-        Return the rows from an MDCs which correspond to this frame.
+        Return the rows from an MDC set which correspond to this frame.
         
         Parameters
         ----------
@@ -612,6 +612,110 @@ class Frame():
             # Write out the frame file
             Fr.frputvect(frameloc+filename, data)
         
+
+class HWInj(Frame):
+    """
+    Represents a hardware injection frame.
+    
+    Injection frames must be an ASCII file of the hoft sampled at 
+    the antenna sampling rate, appropriately convolved with an 
+    antenna response function.
+
+    As a result of the simplicity of this specific output format
+    we do not need information such as start-time in the file itself,
+    however we should have a sensible naming scheme for the ASCII files
+    since they will need to be produced as sidecars for an xml file.
+
+    
+    """
+    def __init__(self, start, duration, ifo):
+        """We'll need to know the start-time, the duration, and the ifo
+        for each which is to be used for hardware injections in order
+        to keep consistency with the data in the xml file, and so that the 
+        appropriate waveform is injected into the appropriate detector.
+
+        Parameters
+        ----------
+        start : float
+           The GPS start-time of the injection frame.
+        duration : float
+           The time, in seconds, that the frame lasts for.
+        ifo : str
+           The name of the interferometer, e.g. "L1" for the Livingston, LA LIGO detector.
+
+        """
+        self.start = start
+        self.duration = duration
+        self.end = self.start + self.duration
+        self.ifo = ifo
+
+    def __repr__(self):
+        """
+        The printable representation of this object.
+        """
+        out = ""
+        out += "Hardware MDC Frame \n"
+        for ifo in self.ifos:
+            out += "{} {} {} \n".format(ifo, self.start, self.duration)
+        return out
+
+    def generate_pcal(self, mdc, directory, force = False):
+        """
+        Produce the PCAL-ready hardware injection files as an ASCII list
+        sampled at the detector's sample rate.
+
+        Parameters
+        ----------
+        mdc : MDCSet object
+           The signal set which should be used to generate the frame.
+        directory : str
+           The root directory where all of the frames are to be stored, for example
+           "/home/albert.einstein/data/mdc/frames/"
+           would cause the SineGaussian injections to be made in the directories under
+           "/home/albert.einstein/data/mdc/frames/sg"
+        force : bool
+           If true this forces the regeneration of the file, even if it
+           already exists.
+        
+        Outputs
+        -------
+        ascii file
+           The ASCII file containing the correctly sampled waveform convolved with
+           the antenna pattern.
+        """
+        
+        family = mdc.waveforms[0].waveform
+
+        # The injections are nested in a directory structure which uses the first
+        # five digits of the GPS time to group the files
+        head_date = str(self.start)[:5]
+        frameloc = os.path.join(directory, (mdc.directory_path(), head_date))
+
+        # Unlike with a conventional frame, we need to produce a separate file
+        # for each IFO.
+        for ifo in self.ifos:
+            for row in rowlist:
+                sim_burst = mdc.waveforms[row]
+                # Check if the file exists, or if we're forcing the creation
+                filename = "{}_{}_{}.txt".format(family, 
+                                                 self.time_geocent.gpsSeconds, 
+                                                 ifo)
+                if not os.path.isfile(frameloc + filename) or force:
+                    data = []
+                   
+                    # Produce the time domain waveform for this injection
+                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/16384);
+                    # Apply detector response
+                    det = lalsimulation.DetectorPrefixToLALDetector(ifo)
+                    # Produce the total strains
+                    h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx,
+                                                                           sim_burst.ra, sim_burst.dec, sim_burst.psi, det)
+                    # Inject the waveform into the overall timeseries
+                    lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
+                    
+                    data = np.array(h_resp.data.data)
+                    np.savetxt(filename)
+
 
 
 class FrameSet():
