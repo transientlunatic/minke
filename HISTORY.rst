@@ -2,6 +2,10 @@
 History
 =======
 
+1.0.1 (2017-01-23)
+------------------
+* Added provisional support for hardware injection production
+
 1.0.0 (2016-09-14)
 ------------------
 The Anniversary Update.
