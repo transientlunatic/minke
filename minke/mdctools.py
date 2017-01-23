@@ -628,7 +628,7 @@ class HWInj(Frame):
 
     
     """
-    def __init__(self, ifo):
+    def __init__(self, ifos):
         """We'll need to know the start-time, the duration, and the ifo
         for each which is to be used for hardware injections in order
         to keep consistency with the data in the xml file, and so that the 
@@ -636,11 +636,11 @@ class HWInj(Frame):
 
         Parameters
         ----------
-        ifo : str
-           The name of the interferometer, e.g. "L1" for the Livingston, LA LIGO detector.
+        ifos : list
+           The name of the interferometers, e.g. "L1" for the Livingston, LA LIGO detector.
 
         """
-        self.ifo = ifo
+        self.ifos = ifos
 
     def __repr__(self):
         """
@@ -707,7 +707,7 @@ class HWInj(Frame):
                     np.savetxt(filename, data)
 
 class HWFrameSet():
-    def __init__(self):
+    def __init__(self, ifos=["H1", "L1"]):
         """
         A collection of hardware injection frames.
 
