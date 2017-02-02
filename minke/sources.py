@@ -464,7 +464,7 @@ class Supernova(Waveform):
 
         # Load the times from the file
         data = np.loadtxt(numrel_file)
-       data = data.T
+        data = data.T
         times = data[0]
         times -= times[0]
 
