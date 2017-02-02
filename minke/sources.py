@@ -541,72 +541,10 @@ class Ott2013(Supernova):
         self.params['phi'] = phi
         self.params['incl'] = theta
         self.sky_dist = sky_dist
-
-        if not decomposed_path : decomposed_path = filepath+".dec"
-        if not os.path.isfile(decomposed_path) :
-            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
-            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
-        
-        #self.numrel_data = filepath + "/" + family
-        self.params['numrel_data'] = decomposed_path #self.numrel_data
+        self.params['numrel_data'] = filepath #decomposed_path #self.numrel_data
         self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
         self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
 
-    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
-        """
-        Produce the spherial harmonic decompositions of a numerical
-        waveform.
-        
-        Parameters
-        ----------
-        numrel_file : str
-           The location of the numerical relativity waveform file.
-        
-        sample_rate : float
-           The sample rate of the NR file. Defaults to 16384.0 Hz.
-        
-        step_back : float
-           The amount of time, in seconds, of the data which should be included
-           before the peak amplitude. Defaults to 0.01 sec.
-
-
-        Returns
-        -------
-        decomposition : ndarray
-           The l=2 mode spherical decompositions of the waveform. 
-        """
-
-        # Load the times from the file
-        data = np.loadtxt(numrel_file)
-        data = data.T
-        times = data[0]
-        times -= times[0]
-
-        # Load the I components from the file        
-        Ixx, Ixy, Ixz, Iyy, Iyz, Izz = data[5:]
-
-        # Make the new time vector for the requried sample rate
-        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
-
-        # Prepare the output matrix
-        output = np.zeros((len(target_times), 11))
-
-        # Add the times in to the first column of said matrix
-        output[:, 0] = target_times
-
-        
-        for i, m in enumerate([-2,-1,0,1,2]):
-            Hlm = self.construct_Hlm(Ixx, Ixy, Ixz, Iyy, Iyz, Izz, l=2, m=m)
-            #
-            # Resample to uniform spacing at 16384 kHz
-            #
-            Hlm_real = self.interpolate(times, Hlm.real, target_times)
-            Hlm_imag = self.interpolate(times, Hlm.imag, target_times)
-            #
-            # Make the output, and rescale it into dimensionless strain values
-            #
-            output[:,2*(i+1)-1] = Hlm_real #* np.sqrt(lal.G_SI / lal.C_SI**4) #/lal.MRSUN_SI / ( distance * lal.PC_SI * 1e6)
-            output[:,2*(i+1)] =   -Hlm_imag #* np.sqrt(lal.G_SI / lal.C_SI**4)#/lal.MRSUN_SI / ( distance * lal.PC_SI * 1e6)
 
     def _generate(self):
         """
