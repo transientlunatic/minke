@@ -681,7 +681,7 @@ class Mueller2012(Supernova):
         #self.numrel_data = filepath + "/" + family
         self.params['numrel_data'] = decomposed_path #self.numrel_data
 
-    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3):
+    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
         """
         Produce the spherial harmonic decompositions of a numerical
         waveform.
