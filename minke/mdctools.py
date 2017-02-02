@@ -685,9 +685,9 @@ class HWInj(Frame):
                     h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx,
                                                                            sim_burst.ra, sim_burst.dec, sim_burst.psi, det)
                     # Inject the waveform into the overall timeseries
-                    lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
+                    #lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
                     
-                    data = np.array(h_resp.data.data)
+                    data = np.array(h_tot.data.data)
                     np.savetxt(filename, data)
 
 class HWFrameSet():
