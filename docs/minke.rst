@@ -20,13 +20,6 @@ minke.mdctools module
     :undoc-members:
     :show-inheritance:
 
-minke.minki module
-------------------
-
-.. automodule:: minke.minki
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 minke.sources module
 --------------------

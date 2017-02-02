@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# minki documentation build configuration file, created by
+# minke documentation build configuration file, created by
 # sphinx-quickstart on Tue Jul  9 22:26:36 2013.
 #
 # This file is execfile()d with the current directory set to its
@@ -195,7 +195,7 @@ html_sidebars = {'**': ['localtoc.html', 'sourcelink.html', 'searchbox.html']}
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'minkidoc'
+htmlhelp_basename = 'minkedoc'
 
 
 # -- Options for LaTeX output ------------------------------------------
@@ -215,7 +215,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ('index', 'minki.tex',
+    ('index', 'minke.tex',
      u'Minke: The Burst MDC Factory Documentation',
      u'Daniel Williams', 'manual'),
 ]

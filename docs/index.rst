@@ -52,6 +52,7 @@ User Guide
    
    installation
    usage
+   numerical
 
 Developer Guide
 ===============
