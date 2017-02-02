@@ -544,7 +544,7 @@ class Ott2013(Supernova):
 
         if not decomposed_path : decomposed_path = filepath+".dec"
         if not os.path.isfile(decomposed_path) :
-            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
             np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
         
         #self.numrel_data = filepath + "/" + family
