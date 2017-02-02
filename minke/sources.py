@@ -96,19 +96,27 @@ class Waveform(object):
         Generate the burst described in a given row, so that it can be
         measured.
         
-        Parameters ---------- rate : float The sampling rate of the
-        signal, in Hz. Defaults to 16384.0Hz
+        Parameters 
+        ---------- 
+        rate : float 
+           The sampling rate of the signal, in Hz. 
+           Defaults to 16384.0Hz
             
-        half : bool Only compute the hp and hx once if this is true;
+        half : bool 
+           Only compute the hp and hx once if this is true;
            these are only required if you need to compute the cross
            products. Defaults to False.
 
-        distance : float The distance, in megaparsecs, at which the
-           injection should be made.  Currently only applies to
-           supernova injections.  Returns ------- hp : The strain in
-           the + polarisation hx : The strain in the x polarisation
-           hp0 : A copy of the strain in the + polarisation hx0 : A
-           copy of the strain in the x polarisation 
+        Returns 
+        ------- 
+           hp : 
+              The strain in the + polarisation 
+           hx : 
+              The strain in the x polarisation
+           hp0 : 
+              A copy of the strain in the + polarisation 
+           hx0 : 
+               A copy of the strain in the x polarisation 
         """ 
         row = self._row() 
         swig_row = lalburst.CreateSimBurst() 
@@ -133,7 +141,7 @@ class Waveform(object):
         
         # Rescale for a given distance 
         if distance and hasattr(self, supernova): 
-            rescale = 1.0 / (self.file_distance / distance)
+            rescale = 1.0 / (self.file_distance / row.amplitude)
             hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale,hx0 * rescale
             
         return hp, hx, hp0, hx0 
@@ -430,7 +438,7 @@ class Supernova(Waveform):
         interpolator = interp.interp1d(x_old, y_old)
         return interpolator(x_new)
 
-    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3):
+    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
         """
         Produce the spherial harmonic decompositions of a numerical
         waveform.
@@ -447,9 +455,6 @@ class Supernova(Waveform):
            The amount of time, in seconds, of the data which should be included
            before the peak amplitude. Defaults to 0.01 sec.
 
-        distance : float
-           The distance, in megaparsecs, from the observer at which the NR waveforms were
-           simulated. Defaults to 10 kpc (i.e. 10e-3 Mpc).
 
         Returns
         -------
@@ -459,7 +464,7 @@ class Supernova(Waveform):
 
         # Load the times from the file
         data = np.loadtxt(numrel_file)
-        data = data.T
+       data = data.T
         times = data[0]
         times -= times[0]
 
@@ -496,7 +501,7 @@ class Ott2013(Supernova):
     The Ott+2013 supernova waveform
     """
     waveform = "Ott+13"
-    def __init__(self, theta, phi, time, sky_dist=uniform_sky, filepath=None, family="s27fheat1p05", decomposed_path=None):
+    def __init__(self, theta, phi, time, sky_dist=uniform_sky, distance = 10e-3,  filepath=None, family="s27fheat1p05", decomposed_path=None):
         """
 
         Parameters
@@ -517,6 +522,9 @@ class Ott2013(Supernova):
         sky_dist : func
            The function describing the sky distribution which the injections
            should be made over. Defaults to a uniform sky.
+
+        distance : float 
+           The distance, in megaparsecs, at which the injection should be made.  
 
         filepath : str
            The filepath to the folder containing the pre-rotated numerical relativity waveforms.
@@ -541,6 +549,8 @@ class Ott2013(Supernova):
         
         #self.numrel_data = filepath + "/" + family
         self.params['numrel_data'] = decomposed_path #self.numrel_data
+        self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
+        self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
 
     def _generate(self):
         """
@@ -825,7 +835,7 @@ class Dimmelmeier08(Supernova):
         self.params['incl']=90
         self.params['numrel_data'] = decomposed_path
         
-    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3):
+    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
         """
         Produce the spherial harmonic decompositions of the Dimmelmeier numerical
         waveform. This is a special case since it is axisymmetric.
@@ -841,10 +851,6 @@ class Dimmelmeier08(Supernova):
         step_back : float
            The amount of time, in seconds, of the data which should be included
            before the peak amplitude. Defaults to 0.01 sec.
-
-        distance : fllal.MTSUN_SIoat
-           The distance, in megaparsecs, from the observer at which the NR waveforms were
-           simulated. Defaults to 10 kpc (i.e. 10e-3 Mpc).
 
         Returns
         -------
