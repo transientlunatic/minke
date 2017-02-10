@@ -172,7 +172,7 @@ class MDCSet():
             i += 1
         del(sim_burst_table)
             
-    def _generate_burst(self, row,rate=16384.0):
+    def _generate_burst(self,row,rate=16384.0):
         """
         Generate the burst described in a given row, so that it can be 
         measured.
@@ -199,10 +199,6 @@ class MDCSet():
         # be bypassed for pre-calculated waveforms.
         # A more robust solution should be considered.
         exceptions = ["Ott+13", "Mueller+12", "Scheidegger+10"]
-
-
-        
-
         row = self.waveforms[row]
         swig_row = lalburst.CreateSimBurst()
         for a in lsctables.SimBurstTable.validcolumns.keys():
@@ -212,23 +208,9 @@ class MDCSet():
             except TypeError: 
                 print a, getattr(row,a)
                 continue # the structure is different than the TableRow
-        #try:
         theta, phi = np.cos(swig_row.incl), swig_row.phi            
-         
-        #if swig_row.waveform in exceptions:
-        #    # This is nasty and shouldn't be a long-term fix!!!
-        #    swig_row.numrel_data =  row.numrel_data.split('\0')[0]+ "_costheta{:.3f}_phi{:.3f}-full.txt".format(theta, phi)
-        #    print swig_row.numrel_data
-        #else:
         swig_row.numrel_data = row.numrel_data
-
-        #for a in lsctables.SimBurstTable.validcolumns.keys():
-        #    print a, getattr(swig_row,a)
-
         hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        
-        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?
-        # DW: I tried that, and it doesn't seem to work :/
         hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         return hp, hx, hp0, hx0
         
@@ -705,9 +687,9 @@ class HWInj(Frame):
                     h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx,
                                                                            sim_burst.ra, sim_burst.dec, sim_burst.psi, det)
                     # Inject the waveform into the overall timeseries
-                    lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
+                    #lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
                     
-                    data = np.array(h_resp.data.data)
+                    data = np.array(h_tot.data.data)
                     np.savetxt(filename, data)
 
 class HWFrameSet():
