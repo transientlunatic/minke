@@ -819,7 +819,7 @@ class Dimmelmeier08(Supernova):
         self.sky_dist = sky_dist
         if not decomposed_path : decomposed_path = filepath+".dec"
         if not os.path.isfile(decomposed_path) :
-            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
             np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
         self.params['phi']=0
         self.params['incl']=90
@@ -876,5 +876,135 @@ class Dimmelmeier08(Supernova):
         # Make the output, and rescale it into dimensionless strain values
         #
         output[:,5] = strain_new #/*  ( extract_dist * lal.PC_SI * 1.0e6) 
+
+        return output
+
+
+class LongDuration(Supernova):
+    """
+
+    A superclass to handle the spherial harmonic decompositions which
+    long duration numerical relativity bursts may require.
+
+    """
+
+    waveform = "LongDuration" # We shouldn't ever use this anyway
+    supernova = True
+
+class ADI(LongDuration):
+    """
+    Accretion disk instability waveforms which are generated using the method described in 
+    LIGO-T1100093, at https://dcc.ligo.org/LIGO-T1100093. The waveforms are based off a model
+    by MH van Putten,
+       M. H. van Putten, A. Levinson, H. K. Lee, T. Regimbau, M. Punturo, and G. M. Harry. Phys. Rev. D., 69(4), 044007, 2004.
+       M. H. van Putten. Phys. Rev. Lett., 87(9), 091101, 2001.
+    The waveforms are stored in .mat binary files which can be read-in by SciPy.
+
+
+    """
+
+    waveform = "ADI"
+
+    def __init__(self, time, sky_dist=uniform_sky, filepath="stamp_adi_a_tapered.mat", decomposed_path=None, ):
+        """
+
+        Parameters
+        ----------
+        time : float or list 
+           The time period over which the injection should be made. If
+           a list is given they should be the start and end times, and
+           the waveform will be produced at some random point in that
+           time range. If a float is given then the injection will be
+           made at that specific time.
+
+        sky_dist : func
+           The function describing the sky distribution which the injections
+           should be made over. Defaults to a uniform sky.
+
+        filepath : str
+           The filepath to the numerical relativity waveform.
+
+        decomposed_path : str
+           The location where the decomposed waveform file should be stored. Optional.
+        """
+        
+        self._clear_params()
+        self.time = time
+        self.sky_dist = sky_dist
+        if not decomposed_path : decomposed_path = filepath+".dec"
+        if not os.path.isfile(decomposed_path) :
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
+            np.savetxt(decomposed_path, decomposed, header="time\thplus\thcross", fmt='%.8e')
+        self.params['phi']=0
+        self.params['incl']=90
+        self.params['numrel_data'] = decomposed_path
+        
+    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
+        """
+        Produce the spherial harmonic decompositions of the ADI
+        waveform. This is a special case since it is axisymmetric.
+        
+        Parameters
+        ----------
+        numrel_file : str
+           The location of the numerical relativity waveform file.
+        
+        sample_rate : float
+           The sample rate of the output NR file. Defaults to 16384.0 Hz, and should
+           be the same as the data rate of the detector. 
+        
+        step_back : float
+           The amount of time, in seconds, of the data which should be included
+           before the peak amplitude. Defaults to 0.01 sec.
+
+        Returns
+        -------
+        decomposition : ndarray
+           The re-interpolated file at the desired sample rate which is in the 
+           <time hp hc> format which can be accepted by LALSimulation. 
+        """
+        from scipy import io
+        # Load the matlab file
+        data = io.matlab.loadmat(numrel_file)
+
+        comment = data['comment'][0].split(';')
+        comment_dict = {}
+        for line in comment:
+            sp = line.split("=")
+            comment_dict[sp[0].strip()] = sp[1].strip()
+
+        extract_dist = comment_dict['dist']
+        # We actually want the extract distance as a float of megaparsecs
+        if extract_dist == "1 Mpc": extract_dist = 1.0
+
+        # Load the sample rate of the file from the file
+        fs = int(data['fs'])
+        # Determine the end time
+        start = 0
+        end = len(data['hp']) * 1.0 / fs
+        # Make the time array
+        times = np.arange(start, end, 1.0/fs)
+
+        # Load the hp components   
+        strainp = data['hp']
+        strainc = data['hc']
+        # Make the new time vector for the requried sample rate
+        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
+
+        # Prepare the output matrix
+        output = np.zeros((len(target_times), 3))
+
+        # Add the times in to the first column of said matrix
+        output[:, 0] = target_times
+        #
+        # Resample to uniform spacing at 16384 kHz
+        #
+        strainp_new = self.interpolate(times, strainp, target_times)
+        strainc_new = self.interpolate(times, strainc, target_times)
+        #
+        # Make the output.
+        #
+        output[:,1] = strainp_new
+        output[:,2] = strainc_new
 
         return output

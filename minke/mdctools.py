@@ -47,6 +47,8 @@ class MDCSet():
                           's10' : 'Scheidegger+10',
                           'm12' : 'Mueller+12',
                           'o13' : 'Ott+13',
+                          # Long-duration
+                          'adi' : 'ADI',
                           }
 
     inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
