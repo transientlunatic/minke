@@ -8,6 +8,7 @@ from pylal.date import XLALTimeDelayFromEarthCenter
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from pylal import inject 
 from glue.ligolw.utils import process
+import glue
 
 import lal, lalframe
 from pylal import Fr
@@ -15,6 +16,7 @@ from pylal import Fr
 import numpy as np
 import pandas as pd
 import os
+import os.path
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -298,7 +300,8 @@ class MDCSet():
         name = ''
         numberspart = ''
         if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13"):
-            numberspart = row.numrel_data.split('/')[-1].split('.')[0]
+            print row
+            numberspart = os.path.basename(row.numrel_data).split('.')[0]
 
         if row.waveform == "Gaussian":
             numberspart = "{:.3f}".format(row.duration * 1e3)
@@ -572,7 +575,6 @@ class Frame():
                 if len(rowlist)==0: return
                 for row in rowlist:
                     sim_burst = mdc.waveforms[row]
-                    # Produce the time domain waveform for this injection
                     hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/16384);
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
@@ -689,7 +691,15 @@ class HWInj(Frame):
                     # Inject the waveform into the overall timeseries
                     #lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
                     
+                    # Check distance scaling
+                    # This should probably be done in LALSimulation, but
+                    # right now it doesn't seem to be working.
+                    distance = sim_burst.amplitude
+                    file_distance = sim_burst.hrss
+                    
+                    
                     data = np.array(h_tot.data.data)
+                    data *= (distance / file_distance)
                     np.savetxt(filename, data)
 
 class HWFrameSet():
