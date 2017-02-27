@@ -120,9 +120,10 @@ class MDCSet():
             procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc", {}) # waveform.params)
             try:
                 waveform_row = waveform._row(sim)
+                waveform_row.process_id = procrow.process_id
             except:
                 waveform_row = waveform
-            waveform_row.process_id = procrow.process_id
+            
             sim.append(waveform_row)
             #del waveform_row
         # Write out the xml and gzip it.
