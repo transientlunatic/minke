@@ -126,9 +126,9 @@ class MDCSet():
                 row = sim.RowType()
 
                 for a in lsctables.SimBurstTable.validcolumns.keys():
-                    setattr(row, a, self.params[a])
+                    setattr(row, a, waveform.params[a])
 
-                waveform.waveform = self.waveform
+                row.waveform = waveform.waveform
                 # Fill in the time
                 row.set_time_geocent(GPS(float(waveform.time)))
                 # Get the sky locations
