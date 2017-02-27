@@ -699,7 +699,7 @@ class HWInj(Frame):
                     
                     
                     data = np.array(h_tot.data.data)
-                    data *= (distance / file_distance)
+                    data /= (distance / file_distance)
                     np.savetxt(filename, data)
 
 class HWFrameSet():
