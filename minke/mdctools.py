@@ -122,7 +122,23 @@ class MDCSet():
                 waveform_row = waveform._row(sim)
                 waveform_row.process_id = procrow.process_id
             except:
-                waveform_row = waveform
+
+                row = sim.RowType()
+
+                for a in lsctables.SimBurstTable.validcolumns.keys():
+                    setattr(row, a, self.params[a])
+
+                waveform.waveform = self.waveform
+                # Fill in the time
+                row.set_time_geocent(GPS(float(waveform.time)))
+                # Get the sky locations
+                row.ra, row.dec, row.psi = waveform.ra, waveform.dec, waveform.psi
+                row.simulation_id = waveform.simulation_id
+                row.waveform_number = random.randint(0,int(2**32)-1)
+                ### !! This needs to be updated.
+                row.process_id = "process:process_id:0" #procrow.process_id
+
+                waveform_row = row
             
             sim.append(waveform_row)
             #del waveform_row
