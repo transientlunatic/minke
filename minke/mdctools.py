@@ -126,7 +126,7 @@ class MDCSet():
                 row = sim.RowType()
 
                 for a in lsctables.SimBurstTable.validcolumns.keys():
-                    setattr(row, a, waveform.params[a])
+                    setattr(row, a, getattr(waveform, a))
 
                 row.waveform = waveform.waveform
                 # Fill in the time
