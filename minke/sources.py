@@ -143,7 +143,10 @@ class Waveform(object):
         if distance and hasattr(self, supernova): 
             rescale = 1.0 / (self.file_distance / row.amplitude)
             hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale,hx0 * rescale
-            
+        # detrend supernova waveforms
+        if hasattr(self, supernova):
+            hp, hx, hp0, hx0 = scipy.detrend(hp), scipy.detrend(hx), scipy.detrend(hp0), scipy.detrend(hx0)
+        
         return hp, hx, hp0, hx0 
 
     def _generate_for_detector(self, ifos, sample_rate = 16384.0, nsamp = 2000):
