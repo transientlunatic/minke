@@ -70,7 +70,7 @@ class TestMinkeSources(unittest.TestCase):
         self.assertAlmostEqual(sn_10.params['amplitude'],float(0.1 * sn_100.params['amplitude']))
         sn_10_hp, _, _, _ = sn_10._generate()
         sn_100_hp, _, _, _ = sn_100._generate()
-        assert np.all(sn_100_hp.data.data == 0.1*sn_10_hp.data.data)
+        assert np.all(sn_100_hp.data.data == 10*sn_10_hp.data.data)
 
     def test_OttXML(self):
         mdcset = mdctools.MDCSet(['L1', 'H1'])

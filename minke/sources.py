@@ -144,10 +144,9 @@ class Waveform(object):
         if hasattr(self, "supernova"):
             hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = scipy.signal.detrend(hp.data.data), scipy.signal.detrend(hx.data.data), scipy.signal.detrend(hp0.data.data), scipy.signal.detrend(hx0.data.data)
             # Rescale for a given distance 
-        if distance and hasattr(self, "supernova"): 
+        if row.amplitude and hasattr(self, "supernova"): 
             rescale = 1.0 / (self.file_distance / row.amplitude)
-            print rescale
-            hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale,hx0 * rescale
+            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = hp.data.data * rescale, hx.data.data * rescale, hp0.data.data * rescale, hx0.data.data * rescale
        
         
         return hp, hx, hp0, hx0 
