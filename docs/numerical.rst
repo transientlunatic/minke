@@ -25,8 +25,12 @@ Dimmelmeier+08
 
 The rotational core-collapse simulations detailed in Dimmelmeier et
 al. (2008) are available from
-http://mpa.iwww.mpg.de/177514/Gravitational-Waveform-Catalog
+http://mpa.iwww.mpg.de/177514/Gravitational-Waveform-Catalog.
 
 
+Ott+13
+------
 
+The 3D hydrodynamic 3-species neutrino heating waveforms from Ott et
+al. (2013) are available from https://stellarcollapse.org/ottetal2013.
 

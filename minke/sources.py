@@ -140,9 +140,9 @@ class Waveform(object):
             hp0, hx0 = hp, hx
         
         # Rescale for a given distance 
-        if distance and hasattr(self, supernova): 
-            rescale = 1.0 / (self.file_distance / row.amplitude)
-            hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale,hx0 * rescale
+        #if distance and hasattr(self, supernova): 
+        #    rescale = 1.0 / (self.file_distance / row.amplitude)
+        #    hp, hx, hp0, hx0 = hp * rescale, hx * rescale, hp0 * rescale,hx0 * rescale
             
         return hp, hx, hp0, hx0 
 
@@ -541,32 +541,37 @@ class Ott2013(Supernova):
         self.params['phi'] = phi
         self.params['incl'] = theta
         self.sky_dist = sky_dist
-        self.params['numrel_data'] = filepath #decomposed_path #self.numrel_data
+        #self.params['numrel_data'] = filepath #decomposed_path #self.numrel_data
+        if not decomposed_path : decomposed_path = filepath+".dec"
+        if not os.path.isfile(decomposed_path) :
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
+            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
+        self.numrel_data = self.params['numrel_data'] = decomposed_path
         self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
         self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
 
 
-    def _generate(self):
-        """
+    # def _generate(self):
+    #     """
 
-        Generate the Ott waveforms. This must be performed
-        differently to other waveform morphologies, since we require
-        the use of pre-generated text files.
+    #     Generate the Ott waveforms. This must be performed
+    #     differently to other waveform morphologies, since we require
+    #     the use of pre-generated text files.
 
-        The filepath and the start of the filenames should be provided in
-        the numrel_data column of the SimBurstTable, so we need to contruct
-        the rest of the filename from the theta and phi angles, and then load 
-        that file.
+    #     The filepath and the start of the filenames should be provided in
+    #     the numrel_data column of the SimBurstTable, so we need to contruct
+    #     the rest of the filename from the theta and phi angles, and then load 
+    #     that file.
 
-        """
-        theta, phi = self.params['incl'], self.params['phi']
-        numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-        numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+    #     """
+    #     theta, phi = self.params['incl'], self.params['phi']
+    #     numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+    #     numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
 
-        data_hp = np.loadtxt(numrel_file_hp)
-        data_hx = np.loadtxt(numrel_file_hx)
+    #     data_hp = np.loadtxt(numrel_file_hp)
+    #     data_hx = np.loadtxt(numrel_file_hx)
 
-        return data_hp, data_hx, data_hp, data_hx
+    #     return data_hp, data_hx, data_hp, data_hx
 
 class Mueller2012(Supernova):
     """
