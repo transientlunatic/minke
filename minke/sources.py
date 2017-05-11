@@ -12,7 +12,8 @@ from glue.ligolw import ilwd
 from glue.segments import segment
 from glue.lal import LIGOTimeGPS as GPS
 from glue.ligolw.utils import process
-from pylal.antenna import response
+#from pylal.antenna import response
+from minke.antenna import response
 
 import scipy.signal as signal
 import scipy.interpolate as interp

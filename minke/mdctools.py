@@ -2,11 +2,11 @@ from glue.ligolw import ligolw, utils, lsctables
 lsctables.use_in(ligolw.LIGOLWContentHandler);
 import numpy
 import lalburst, lalsimulation, lalmetaio
-from pylal.antenna import response
+from minke.antenna import response
 
-from pylal.date import XLALTimeDelayFromEarthCenter
+from lal import TimeDelayFromEarthCenter as XLALTimeDelayFromEarthCenter
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-from pylal import inject 
+#from pylal import inject 
 from glue.ligolw.utils import process
 import glue
 
@@ -254,19 +254,11 @@ class MDCSet():
         detector : LALDetector
             The LAL object describing the detector
         """
-        # create detector-name map 
-        detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k', 
-                  'G1': 'GEO_600', 'V1': 'VIRGO', 'T1': 'TAMA_300'} 
-        try: 
-            detector=detMap[det] 
-        except KeyError: 
-             raise ValueError, "ERROR. Key %s is not a valid detector name." % (det) 
-
         # get detector 
-        if detector not in inject.cached_detector.keys(): 
+        if det not in lal.cached_detector_by_prefix.keys(): 
               raise ValueError, "%s is not a cached detector.  "\
                     "Cached detectors are: %s" % (det, inject.cached_detector.keys()) 
-        return inject.cached_detector[detector]
+        return lal.cached_detector_by_prefix[det]
 
     def _timeDelayFromGeocenter(self, detector, ra, dec, gpstime):
         """

@@ -13,3 +13,7 @@ class TestMinkeDistributions(unittest.TestCase):
         for sample in distro:
             self.assertGreater(sample, 0)
             self.assertLess(sample, 10)
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(unittest.main())
