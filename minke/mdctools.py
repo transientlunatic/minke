@@ -2,12 +2,13 @@ from glue.ligolw import ligolw, utils, lsctables
 lsctables.use_in(ligolw.LIGOLWContentHandler);
 import numpy
 import lalburst, lalsimulation, lalmetaio
-from pylal.antenna import response
+from minke.antenna import response
 
-from pylal.date import XLALTimeDelayFromEarthCenter
+from lal import TimeDelayFromEarthCenter as XLALTimeDelayFromEarthCenter
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-from pylal import inject 
+#from pylal import inject 
 from glue.ligolw.utils import process
+import glue
 
 import lal, lalframe
 from pylal import Fr
@@ -15,6 +16,7 @@ from pylal import Fr
 import numpy as np
 import pandas as pd
 import os
+import os.path
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -47,6 +49,8 @@ class MDCSet():
                           's10' : 'Scheidegger+10',
                           'm12' : 'Mueller+12',
                           'o13' : 'Ott+13',
+                          # Long-duration
+                          'adi' : 'ADI',
                           }
 
     inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
@@ -114,8 +118,28 @@ class MDCSet():
         # write something sensible.
         for waveform in self.waveforms:
             procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc", {}) # waveform.params)
-            waveform_row = waveform._row(sim)
-            waveform_row.process_id = procrow.process_id
+            try:
+                waveform_row = waveform._row(sim)
+                waveform_row.process_id = procrow.process_id
+            except:
+
+                row = sim.RowType()
+
+                for a in lsctables.SimBurstTable.validcolumns.keys():
+                    setattr(row, a, getattr(waveform, a))
+
+                row.waveform = waveform.waveform
+                # Fill in the time
+                row.set_time_geocent(GPS(float(waveform.time)))
+                # Get the sky locations
+                row.ra, row.dec, row.psi = waveform.ra, waveform.dec, waveform.psi
+                row.simulation_id = waveform.simulation_id
+                row.waveform_number = random.randint(0,int(2**32)-1)
+                ### !! This needs to be updated.
+                row.process_id = "process:process_id:0" #procrow.process_id
+
+                waveform_row = row
+            
             sim.append(waveform_row)
             #del waveform_row
         # Write out the xml and gzip it.
@@ -230,19 +254,11 @@ class MDCSet():
         detector : LALDetector
             The LAL object describing the detector
         """
-        # create detector-name map 
-        detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k', 
-                  'G1': 'GEO_600', 'V1': 'VIRGO', 'T1': 'TAMA_300'} 
-        try: 
-            detector=detMap[det] 
-        except KeyError: 
-             raise ValueError, "ERROR. Key %s is not a valid detector name." % (det) 
-
         # get detector 
-        if detector not in inject.cached_detector.keys(): 
+        if det not in lal.cached_detector_by_prefix.keys(): 
               raise ValueError, "%s is not a cached detector.  "\
                     "Cached detectors are: %s" % (det, inject.cached_detector.keys()) 
-        return inject.cached_detector[detector]
+        return lal.cached_detector_by_prefix[det]
 
     def _timeDelayFromGeocenter(self, detector, ra, dec, gpstime):
         """
@@ -296,7 +312,8 @@ class MDCSet():
         name = ''
         numberspart = ''
         if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13"):
-            numberspart = row.numrel_data.split('/')[-1].split('.')[0]
+            print row
+            numberspart = os.path.basename(row.numrel_data).split('.')[0]
 
         if row.waveform == "Gaussian":
             numberspart = "{:.3f}".format(row.duration * 1e3)
@@ -570,7 +587,6 @@ class Frame():
                 if len(rowlist)==0: return
                 for row in rowlist:
                     sim_burst = mdc.waveforms[row]
-                    # Produce the time domain waveform for this injection
                     hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/16384);
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
@@ -687,7 +703,15 @@ class HWInj(Frame):
                     # Inject the waveform into the overall timeseries
                     #lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
                     
+                    # Check distance scaling
+                    # This should probably be done in LALSimulation, but
+                    # right now it doesn't seem to be working.
+                    distance = sim_burst.amplitude
+                    file_distance = sim_burst.hrss
+                    
+                    
                     data = np.array(h_tot.data.data)
+                    data /= (distance / file_distance)
                     np.savetxt(filename, data)
 
 class HWFrameSet():

@@ -7,4 +7,4 @@ else
     _strict=""
 fi
 
-coverage run --source=gwpy -m py.test -v ${_strict} tests/
+coverage run --source=minke -m py.test -v ${_strict} tests/
