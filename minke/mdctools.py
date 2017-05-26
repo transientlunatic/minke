@@ -6,7 +6,6 @@ from minke.antenna import response
 
 from lal import TimeDelayFromEarthCenter as XLALTimeDelayFromEarthCenter
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-#from pylal import inject 
 from glue.ligolw.utils import process
 import glue
 
@@ -254,11 +253,12 @@ class MDCSet():
         detector : LALDetector
             The LAL object describing the detector
         """
-        # get detector 
-        if det not in lal.cached_detector_by_prefix.keys(): 
-              raise ValueError, "%s is not a cached detector.  "\
-                    "Cached detectors are: %s" % (det, inject.cached_detector.keys()) 
-        return lal.cached_detector_by_prefix[det]
+        # get detector
+        return lalsimulation.DetectorPrefixToLALDetector(det)
+        #if det not in lal.cached_detector_by_prefix.keys(): 
+        #      raise ValueError, "%s is not a cached detector.  "\
+        #            "Cached detectors are: %s" % (det, inject.cached_detector.keys()) 
+        #return lal.cached_detector_by_prefix[det]
 
     def _timeDelayFromGeocenter(self, detector, ra, dec, gpstime):
         """
@@ -568,7 +568,7 @@ class Frame():
         ifosstr = "".join(set(ifo[0] for ifo in self.ifos))
         family = mdc.waveforms[0].waveform
         filename = "{}-{}-{}-{}.gwf".format(ifosstr, family, self.start, self.duration)
-
+        
         head_date = str(self.start)[:5]
         frameloc = directory+"/"+mdc.directory_path()+"/"+head_date+"/"
         #print frameloc, filename
