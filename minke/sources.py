@@ -32,7 +32,7 @@ try:
     import tkinter as tk
 except ImportError:
     import matplotlib
-    marplotlib.use("agg")
+    matplotlib.use("agg")
 
 import matplotlib.pyplot as plt
 
