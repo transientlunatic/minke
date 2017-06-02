@@ -2,5 +2,5 @@ image: lpmn/minke
 
 test:
   script:
-    - python setup.py test
+    - cd minke && git pull && python setup.py install && python setup.py test
      
