@@ -1,5 +1,4 @@
 before_script:
-  - add-apt-repository ppa:dns/gnu -y
   - apt-get update -q
   - apt-get update -qq && apt-get install -y -qq gcc gfortran libblas-dev liblapack-dev pkg-config zlib1f-dev libgsl0-dev swig bc fftw-dev libsasl2-2 libhdf5-serial-dev python-pip python-cython
   - apt-get install --only-upgrade autoconf
