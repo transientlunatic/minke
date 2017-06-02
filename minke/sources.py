@@ -30,7 +30,7 @@ from minke.distribution import *
 
 try:
     import tkinter as tk
-else:
+except ImportError:
     import matplotlib
     marplotlib.use("agg")
 
