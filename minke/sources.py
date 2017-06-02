@@ -28,6 +28,12 @@ lalsim = lalsimulation
 
 from minke.distribution import *
 
+try:
+    import tkinter as tk
+else:
+    import matplotlib
+    marplotlib.use("agg")
+
 import matplotlib.pyplot as plt
 
 class Waveform(object):
