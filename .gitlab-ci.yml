@@ -1,0 +1,21 @@
+before_script:
+  - sudo add-apt-repository ppa:dns/gnu -y
+  - sudo apt-get update -q
+  - apt-get update -qq && apt-get install -y -qq gcc gfortran libblas-dev liblapack-dev pkg-config zlib1f-dev libgsl0-dev swig bc fftw-dev libsasl2-2 libhdf5-serial-dev python-pip python-cython
+  - sudo apt-get install --only-upgrade autoconf
+  # update pip
+  - pip install -q ${PRE} --upgrade pip
+  # build and install numpy first
+  - pip install -q ${PRE} "numpy>=1.9.1"
+  # build src packages
+  - source .travis/setup_environment.sh
+  # install testing dependencies
+  - pip install  ${PRE} -r requirements_dev.txt 
+install:
+  - pip install ${PRE} -r requirements.txt
+  - python setup.py build
+
+test:
+   script:
+     - python setup.py test
+     
