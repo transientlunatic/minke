@@ -1,4 +1,4 @@
-image: lpmn/minke
+image: lpmn/lalsuite:minke
 
 test:
   script:
