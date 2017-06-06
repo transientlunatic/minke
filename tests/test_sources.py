@@ -32,7 +32,7 @@ def download_nr(url):
             attempts += 1
             print type(e)
 
-    return fname.strip(".gz")]
+    return fname.strip(".gz")
 
 class TestMinkeSources(unittest.TestCase):
     def setUp(self):
