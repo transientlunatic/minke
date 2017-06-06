@@ -32,9 +32,7 @@ def download_nr(url):
             attempts += 1
             print type(e)
 
-    return fname.strip(".gz")
-download_nr(ott_data_url)
-
+    return fname.strip(".gz")]
 
 class TestMinkeSources(unittest.TestCase):
     def setUp(self):
