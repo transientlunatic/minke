@@ -13,14 +13,47 @@ virtual environment alongside the Minke code, which should make your
 life slightly easier, and in the future we hope to find a way to
 bundle this installation into the Minke install script.
 
-To install lalsuite and minke you should run::
-  $ ./setup_environment.sh
-in the root of the project, which will attempt to download and build the 
-latest version of lalsuite, using the correct branch to run the minke code.
-You can then install the Minke python package by running::
+Installing in a virtual environment
+===================================
+
+We need to setup a virtual environment first. If you're using
+virtualenvwrapper this is straightforward::
+  $ mkvirtualenv <name for venv>
+
+First install lalsuite from the minke branch on git::
+  $ git clone https://github.com/lscsoft/lalsuite.git
+  $ git checkout minke
+  $ ./00boot
+  $ configure --prefix=$VIRTUALENV
+  $ make && make install
+
+Then clone the minke repository, and install the code and dependencies::
+  $ git clone https://daniel-williams@git.ligo.org/daniel-williams/minke.git
+  $ pip install numpy scipy matplotlib pandas
+  $ cd minke
   $ python setup.py install
 
-=======================
+  
+System-wide installation
+========================
+
+We do not recommend system-wide installation of minke, however, it is possible.
+
+First install lalsuite from the minke branch on git::
+  $ git clone https://github.com/lscsoft/lalsuite.git
+  $ git checkout minke
+  $ ./00boot
+  $ configure
+  $ make
+  $ sudo make install
+
+Then clone the minke repository, and install the code::
+  $ git clone https://daniel-williams@git.ligo.org/daniel-williams/minke.git
+  $ sudo pip install numpy scipy matplotlib pandas
+  $ cd minke
+  $ sudo python setup.py install
+
+
 Use on the LDG Clusters
 =======================
 
@@ -34,3 +67,23 @@ the following command in BASH::
 Any code which is run in this virtual environment should link
 automatically to the correct python packages to produce signals using
 Minke.
+
+
+Using Minke in docker
+=====================
+
+Minke is now available in a docker container, allowing you to run
+Minke on any system which has docker installed. The container is
+available on both dockerhub and git.ligo.org's registry.
+
+To get the minke image from dockerhub just run::
+
+  docker pull lpmn/minke
+
+The process for fetching the image from gitlab is a little more
+involved, as you need to be logged in to the registry first. ::
+
+  docker login git.ligo.org
+  docker pull git.ligo.org/registry/daniel.williams/minke
+
+
