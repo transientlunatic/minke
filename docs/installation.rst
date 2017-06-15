@@ -17,10 +17,12 @@ Installing in a virtual environment
 ===================================
 
 We need to setup a virtual environment first. If you're using
-virtualenvwrapper this is straightforward::
+virtualenvwrapper this is straightforward ::
+  
   $ mkvirtualenv <name for venv>
 
-First install lalsuite from the minke branch on git::
+First install lalsuite from the minke branch on git ::
+  
   $ git clone https://github.com/lscsoft/lalsuite.git
   $ git checkout minke
   $ ./00boot
@@ -28,6 +30,7 @@ First install lalsuite from the minke branch on git::
   $ make && make install
 
 Then clone the minke repository, and install the code and dependencies::
+  
   $ git clone https://daniel-williams@git.ligo.org/daniel-williams/minke.git
   $ pip install numpy scipy matplotlib pandas
   $ cd minke
@@ -39,7 +42,8 @@ System-wide installation
 
 We do not recommend system-wide installation of minke, however, it is possible.
 
-First install lalsuite from the minke branch on git::
+First install lalsuite from the minke branch on git ::
+  
   $ git clone https://github.com/lscsoft/lalsuite.git
   $ git checkout minke
   $ ./00boot
@@ -47,7 +51,8 @@ First install lalsuite from the minke branch on git::
   $ make
   $ sudo make install
 
-Then clone the minke repository, and install the code::
+Then clone the minke repository, and install the code ::
+  
   $ git clone https://daniel-williams@git.ligo.org/daniel-williams/minke.git
   $ sudo pip install numpy scipy matplotlib pandas
   $ cd minke
