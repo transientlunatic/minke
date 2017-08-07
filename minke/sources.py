@@ -153,7 +153,14 @@ class Waveform(object):
         if row.amplitude and hasattr(self, "supernova"): 
             rescale = 1.0 / (self.file_distance / row.amplitude)
             hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = hp.data.data * rescale, hx.data.data * rescale, hp0.data.data * rescale, hx0.data.data * rescale
-       
+
+            if hasattr(self, "has_memory"):
+                # Apply the tail correction for memory
+                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
+                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
+
+                hp.data.data = np.append(hp.data.data(tail_hp))
+                hx.data.data = np.append(hp.data.data(tail_hx))
         
         return hp, hx, hp0, hx0 
 
@@ -442,7 +449,45 @@ class Supernova(Waveform):
 
         return Hlm
 
+    def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23):
+        """Generate a "low frequency tail" to append to the end of the
+        waveform to overcome problems related to memory in the
+        waveform.
+        
+        This code was adapted from an iPython notebook provided by
+        Marek Szczepanczyk.
+
+        The tail needs to be added to the waveform after all of the
+        other corrections have been applied (DW: I think)
+
+        Parameters
+        ----------
+        sampling : float
+           The sample rate of the injection data. By default this is 16384 Hz, which is the standard advanced LIGO sampling rate.
+
+        length : float
+           The length of the tail to be added, in seconds; defaults to 1.
+
+        h_max : float
+           The strain at the beginning of the tail -- the strain at the end of the NR data.
+
+        Notes
+        -----
+
+        * TODO Confirm that the tail is added-on after the waveform is
+        convolved with the antenna pattern.
+
+        """
+
+        times = np.linspace(0, length, length * sampling)
+        tail_f = 1.0 / length / 2.0 # Calculate the frequency for a half cosine function over the length of the tail
+        tail = 0.5 * (h_max + h_max * np.cos( 2 * np.pi * f_tail * times))
+
+        return tail
+        
+        
     def interpolate(self, x_old, y_old, x_new):
+
         """
         Convenience funtion to avoid repeated code
         """
