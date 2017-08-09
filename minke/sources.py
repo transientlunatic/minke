@@ -635,6 +635,8 @@ class Mueller2012(Supernova):
     """
 
     waveform = "Mueller+12"
+    has_memory = True
+    
     def __init__(self, theta, phi, time, sky_dist=uniform_sky, filepath=None, family="L15-3", decomposed_path=None):
         """
 
