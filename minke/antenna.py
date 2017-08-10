@@ -96,7 +96,7 @@ def timeDelay( gpsTime, rightAscension, declination, unit, det1, det2 ):
     ra_rad = rightAscension/180.0*pi
     de_rad = declination/180.0*pi
   else:
-    raise ValueError, "Unknown unit %s" % unit
+    raise ValueError("Unknown unit %s" % unit)
 
   # check input values
   if ra_rad<0.0 or ra_rad> 2*pi:
