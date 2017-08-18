@@ -488,11 +488,11 @@ class MDCSet():
         output.append(strains[0])                 # SimHrss
         output.append(energy)                     # SimEgwR2
         output.append(strains[0])                 # GravEn_Ampl
-        output.append(row.incl)                          # Internal_x (currently not implemented)
-        output.append(row.phi)                          # Intenal_phi ('')
-        output.append(np.cos(row.ra))                     # cos(External_x)
-        output.append(row.dec)                    # External_phi
-        output.append(row.psi)            # External_psi
+        output.append(np.cos(row.incl))           # Internal_x the cosine of the angle the LOS makes with axis of angular momentum
+        output.append(row.phi)                    # Intenal_phi angle between source x-axis and the LOS
+        output.append(np.cos(np.pi/2.0 - row.dec)) # cos(External_x) # this needs to be the co-declination
+        output.append(np.pi - row.ra)             # External_phi # This is the RA projected onto an Earth-based coordinate system
+        output.append(row.psi)                    # External_psi # source's polarisation angle
         output.append(frame.start)                # FrameGPS
         output.append(row.time_geocent_gps)       # EarthCtrGPS
         output.append(rowname)                    # SimName
