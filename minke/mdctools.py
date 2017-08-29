@@ -1,3 +1,25 @@
+"""
+88b           d88  88               88                    
+888b         d888  ""               88                    
+88`8b       d8'88                   88                    
+88 `8b     d8' 88  88  8b,dPPYba,   88   ,d8   ,adPPYba,  
+88  `8b   d8'  88  88  88P'   `"8a  88 ,a8"   a8P_____88  
+88   `8b d8'   88  88  88       88  8888[     8PP"""""""  
+88    `888'    88  88  88       88  88`"Yba,  "8b,   ,aa  
+88     `8'     88  88  88       88  88   `Y8a  `"Ybbd8"'  
+                                                          
+--------------------------------------------------------
+
+This file is a part of Minke, a tool for generating simulated
+gravitational wave signals, used for characterising and training
+search algorithms.
+
+Minke was created by Daniel Williams, based on work started by Chris
+Pankow and others, and is built around the LALSimulation library.
+
+
+
+"""
 from glue.ligolw import ligolw, utils, lsctables
 lsctables.use_in(ligolw.LIGOLWContentHandler);
 import numpy
@@ -483,16 +505,18 @@ class MDCSet():
         responses = self._responses(row)
         energy = self.egw[row]
         row = self.waveforms[row]
-        output = [] 
+        output = []
+        
         output.append(self.name)                  # GravEn_SimID
         output.append(strains[0])                 # SimHrss
         output.append(energy)                     # SimEgwR2
         output.append(strains[0])                 # GravEn_Ampl
-        output.append(row.incl)                          # Internal_x (currently not implemented)
-        output.append(row.phi)                          # Intenal_phi ('')
-        output.append(np.cos(row.ra))                     # cos(External_x)
-        output.append(row.dec)                    # External_phi
-        output.append(row.psi)            # External_psi
+        output.append(np.cos(row.incl))           # Internal_x the cosine of the angle the LOS makes with axis of angular momentum
+        output.append(row.phi)                    # Intenal_phi angle between source x-axis and the LOS
+        output.append(np.cos(np.pi/2.0 - row.dec)) # cos(External_x) # this needs to be the co-declination
+        output.append(row.ra if row.ra < np.pi else row.ra - 2*np.pi)
+        # ^ External_phi # This is the RA projected onto an Earth-based coordinate system
+        output.append(row.psi)                    # External_psi # source's polarisation angle
         output.append(frame.start)                # FrameGPS
         output.append(row.time_geocent_gps)       # EarthCtrGPS
         output.append(rowname)                    # SimName

@@ -39,7 +39,7 @@ def response( gpsTime, rightAscension, declination, inclination,
     psi_rad = polarization/180.0*pi
     iota_rad = inclination/180.0*pi
   else:
-    raise ValueError, "Unknown unit %s" % unit
+    raise ValueError("Unknown unit %s" % unit)
 
   # calculate GMST if the GPS time
   gps = lal.LIGOTimeGPS( gpsTime )
@@ -49,8 +49,7 @@ def response( gpsTime, rightAscension, declination, inclination,
   try:
     detector=lal.cached_detector_by_prefix[det]
   except KeyError:
-    raise ValueError, "ERROR. Key %s is not a valid detector prefix."\
-          % (det)
+    raise ValueError("ERROR. Key %s is not a valid detector prefix." % (det))
 
   # get the correct response data
   response = detector.response
@@ -97,17 +96,17 @@ def timeDelay( gpsTime, rightAscension, declination, unit, det1, det2 ):
     ra_rad = rightAscension/180.0*pi
     de_rad = declination/180.0*pi
   else:
-    raise ValueError, "Unknown unit %s" % unit
+    raise ValueError("Unknown unit %s" % unit)
 
   # check input values
   if ra_rad<0.0 or ra_rad> 2*pi:
-    raise ValueError, "ERROR. right ascension=%f "\
+    raise ValueError( "ERROR. right ascension=%f "\
           "not within reasonable range."\
-          % (rightAscension)
+          % (rightAscension))
 
   if de_rad<-pi or de_rad> pi:
-    raise ValueError, "ERROR. declination=%f not within reasonable range."\
-          % (declination)
+    raise ValueError( "ERROR. declination=%f not within reasonable range."\
+          % (declination))
 
   if det1 == det2:
     return 0.0
