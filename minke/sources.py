@@ -556,6 +556,7 @@ class Ott2013(Supernova):
     """
     The Ott+2013 supernova waveform
     """
+    has_memory = True
     waveform = "Ott+13"
     def __init__(self, theta, phi, time, sky_dist=uniform_sky, distance = 10e-3,  filepath=None, family="s27fheat1p05", decomposed_path=None):
         """
