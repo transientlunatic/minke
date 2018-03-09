@@ -730,12 +730,14 @@ class HWInj(Frame):
                     # Check distance scaling
                     # This should probably be done in LALSimulation, but
                     # right now it doesn't seem to be working.
-                    distance = sim_burst.amplitude
+                    
 
                     # Check if the distance or the hrss is stored in the hrss field.
                     if sim_burst.hrss > 1:
+                        distance = sim_burst.amplitude
                         file_distance = sim_burst.hrss
                     else:
+                        distance = 1.0
                         file_distance = 1.0
                         
                     
