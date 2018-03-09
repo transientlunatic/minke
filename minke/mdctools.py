@@ -732,7 +732,8 @@ class HWInj(Frame):
                     # right now it doesn't seem to be working.
                     distance = sim_burst.amplitude
 
-                    if sim_burst.hrss > 0:
+                    # Check if the distance or the hrss is stored in the hrss field.
+                    if sim_burst.hrss > 1:
                         file_distance = sim_burst.hrss
                     else:
                         file_distance = 1.0
