@@ -1,15 +1,22 @@
 image: lpmn/lalsuite:minke-latest
 
+stages:
+  - test
+  - build
+#  - deploy
+
 test:
+  stage: test
   script:
     - python setup.py test
 
 
-build:pages:
+pages:
+  stage: build
   script:
-  - pip install sphinx sphinx-bootstrap-theme numpydoc
+  - pip install sphinx sphinx-bootstrap-theme numpydoc sphinxcontrib-versioning
   - make docs
-  - mv docs/_build/html/ public/
+  - mv docs/_buidl/html/ public/
   artifacts:
     paths:
     - public
@@ -19,13 +26,11 @@ build:pages:
 
 # Build receipe for standalone wheels on Linux
 build:wheel:
-  # stage: build
+  stage: build
   script:
     - pip install wheel
     # Build wheel
     - python setup.py bdist_wheel --universal
-    # Bundle and fix up dependent shared libraries
-    - auditwheel repair wheel/*.whl
   dependencies: []
   artifacts:
     expire_in: 3h
