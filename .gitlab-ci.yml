@@ -2,5 +2,70 @@ image: lpmn/lalsuite:minke-latest
 
 test:
   script:
-    - python setup.py install && python setup.py test
-     
+    - python setup.py test
+
+
+pages:
+  script:
+  - apk --no-cache add py2-pip python-dev
+  - pip install sphinx
+  - apk --no-cache add make
+  - make docs
+  - mv _build/html/ public/
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
+
+
+# # Build receipe for standalone wheels on Linux
+# .nightly:wheel:manylinux1: &nightly-wheel-manylinux1
+#   # This container is derived from the official manylinux image provided by
+#   # python.org (see PEP 513), and includes all of the LALSuite
+#   # build-dependencies.
+#   image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+#   stage: nightly
+#   script:
+#     - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
+#     # Build wheel
+#     - ./00boot
+#     # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
+#     - ./configure PYTHON=${PYPREFIX}/bin/python
+#       --enable-swig-python --enable-nightly
+#       --disable-laldetchar
+#     - make -j4 wheel
+#     # Bundle and fix up dependent shared libraries
+#     - auditwheel repair wheel/*.whl
+#     # Test
+#     - ${PYPREFIX}/bin/virtualenv test
+#     - source test/bin/activate
+#     - pip install -q wheelhouse/*
+#     - python -c 'import lal, lalframe, lalmetaio'
+#   dependencies: []
+#   only:
+#     - /^lalsuite-.+/
+#     - schedules
+#     - web
+#   artifacts:
+#     expire_in: 3h
+#     paths:
+#       - wheelhouse
+
+
+# deploy:wheel:
+#    stage: deploy
+#    image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+#    script:
+#     - /opt/python/cp36-cp36m/bin/pip install twine	
+#     - /opt/python/cp36-cp36m/bin/twine upload wheelhouse/*
+
+#   artifacts:
+#     expire_in: 3h
+#     paths:
+#       - wheelhouse
+#   only:
+#     - master@lscsoft/lalsuite
+#   except:
+#     - pushes
+#     - web
