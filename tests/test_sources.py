@@ -8,6 +8,8 @@ import numpy as np
 
 ott_data_url = "http://www.stellarcollapse.org/gwdata/ottetal2012b/s27WHW02_LS220_j0_rx3_full_cc_fheat1.05_HlmD.dat.gz"
 
+
+
 def download_nr(url):
     """
     Download the datafile for an NR waveform, and extract it from a gzip if relevent
@@ -44,6 +46,8 @@ class TestMinkeSources(unittest.TestCase):
         self.datafiles = {}
         self.datafiles['Ott13'] = 'tests/data/ott_test.dat' #download_nr(ott_data_url)
 
+        mdctools.mkdir("./testout/frames")
+        
         self.mdcset = mdctools.MDCSet(['L1', 'H1'])
         self.times = distribution.even_time(start = 1126620016, stop = 1136995216, rate = 630720, jitter = 20)
         self.angles = distribution.supernova_angle(len(self.times))
@@ -79,7 +83,7 @@ class TestMinkeSources(unittest.TestCase):
                              family = "s27fheat1p05",)
         mdcset + sn
 
-        mdcset.save_xml('ott13.xml.gz')
+        mdcset.save_xml('testout/ott13.xml.gz')
 
     def test_OttFrame(self):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
@@ -93,7 +97,7 @@ class TestMinkeSources(unittest.TestCase):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
         mdcset.load_xml('ott13.xml.gz')
         o1 = mdctools.FrameSet('tests/data/frame_list.dat')
-        o1.full_logfile(mdcset, './frames/logfile.txt')
+        o1.full_logfile(mdcset, 'testout/frames/logfile.txt')
 
 
         
