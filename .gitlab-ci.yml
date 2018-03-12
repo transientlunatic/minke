@@ -9,7 +9,8 @@ test:
   stage: test
   script:
     - export PYTHONPATH="/usr/local/lib64/python2.7/site-packages:/usr/local/lib/python2.7/site-packages"
-    - pip install pandas numpy
+    - echo "pandas" > requirements.txt
+    - pip install -r requirements.txt
     - python setup.py install
     - python setup.py test
   # As a temporary measure
@@ -30,7 +31,7 @@ pages:
 
 
 # Build receipe for standalone wheels on Linux
-build:wheel:
+wheel:
   stage: build
   script:
     - pip install wheel
@@ -40,23 +41,21 @@ build:wheel:
   artifacts:
     expire_in: 3h
     paths:
-      - wheelhouse
+      - dist
 
-
-
-# deploy:wheel:
-#    stage: deploy
-#    image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
-#    script:
-#     - /opt/python/cp36-cp36m/bin/pip install twine	
-#     - /opt/python/cp36-cp36m/bin/twine upload wheelhouse/*
-
-#   artifacts:
-#     expire_in: 3h
-#     paths:
-#       - wheelhouse
-#   only:
-#     - master@lscsoft/lalsuite
-#   except:
-#     - pushes
-#     - web
+deploy:wheel:
+   stage: deploy
+   script:
+    - pip install twine
+    - twine upload dist/*
+  artifacts:
+    expire_in: 3h
+    paths:
+      - dist
+  only:
+    - master
+  #only:
+  #  - tags
+  # except:
+  #   - pushes
+  #   - web

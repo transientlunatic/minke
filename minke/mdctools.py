@@ -603,7 +603,7 @@ class Frame():
             # Loop through each interferometer
             for ifo in self.ifos:
                 # Calculate the number of samples in the timeseries
-                nsamp = (self.end-self.start)*rate
+                nsamp = int((self.end-self.start)*rate)
                 # Make the timeseries
                 h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
                 # Loop over all of the injections corresponding to this frame
