@@ -3,7 +3,7 @@ image: lpmn/lalsuite:minke-latest
 stages:
   - test
   - build
-#  - deploy
+  - deploy
 
 test:
   stage: test
@@ -13,8 +13,6 @@ test:
     - pip install -r requirements.txt
     - python setup.py install
     - python setup.py test
-  # As a temporary measure
-  allow_failure: true
 
 
 pages:
@@ -44,16 +42,10 @@ wheel:
       - dist
 
 deploy:wheel:
-   stage: deploy
-   script:
+  stage: deploy
+  script:
     - pip install twine
     - twine upload dist/*
-  artifacts:
-    expire_in: 3h
-    paths:
-      - dist
-  only:
-    - master
   #only:
   #  - tags
   # except:
