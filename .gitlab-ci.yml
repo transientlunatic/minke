@@ -24,6 +24,7 @@ build:wheel:
   # build-dependencies.
   # stage: build
   script:
+    - pip install wheel
     # Build wheel
     - python setup.py bdist_wheel --universal
     # Bundle and fix up dependent shared libraries
