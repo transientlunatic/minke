@@ -9,7 +9,7 @@ build:pages:
   script:
   - pip install sphinx sphinx-bootstrap-theme numpydoc
   - make docs
-  - mv _build/html/ public/
+  - mv docs/_build/html/ public/
   artifacts:
     paths:
     - public
@@ -19,9 +19,6 @@ build:pages:
 
 # Build receipe for standalone wheels on Linux
 build:wheel:
-  # This container is derived from the official manylinux image provided by
-  # python.org (see PEP 513), and includes all of the LALSuite
-  # build-dependencies.
   # stage: build
   script:
     - pip install wheel
