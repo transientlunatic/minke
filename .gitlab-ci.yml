@@ -5,9 +5,9 @@ test:
     - python setup.py test
 
 
-pages:
+buildp:ages:
   script:
-  - pip install sphinx
+  - pip install sphinx sphinx-bootstrap-theme
   - make docs
   - mv _build/html/ public/
   artifacts:
