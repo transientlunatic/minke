@@ -87,15 +87,15 @@ class TestMinkeSources(unittest.TestCase):
 
     def test_OttFrame(self):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
-        mdcset.load_xml('ott13.xml.gz')
+        mdcset.load_xml('testout/ott13.xml.gz')
         o1 = mdctools.FrameSet('tests/data/frame_list.dat')
-        mdc_folder = "./frames"
+        mdc_folder = "testout/frames"
         for o1frame in o1.frames:
             o1frame.generate_gwf(mdcset, mdc_folder, 'SCIENCE')
 
     def test_OttGraven(self):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
-        mdcset.load_xml('ott13.xml.gz')
+        mdcset.load_xml('testout/ott13.xml.gz')
         o1 = mdctools.FrameSet('tests/data/frame_list.dat')
         o1.full_logfile(mdcset, 'testout/frames/logfile.txt')
 
