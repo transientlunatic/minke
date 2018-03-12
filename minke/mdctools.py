@@ -565,7 +565,7 @@ class Frame():
             log += "\n"
         return log
 
-    def generate_gwf(self, mdc, directory, channel="SCIENCE", force=False):
+    def generate_gwf(self, mdc, directory, channel="SCIENCE", force=False, rate=16384.0):
         """
         Produce the gwf file which corresponds to the MDC set over the period of this frame.
 
@@ -603,15 +603,15 @@ class Frame():
             # Loop through each interferometer
             for ifo in self.ifos:
                 # Calculate the number of samples in the timeseries
-                nsamp = (self.end-self.start)*16384
+                nsamp = (self.end-self.start)*rate
                 # Make the timeseries
-                h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/16384, lal.StrainUnit, nsamp)
+                h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
                 # Loop over all of the injections corresponding to this frame
                 rowlist = self.get_rowlist(mdc)
                 if len(rowlist)==0: return
                 for row in rowlist:
                     sim_burst = mdc.waveforms[row]
-                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/16384);
+                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
                     # Produce the total strains
@@ -673,7 +673,7 @@ class HWInj(Frame):
             out += "{} \n".format(ifo)
         return out
 
-    def generate_pcal(self, mdc, directory, force = False):
+    def generate_pcal(self, mdc, directory, force = False, rate=16384):
         """
         Produce the PCAL-ready hardware injection files as an ASCII list
         sampled at the detector's sample rate.
@@ -715,10 +715,10 @@ class HWInj(Frame):
                     data = []
                     epoch = lal.LIGOTimeGPS(sim_burst.time_geocent_gps)
                     duration = 10
-                    nsamp = duration*16384
-                    h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/16384, lal.StrainUnit, nsamp)
+                    nsamp = duration*rate
+                    h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
                     # Produce the time domain waveform for this injection
-                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/16384);
+                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
                     # Produce the total strains
@@ -731,8 +731,13 @@ class HWInj(Frame):
                     # This should probably be done in LALSimulation, but
                     # right now it doesn't seem to be working.
                     distance = sim_burst.amplitude
-                    file_distance = sim_burst.hrss
-                    
+
+                    # Check if the distance or the hrss is stored in the hrss field.
+                    if sim_burst.hrss > 1:
+                        file_distance = sim_burst.hrss
+                    else:
+                        file_distance = 1.0
+                        
                     
                     data = np.array(h_tot.data.data)
                     data /= (distance / file_distance)
@@ -837,7 +842,6 @@ class FrameSet():
         for frame in self.frames:
             full_log += frame.generate_log(mdc)
             
-        text_file = open(location, "w")
-        text_file.write(full_log)
-        text_file.close()
+        with open(location, "w") as text_file:
+            text_file.write(full_log)
 
