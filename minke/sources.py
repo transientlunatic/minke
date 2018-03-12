@@ -159,8 +159,16 @@ class Waveform(object):
                 tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
                 tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
 
-                hp.data.data = np.append(hp.data.data(tail_hp))
-                hx.data.data = np.append(hp.data.data(tail_hx))
+                hp_data = np.append(hp.data.data,tail_hp.data)
+                hx_data = np.append(hp.data.data,tail_hx.data)
+
+                tail_hp = lal.CreateREAL8Vector(len(hp_data))
+                tail_hp.data = hp_data
+                tail_hx = lal.CreateREAL8Vector(len(hx_data))
+                tail_hx.data = hx_data
+
+                hp.data = tail_hp
+                hx.data = tail_hx
         
         return hp, hx, hp0, hx0 
 
@@ -481,9 +489,12 @@ class Supernova(Waveform):
 
         times = np.linspace(0, length, length * sampling)
         tail_f = 1.0 / length / 2.0 # Calculate the frequency for a half cosine function over the length of the tail
-        tail = 0.5 * (h_max + h_max * np.cos( 2 * np.pi * f_tail * times))
+        tail = 0.5 * (h_max + h_max * np.cos( 2 * np.pi * tail_f * times))
 
-        return tail
+        tailout = lal.CreateREAL8Vector(len(tail))
+        tailout.data = tail
+        
+        return tailout
         
         
     def interpolate(self, x_old, y_old, x_new):
