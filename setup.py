@@ -40,7 +40,7 @@ test_requirements = [
 
 setup(
     name='minke',
-    version='1.0.1',
+    #version='1.0.1',
     use_scm_version=True,
     description="Minke is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.",
     long_description=readme + '\n\n' + history,
