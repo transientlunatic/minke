@@ -8,6 +8,7 @@ stages:
 test:
   stage: test
   script:
+    - python setup.py install
     - python setup.py test
   # As a temporary measure
   allow_failure: true
