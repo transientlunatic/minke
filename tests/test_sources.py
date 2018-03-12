@@ -42,7 +42,7 @@ class TestMinkeSources(unittest.TestCase):
         """
 
         self.datafiles = {}
-        self.datafiles['Ott13'] = download_nr(ott_data_url)
+        self.datafiles['Ott13'] = 'tests/data/frame_list.dat' #download_nr(ott_data_url)
 
         self.mdcset = mdctools.MDCSet(['L1', 'H1'])
         self.times = distribution.even_time(start = 1126620016, stop = 1136995216, rate = 630720, jitter = 20)
