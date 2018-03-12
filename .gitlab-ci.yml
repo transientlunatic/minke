@@ -8,6 +8,8 @@ stages:
 test:
   stage: test
   script:
+    - export PYTHONPATH=/usr/local/lib64/python2.7/site-packages:/usr/local/lib/python2.7/site-packages:
+    - pip install pandas numpy
     - python setup.py install
     - python setup.py test
   # As a temporary measure
