@@ -22,6 +22,10 @@ Minke: The Burst MDC Factory
 .. image:: https://code.daniel-williams.co.uk/minke/_images/minke.png
 	   :alt: Project Minke Logo
 
+.. image:: https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg
+	   :target: https://singularity-hub.org/collections/504
+	   :alt: Singularity image 
+		 
 Minke is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.
 
 * Free software: ISC license

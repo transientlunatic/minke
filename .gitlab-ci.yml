@@ -11,7 +11,7 @@ test:
     - export PYTHONPATH="/usr/local/lib64/python2.7/site-packages"
     - echo "pandas" > requirements.txt
     - pip install -r requirements.txt
-    - pip install .
+    - python setup.py install
     - python setup.py test
   artifacts:
     expire_in: 3h
