@@ -43,6 +43,28 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
 
+
+table_types = {
+    # Ad-Hoc
+    "ga" : lsctables.SimBurstTable,
+    "sg" : lsctables.SimBurstTable,
+    "wnb" : lsctables.SimBurstTable,
+    # Supernova Families
+    "d08" : lsctables.SimBurstTable,
+    "s10" : lsctables.SimBurstTable,
+    "m12" : lsctables.SimBurstTable,
+    "o13" : lsctables.SimBurstTable,
+    # Long Duration
+    "adi" : lsctables.SimBurstTable,
+    # Ringdown
+    "rng" : lsctables.SimRingdownTable
+    }
+
+tables = {
+    "burst" : lsctables.SimBurstTable,
+    "ringdown" : lsctables.SimRingdownTable
+    }
+
 def mkdir(path):
     """
     Make all of the tree of directories in a given path if they don't
@@ -60,6 +82,10 @@ def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
+
+class TableTypeError(Exception):
+    pass
+        
 class MDCSet():
 
     inj_families_names = {'ga' : 'Gaussian',
@@ -72,6 +98,8 @@ class MDCSet():
                           'o13' : 'Ott+13',
                           # Long-duration
                           'adi' : 'ADI',
+                          # Ringdown
+                          'rng' : "Ringdown",
                           }
 
     inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
@@ -85,7 +113,7 @@ class MDCSet():
 
     waveforms = []
 
-    def __init__(self, detectors, name='MDC Set'):
+    def __init__(self, detectors, name='MDC Set', table_type = "burst"):
         """
         Represents an MDC set, stored in an XML SimBurstTable file.
         
@@ -96,6 +124,10 @@ class MDCSet():
 
         name : str
             A name for the MDC Set. Defaults to 'MDC Set'.
+
+        table_type : str
+            The type of table which should be generated. Default is `burst`, 
+            which generates a SimBurstTable.
         """
         self.detectors = detectors
         
@@ -107,6 +139,8 @@ class MDCSet():
             
         self.times = np.array(self.times)
 
+        self.table_type = tables[table_type]
+
     def __add__(self, waveform):
         """
         Handle a waveform being added to the MDC set.
@@ -117,6 +151,11 @@ class MDCSet():
            The waveform which should be added to the MDC set.
 
         """
+
+        # Check that this type of waveform can go into this type of
+        # XML file.
+        if not table_types[self.inj_families_abb[waveform.waveform]] == self.table_type:
+            raise TableTypeError()
         
         self.waveforms.append(waveform)
         self.times = np.append(self.times, waveform.time)
@@ -133,7 +172,7 @@ class MDCSet():
         """
         xmldoc = ligolw.Document()
         lw = xmldoc.appendChild(ligolw.LIGO_LW())
-        sim = lsctables.New(lsctables.SimBurstTable)
+        sim = lsctables.New(self.table_type)
         lw.appendChild(sim)
         # This needs to be given the proper metadata once the package has the maturity to
         # write something sensible.

@@ -955,6 +955,14 @@ class Dimmelmeier08(Supernova):
         return output
 
 
+
+class Ringdown(Waveform):
+    """
+    A class to handle Rindown waveforms.
+    """
+    waveform = "Ringdown"
+    pass
+
 class LongDuration(Supernova):
     """
 
