@@ -44,7 +44,8 @@ class Waveform(object):
     """
 
     sim = lsctables.New(lsctables.SimBurstTable)
-
+    table_type = lsctables.SimBurstTable
+    
     numrel_data = []
     waveform = "Generic"
     expnum = 1
@@ -205,7 +206,7 @@ class Waveform(object):
         if not sim: sim = self.sim
         row = sim.RowType()
 
-        for a in lsctables.SimBurstTable.validcolumns.keys():
+        for a in self.table_type.validcolumns.keys():
             setattr(row, a, self.params[a])
 
         row.waveform = self.waveform
@@ -274,6 +275,7 @@ class SineGaussian(Waveform):
         self.time = time
         self.polarisation = polarisation
         self.params['pol_ellipse_e'], self.params['pol_ellipse_angle'] = self.parse_polarisation(self.polarisation)    
+
 
 
 class Gaussian(Waveform):
@@ -960,6 +962,7 @@ class Ringdown(Waveform):
     """
     A class to handle Rindown waveforms.
     """
+    table_type = lsctables.SimRingdownTable
     waveform = "Ringdown"
     pass
 
@@ -1091,3 +1094,25 @@ class ADI(LongDuration):
         output[:,2] = strainc_new
 
         return output
+
+class BBHRingdown(Ringdown):
+    """
+    A class to represent BBH ringdowns.
+    """
+    #lalsimfunction = SimBlackHoleRingdown
+
+    def __init__(self, time, hrss,  phi0, deltaT, mass, spin, massloss, distance, inclination, l, m, sky_dist=uniform_sky):
+        self._clear_params()
+        self.time = self.v_start_time_ns = time
+        self.sky_dist = sky_dist
+        self.params['simulation_id'] = self.simulation_id =  self.sim.get_next_id()
+        self.params['phi0'] = phi0
+        self.params['deltaT'] = deltaT
+        self.params['mass'] = mass
+        self.params['spin'] = spin
+        self.params['massloss'] = massloss
+        self.params['eff_dist_l'] = self.eff_dist_l = distance
+        self.params['hrss'] = self.hrss = hrss
+        self.params['inclination'] = inclination
+        self.params['l'] = l
+        self.params['m'] = m
