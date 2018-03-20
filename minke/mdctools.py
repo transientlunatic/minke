@@ -245,7 +245,7 @@ class MDCSet():
         i = 0
         #sim_burst_table = lalburst.SimBurstTableFromLIGOLw(filename, start, stop)
 
-        xml = glue.ligolw.utils.load_filename("test_simbursttable.xml.gz",
+        xml = glue.ligolw.utils.load_filename(filename, 
                                               contenthandler = glue.ligolw.ligolw.LIGOLWContentHandler,
                                               verbose = True)
         sim_burst_table = glue.ligolw.table.get_table(xml, self.table_type.tableName)
@@ -260,8 +260,9 @@ class MDCSet():
             if full:
                 self._measure_hrss(i)
                 self._measure_egw_rsq(i)
-            
-            self.times = np.append(self.times, float(simrow.time_geocent_gps))
+
+            if self.table_type == "burst":
+                self.times = np.append(self.times, float(simrow.time_geocent_gps))
             #np.insert(self.times, len(self.times), sim_burst_table.time_geocent_gps)
             #if sim_burst_table.next is None: break
             #sim_burst_table = sim_burst_table.next
@@ -302,16 +303,11 @@ class MDCSet():
                 setattr(swig_row, a, getattr( row, a ))
             except AttributeError: continue # we didn't define it
             except TypeError: 
-                print a, getattr(row,a)
+                #print a, getattr(row,a)
                 continue # the structure is different than the TableRow
         theta, phi = np.cos(swig_row.incl), swig_row.phi
-        try:
-            swig_row.numrel_data = row.numrel_data
-        except AttributeError:
-            # Don't fail badly if there's a problem with numerical relativity data unless this is a supernova injection
-            swig_row.numrel_data = ""
-            if row.waveform in exceptions:
-                raise AttributeError
+        swig_row.numrel_data = str(row.numrel_data)
+        
         hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
         return hp, hx, hp0, hx0
@@ -393,7 +389,7 @@ class MDCSet():
         name = ''
         numberspart = ''
         if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13"):
-            print row
+            #print row
             numberspart = os.path.basename(row.numrel_data).split('.')[0]
 
         if row.waveform == "Gaussian":

@@ -81,7 +81,7 @@ class TestMinke(unittest.TestCase):
         """
         Read-in the xml simburst table.
         """
-        mdcset = mdctools.MDCSet(["L1"])
+        mdcset = mdctools.MDCSet(["L1"], table_type = "ringdown",)
         mdcset.load_xml("test_simringdowntable.xml.gz", full = False)
 
         self.assertEqual(len(mdcset.waveforms), 1)

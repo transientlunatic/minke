@@ -964,7 +964,8 @@ class Ringdown(Waveform):
     """
     table_type = lsctables.SimRingdownTable
     waveform = "Ringdown"
-    pass
+
+        
 
 class LongDuration(Supernova):
     """
@@ -1101,18 +1102,42 @@ class BBHRingdown(Ringdown):
     """
     #lalsimfunction = SimBlackHoleRingdown
 
-    def __init__(self, time, hrss,  phi0, deltaT, mass, spin, massloss, distance, inclination, l, m, sky_dist=uniform_sky):
+    def __init__(self, time, hrss,  phi0, mass, spin, massloss, distance, inclination, l, m, sky_dist=uniform_sky, deltaT = 1/16384.0):
         self._clear_params()
-        self.time = self.v_start_time_ns = time
+        self.time = time
         self.sky_dist = sky_dist
         self.params['simulation_id'] = self.simulation_id =  self.sim.get_next_id()
         self.params['phi0'] = phi0
         self.params['deltaT'] = deltaT
-        self.params['mass'] = mass
+        self.params['mass'] = mass # in solar masses
         self.params['spin'] = spin
         self.params['massloss'] = massloss
-        self.params['eff_dist_l'] = self.eff_dist_l = distance
+        self.params['eff_dist_l'] = self.eff_dist_l = distance # megaparsec
         self.params['hrss'] = self.hrss = hrss
-        self.params['inclination'] = inclination
-        self.params['l'] = l
-        self.params['m'] = m
+        self.params['inclination'] = self.inclination = inclination
+        self.params['l'] = self.l = l
+        self.params['m'] = self.m = m
+
+    def _generate(self, rate=16384.0):
+        """
+        Generate this BBH Ringdown waveform.
+
+        Parameters
+        ----------
+        rate : float
+           The signal sampling rate. Defaults to 16384.0 Hz
+        """
+        dt = 1.0 / rate
+
+        #&epoch, q, dt, M, a, e, r, i, l, m
+        
+        hp, hx = lalsimulation.SimBlackHoleRingdown(self.time,
+                                           np.deg2rad(self.azimuth),
+                                           dt,
+                                           self.mass*lal.MSUN_SI,
+                                           self.spin,
+                                           self.massloss,
+                                           self.eff_dist_l *  1e6 * lal.PC_SI,
+                                           np.deg2rad(self.inclination),
+                                           self.l, self.m)
+        return hp, hx
