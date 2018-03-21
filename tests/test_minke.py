@@ -43,23 +43,21 @@ class TestMinke(unittest.TestCase):
 
     # Check that the correct XML files are produced for different table types
 
-    def test_write_simbursttable(self):
+    def test_readwrite_simbursttable(self):
         """Test writing out a simburst table xml file."""
         mdcset = mdctools.MDCSet(["L1"], table_type = "burst")
         waveform = sources.Gaussian(0.1,1e-23,1000)
 
         mdcset + waveform
 
-        mdcset.save_xml("test_simbursttable.xml.gz")
+        mdcset.save_xml("testout/test_simbursttable.xml.gz")
 
-    def test_verify_simbursttable(self):
-        """Read-in the xml simburst table."""
         mdcset = mdctools.MDCSet(["L1"])
-        mdcset.load_xml("test_simbursttable.xml.gz", full = False)
+        mdcset.load_xml("testout/test_simbursttable.xml.gz", full = False)
 
         self.assertEqual(len(mdcset.waveforms), 1)
 
-    def test_write_simringdowntable(self):
+    def test_readwrite_simringdowntable(self):
         """Write out a simringdown table xml file
         """
         mdcset = mdctools.MDCSet(["L1"], table_type = "ringdown")
@@ -67,19 +65,18 @@ class TestMinke(unittest.TestCase):
 
         mdcset + waveform
 
-        mdcset.save_xml("test_simringdowntable.xml.gz")
+        mdcset.save_xml("testout/test_simringdowntable.xml.gz")
 
-    def test_verify_simringdowntable(self):
-        """Read-in the xml simringdown table. """
         mdcset = mdctools.MDCSet(["L1"], table_type = "ringdown",)
-        mdcset.load_xml("test_simringdowntable.xml.gz", full = False)
+        mdcset.load_xml("testout/test_simringdowntable.xml.gz", full = False)
 
         self.assertEqual(len(mdcset.waveforms), 1)
 
 
 class TestMDC(unittest.TestCase):
     def setUp(self):
-
+        mdctools.mkdir("./testout")
+        
         rng = minke.sources.BBHRingdown(100.23, np.rad2deg(.1), 10., 0.97, 0.01, 1.0,45.)
         
         mdcset = mdctools.MDCSet(["L1"], table_type="ringdown")
@@ -147,7 +144,8 @@ class TestMDCEdit(unittest.TestCase):
 
         mdcset = mdctools.MDCSet(["L1"])
         mdcset + ga
-
+        
+        mdctools.mkdir("./testout")
         mdcset.save_xml("testout/gaussian_edit_test.xml")
 
     def testXMLLoad(self):
