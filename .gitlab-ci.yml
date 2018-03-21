@@ -1,4 +1,4 @@
-image: lpmn/lalsuite:minke-latest
+image: lpmn/minke:latest
 
 stages:
   - test
