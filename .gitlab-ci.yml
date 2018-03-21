@@ -1,4 +1,4 @@
-image: lpmn/lalsuite:minke-latest
+image: lpmn/minke:latest
 
 stages:
   - test
@@ -49,7 +49,8 @@ deploy:wheel:
   script:
     - pip install twine
     - twine upload dist/*
-  #only:
+  only:
+    - master@daniel-williams/minke
   #  - tags
   # except:
   #   - pushes

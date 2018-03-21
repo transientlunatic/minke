@@ -52,7 +52,9 @@ User Guide
    
    installation
    usage
+   ringdowns
    numerical
+   
 
 Developer Guide
 ===============

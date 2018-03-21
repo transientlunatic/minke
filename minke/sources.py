@@ -36,22 +36,26 @@ except ImportError:
 
 import matplotlib.pyplot as plt
 
+
+
+
 class Waveform(object):
     """
     Generic container for different source types. 
     Currently, it checks for the waveform type and initializes itself appropriately. 
     In the future, different sources should subclass this and override the generation routines.
     """
-
-    sim = lsctables.New(lsctables.SimBurstTable)
-
+    
+    table_type = lsctables.SimBurstTable
+    sim = lsctables.New(table_type)
+    
     numrel_data = []
     waveform = "Generic"
     expnum = 1
 
     def _clear_params(self):
         self.params = {}
-        for a in lsctables.SimBurstTable.validcolumns.keys():
+        for a in self.table_type.validcolumns.keys():
             self.params[a] = None
         
 
@@ -124,54 +128,41 @@ class Waveform(object):
               A copy of the strain in the + polarisation 
            hx0 : 
                A copy of the strain in the x polarisation 
-        """ 
-        row = self._row() 
-        swig_row = lalburst.CreateSimBurst() 
-        for a in lsctables.SimBurstTable.validcolumns.keys(): 
-            try:
-                setattr(swig_row, a, getattr( row, a )) 
-            except AttributeError: 
-                continue 
-            except TypeError: 
-                continue 
-            try:
-                swig_row.numrel_data = row.numrel_data 
-            except: pass
-        
-        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate) 
-        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?  
-        # DW: I tried that, and it doesn't seem to work :/
+        """
+        burstobj = self._burstobj()
+                
+        hp, hx = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
         if not half :
-            hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate) 
+            hp0, hx0 = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
         else: 
             hp0, hx0 = hp, hx
         
-        # detrend supernova waveforms
-        if hasattr(self, "supernova"):
-            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = scipy.signal.detrend(hp.data.data), scipy.signal.detrend(hx.data.data), scipy.signal.detrend(hp0.data.data), scipy.signal.detrend(hx0.data.data)
-            # Rescale for a given distance 
-        if row.amplitude and hasattr(self, "supernova"): 
-            rescale = 1.0 / (self.file_distance / row.amplitude)
-            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = hp.data.data * rescale, hx.data.data * rescale, hp0.data.data * rescale, hx0.data.data * rescale
-
-            if hasattr(self, "has_memory"):
-                # Apply the tail correction for memory
-                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
-                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
-
-                hp_data = np.append(hp.data.data,tail_hp.data)
-                hx_data = np.append(hp.data.data,tail_hx.data)
-
-                tail_hp = lal.CreateREAL8Vector(len(hp_data))
-                tail_hp.data = hp_data
-                tail_hx = lal.CreateREAL8Vector(len(hx_data))
-                tail_hx.data = hx_data
-
-                hp.data = tail_hp
-                hx.data = tail_hx
-        
         return hp, hx, hp0, hx0 
 
+    def _burstobj(self):
+        """
+        Generate a SimBurst object for this waveform.
+        """
+        swig_row = self._row()
+        burstobj = lalburst.CreateSimBurst()
+        
+        for a in self.table_type.validcolumns.keys():
+            try:
+                setattr(burstobj, a, getattr(swig_row,a))
+            except AttributeError:
+                continue
+            except TypeError: 
+                continue
+
+        burstobj.waveform = str(self.waveform)
+            
+        if swig_row.numrel_data:
+            burstobj.numrel_data = str(swig_row.numrel_data)
+        else:
+            burstobj.numrel_data = str("")
+
+        return burstobj
+    
     def _generate_for_detector(self, ifos, sample_rate = 16384.0, nsamp = 2000):
         data = []
         # Loop through each interferometer
@@ -205,14 +196,20 @@ class Waveform(object):
         if not sim: sim = self.sim
         row = sim.RowType()
 
-        for a in lsctables.SimBurstTable.validcolumns.keys():
+        for a in self.table_type.validcolumns.keys():
             setattr(row, a, self.params[a])
 
+        if self.numrel_data:
+            row.numrel_data = str(self.numrel_data)
+        else:
+            row.numrel_data = ""
+            
         row.waveform = self.waveform
         # Fill in the time
         row.set_time_geocent(GPS(float(self.time)))
         # Get the sky locations
-        row.ra, row.dec, row.psi = self.sky_dist()
+        if not row.ra:
+            row.ra, row.dec, row.psi = self.sky_dist()
         row.simulation_id = sim.get_next_id()
         row.waveform_number = random.randint(0,int(2**32)-1)
         ### !! This needs to be updated.
@@ -274,6 +271,7 @@ class SineGaussian(Waveform):
         self.time = time
         self.polarisation = polarisation
         self.params['pol_ellipse_e'], self.params['pol_ellipse_angle'] = self.parse_polarisation(self.polarisation)    
+
 
 
 class Gaussian(Waveform):
@@ -457,6 +455,68 @@ class Supernova(Waveform):
 
         return Hlm
 
+    def _generate(self, rate=16384.0, half=False, distance=None): 
+        """
+        Generate the burst described in a given row, so that it can be
+        measured.
+        
+        Parameters 
+        ---------- 
+        rate : float 
+           The sampling rate of the signal, in Hz. 
+           Defaults to 16384.0Hz
+            
+        half : bool 
+           Only compute the hp and hx once if this is true;
+           these are only required if you need to compute the cross
+           products. Defaults to False.
+
+        Returns 
+        ------- 
+           hp : 
+              The strain in the + polarisation 
+           hx : 
+              The strain in the x polarisation
+           hp0 : 
+              A copy of the strain in the + polarisation 
+           hx0 : 
+               A copy of the strain in the x polarisation 
+        """
+        burstobj = self._burstobj()
+                
+        hp, hx = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
+        if not half :
+            hp0, hx0 = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
+        else: 
+            hp0, hx0 = hp, hx
+        
+        # detrend supernova waveforms
+        if hasattr(self, "supernova"):
+            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = scipy.signal.detrend(hp.data.data), scipy.signal.detrend(hx.data.data), scipy.signal.detrend(hp0.data.data), scipy.signal.detrend(hx0.data.data)
+            # Rescale for a given distance 
+        if burstobj.amplitude: 
+            rescale = 1.0 / (self.file_distance / burstobj.amplitude)
+            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = hp.data.data * rescale, hx.data.data * rescale, hp0.data.data * rescale, hx0.data.data * rescale
+
+            if hasattr(self, "has_memory"):
+                # Apply the tail correction for memory
+                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
+                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
+
+                hp_data = np.append(hp.data.data,tail_hp.data)
+                hx_data = np.append(hp.data.data,tail_hx.data)
+
+                tail_hp = lal.CreateREAL8Vector(len(hp_data))
+                tail_hp.data = hp_data
+                tail_hx = lal.CreateREAL8Vector(len(hx_data))
+                tail_hx.data = hx_data
+
+                hp.data = tail_hp
+                hx.data = tail_hx
+
+        
+        return hp, hx, hp0, hx0 
+    
     def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23):
         """Generate a "low frequency tail" to append to the end of the
         waveform to overcome problems related to memory in the
@@ -955,6 +1015,16 @@ class Dimmelmeier08(Supernova):
         return output
 
 
+
+class Ringdown(Waveform):
+    """
+    A class to handle Rindown waveforms.
+    """
+    table_type = lsctables.SimRingdownTable
+    waveform = "GenericRingdown"
+
+        
+
 class LongDuration(Supernova):
     """
 
@@ -1083,3 +1153,94 @@ class ADI(LongDuration):
         output[:,2] = strainc_new
 
         return output
+
+class BBHRingdown(Ringdown):
+    """
+    A class to represent BBH ringdowns.
+    """
+    #lalsimfunction = SimBlackHoleRingdown
+    waveform = "BBHRingdown"
+    def __init__(self, time, phi0, mass, spin, massloss, distance, inclination, sky_dist=uniform_sky):
+        """
+        Binary Black Hole (BBH) Ringdown waveform
+
+        Parameters
+        ----------
+        time : float
+           The time that the waveform should be generated at, in gps seconds.
+        phi0 : float
+           The starting phase.
+        mass : float
+           The mass of the final black hole in solar masses.
+        spin : float
+           The dimensionless spin parameter for the final black hole.
+        massloss : float
+           The total mass loss of the system. (Also denoted epsilon).
+        distance : float
+           The effective luminosity distance at which the signal should be generated.
+        inlination : float
+            The inclination of the system in degrees.
+        """
+        self._clear_params()
+        self.time = self.geocent_start_time = self.params['geocent_start_time'] =  time
+        self.sky_dist = sky_dist
+        self.params['simulation_id'] = self.simulation_id =  self.sim.get_next_id()
+        self.params['phase'] = phi0
+        self.params['mass'] = mass # in solar masses
+        self.params['spin'] = spin
+        self.params['epsilon'] = massloss
+        self.params['eff_dist_l'] = self.eff_dist_l = distance # megaparsec
+        self.params['inclination'] = self.inclination = float(inclination)
+
+    def _generate(self, rate=16384.0, half=False, l = 2, m = 2):
+        """
+        Generate this BBH Ringdown waveform.
+
+        Parameters
+        ----------
+        rate : float
+           The signal sampling rate. Defaults to 16384.0 Hz.
+        l : int
+           The azimuthal number of the mode to be generated.
+        m : int 
+           The polar number of the mode to be generated.    
+        half : bool 
+           Only compute the hp and hx once if this is true;
+           these are only required if you need to compute the cross
+           products. Defaults to False.
+
+        Returns 
+        ------- 
+           hp : 
+              The strain in the + polarisation 
+           hx : 
+              The strain in the x polarisation
+           hp0 : 
+              A copy of the strain in the + polarisation 
+           hx0 : 
+               A copy of the strain in the x polarisation 
+        """
+        dt = 1.0 / rate
+        hp, hx = lalsimulation.SimBlackHoleRingdown(self.params['geocent_start_time'],
+                                                    self.params["phase"],
+                                                    dt,
+                                                    self.params['mass']*lal.MSUN_SI,
+                                                    self.params['spin'],
+                                                    self.params['epsilon'],
+                                                    self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
+                                                    np.deg2rad(self.params['inclination']),
+                                                    l, m)
+        if not half:
+            hp0, hx0 = lalsimulation.SimBlackHoleRingdown(self.params['geocent_start_time'],
+                                                          self.params["phase"],
+                                                          dt,
+                                                          self.params['mass']*lal.MSUN_SI,
+                                                          self.params['spin'],
+                                                          self.params['epsilon'],
+                                                          self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
+                                                          np.deg2rad(self.params['inclination']),
+                                                          l, m)
+        else:
+            hp0, hx0 = hp, hx
+        
+        return hp, hx, hp0, hx0

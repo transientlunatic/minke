@@ -31,6 +31,9 @@ from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from glue.ligolw.utils import process
 import glue
 
+import glue.ligolw
+import gzip 
+
 import lal, lalframe
 from pylal import Fr
 
@@ -42,6 +45,54 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
+import random
+
+from minke import sources
+sourcemap = {}
+for classin in dir(sources):
+    classin = sources.__dict__[classin]
+    if hasattr(classin, "waveform"):
+        sourcemap[classin.waveform] = classin
+        
+def source_from_row(row):
+    waveform = row.waveform
+    sourceobj = sourcemap[row.waveform].__new__(sourcemap[row.waveform])
+    sourceobj.numrel_data = str("")
+    params = {}
+    for attr in dir(row):
+        if not attr[0] == "_" and not attr[:3] =="get":
+            #print attr
+            params[attr] = getattr(row, attr)
+            setattr(sourceobj, attr, getattr(row, attr))
+    sourceobj.params = params
+    try:
+        sourceobj.time = row.time_geocent_gps
+    except:
+        sourceobj.time = row.geocent_start_time
+        pass
+    return sourceobj
+
+table_types = {
+    # Ad-Hoc
+    "ga" : lsctables.SimBurstTable,
+    "sg" : lsctables.SimBurstTable,
+    "wnb" : lsctables.SimBurstTable,
+    # Supernova Families
+    "d08" : lsctables.SimBurstTable,
+    "s10" : lsctables.SimBurstTable,
+    "m12" : lsctables.SimBurstTable,
+    "o13" : lsctables.SimBurstTable,
+    # Long Duration
+    "adi" : lsctables.SimBurstTable,
+    # Ringdown
+    "rng" : lsctables.SimRingdownTable,
+    "gng" : lsctables.SimRingdownTable,
+    }
+
+tables = {
+    "burst" : lsctables.SimBurstTable,
+    "ringdown" : lsctables.SimRingdownTable
+    }
 
 def mkdir(path):
     """
@@ -60,6 +111,10 @@ def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
+
+class TableTypeError(Exception):
+    pass
+        
 class MDCSet():
 
     inj_families_names = {'ga' : 'Gaussian',
@@ -72,6 +127,9 @@ class MDCSet():
                           'o13' : 'Ott+13',
                           # Long-duration
                           'adi' : 'ADI',
+                          # Ringdown
+                          'rng' : "BBHRingdown",
+                          'gng' : "GenericRingdown",
                           }
 
     inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
@@ -85,7 +143,7 @@ class MDCSet():
 
     waveforms = []
 
-    def __init__(self, detectors, name='MDC Set'):
+    def __init__(self, detectors, name='MDC Set', table_type = "burst"):
         """
         Represents an MDC set, stored in an XML SimBurstTable file.
         
@@ -96,6 +154,10 @@ class MDCSet():
 
         name : str
             A name for the MDC Set. Defaults to 'MDC Set'.
+
+        table_type : str
+            The type of table which should be generated. Default is `burst`, 
+            which generates a SimBurstTable.
         """
         self.detectors = detectors
         
@@ -107,6 +169,8 @@ class MDCSet():
             
         self.times = np.array(self.times)
 
+        self.table_type = tables[table_type]
+
     def __add__(self, waveform):
         """
         Handle a waveform being added to the MDC set.
@@ -117,6 +181,11 @@ class MDCSet():
            The waveform which should be added to the MDC set.
 
         """
+
+        # Check that this type of waveform can go into this type of
+        # XML file.
+        if not table_types[self.inj_families_abb[waveform.waveform]] == self.table_type:
+            raise TableTypeError()
         
         self.waveforms.append(waveform)
         self.times = np.append(self.times, waveform.time)
@@ -133,7 +202,7 @@ class MDCSet():
         """
         xmldoc = ligolw.Document()
         lw = xmldoc.appendChild(ligolw.LIGO_LW())
-        sim = lsctables.New(lsctables.SimBurstTable)
+        sim = lsctables.New(self.table_type)
         lw.appendChild(sim)
         # This needs to be given the proper metadata once the package has the maturity to
         # write something sensible.
@@ -143,17 +212,22 @@ class MDCSet():
                 waveform_row = waveform._row(sim)
                 waveform_row.process_id = procrow.process_id
             except:
-
                 row = sim.RowType()
-
-                for a in lsctables.SimBurstTable.validcolumns.keys():
-                    setattr(row, a, getattr(waveform, a))
+                for a in self.table_type.validcolumns.keys():
+                    if a in waveform.params.keys():
+                        setattr(row, a, waveform.params[a])
+                    else:
+                        if not hasattr(waveform, a):
+                            setattr(row, a, 0)
+                        else:
+                            setattr(row, a, getattr(waveform, a))
 
                 row.waveform = waveform.waveform
-                # Fill in the time
-                row.set_time_geocent(GPS(float(waveform.time)))
-                # Get the sky locations
-                row.ra, row.dec, row.psi = waveform.ra, waveform.dec, waveform.psi
+                if self.table_type == lsctables.SimBurstTable:
+                    # Fill in the time
+                    row.set_time_geocent(GPS(float(waveform.time)))
+                    # Get the sky locations
+                    row.ra, row.dec, row.psi = waveform.ra, waveform.dec, waveform.psi
                 row.simulation_id = waveform.simulation_id
                 row.waveform_number = random.randint(0,int(2**32)-1)
                 ### !! This needs to be updated.
@@ -196,24 +270,32 @@ class MDCSet():
         file. This should be fixed so that the object works symmetrically.
         """
         i = 0
-        sim_burst_table = lalburst.SimBurstTableFromLIGOLw(filename, start, stop)
-        while True:
+        #sim_burst_table = lalburst.SimBurstTableFromLIGOLw(filename, start, stop)
+
+        xml = glue.ligolw.utils.load_filename(filename, 
+                                              contenthandler = glue.ligolw.ligolw.LIGOLWContentHandler,
+                                              verbose = True)
+        sim_burst_table = glue.ligolw.table.get_table(xml, self.table_type.tableName)
+        
+        for i,simrow in enumerate(sim_burst_table):
             # This is an ugly kludge to get around the poor choice of wavform name in the xmls, and
-            if sim_burst_table.waveform[:3]=="s15": 
+            if simrow.waveform[:3]=="s15": 
                 self.numrel_file = str(sim_burst_table.waveform)
                 sim_burst_table.waveform = "Dimmelmeier+08"
 
-            self.waveforms.append(sim_burst_table)
+            self.waveforms.append(source_from_row(simrow))
+            
             if full:
                 self._measure_hrss(i)
                 self._measure_egw_rsq(i)
-            
-            self.times = np.append(self.times, float(sim_burst_table.time_geocent_gps))
+
+            if self.table_type == "burst":
+                self.times = np.append(self.times, float(simrow.time_geocent_gps))
             #np.insert(self.times, len(self.times), sim_burst_table.time_geocent_gps)
-            if sim_burst_table.next is None: break
-            sim_burst_table = sim_burst_table.next
-            i += 1
-        del(sim_burst_table)
+            #if sim_burst_table.next is None: break
+            #sim_burst_table = sim_burst_table.next
+            #i += 1
+        #del(sim_burst_table)
             
     def _generate_burst(self,row,rate=16384.0):
         """
@@ -238,25 +320,9 @@ class MDCSet():
         hx0 : 
             A copy of the strain in the x polarisation
         """
-        # This is a temporary kludge to allow LALSimulation to
-        # be bypassed for pre-calculated waveforms.
-        # A more robust solution should be considered.
-        exceptions = ["Ott+13", "Mueller+12", "Scheidegger+10"]
         row = self.waveforms[row]
-        swig_row = lalburst.CreateSimBurst()
-        for a in lsctables.SimBurstTable.validcolumns.keys():
-            try:
-                setattr(swig_row, a, getattr( row, a ))
-            except AttributeError: continue # we didn't define it
-            except TypeError: 
-                print a, getattr(row,a)
-                continue # the structure is different than the TableRow
-        theta, phi = np.cos(swig_row.incl), swig_row.phi            
-        swig_row.numrel_data = row.numrel_data
-        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
+        hp, hx, hp0, hx0 = row._generate()
         return hp, hx, hp0, hx0
-        
     
     def _getDetector(self, det):
         """
@@ -334,7 +400,7 @@ class MDCSet():
         name = ''
         numberspart = ''
         if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13"):
-            print row
+            #print row
             numberspart = os.path.basename(row.numrel_data).split('.')[0]
 
         if row.waveform == "Gaussian":
@@ -379,7 +445,8 @@ class MDCSet():
         hphx : float
             The hrss of |HpHx| 
         """
-        hp, hx, hp0, hx0 = self._generate_burst(row)# self.hp, self.hx, self.hp0, self.hx0
+        row = self.waveforms[row]
+        hp, hx, hp0, hx0 = row._generate() #self._generate_burst(row)# self.hp, self.hx, self.hp0, self.hx0
 
         hp0.data.data *= 0
         hx0.data.data *= 0
