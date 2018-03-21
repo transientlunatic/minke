@@ -49,7 +49,8 @@ deploy:wheel:
   script:
     - pip install twine
     - twine upload dist/*
-  #only:
+  only:
+    - master@daniel-williams/minke
   #  - tags
   # except:
   #   - pushes
