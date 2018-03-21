@@ -113,7 +113,26 @@ class TestMDC(unittest.TestCase):
          3.15739881e-22,   6.68755767e-24,   6.21121403e-26])
 
         np.testing.assert_array_almost_equal(data[0].data.data[::5000], gadata)
+
+
+    def test_Ringdown_Waveform_generation_in_MDC(self):
+        """Check that waveforms inside an MDC are generated. """
+        rng = minke.sources.BBHRingdown(100.23, 1e-22, np.rad2deg(.1), 10., 0.97, 0.01, 1.0,45., 2, 2)
+        mdcset = mdctools.MDCSet(["L1"], table_type="ringdown")
+        mdcset + rng
         
+        data = mdcset._generate_burst(0)
+
+        testdata = np.array([ -4.14099902e-20,   4.05706892e-21,   9.44712664e-22,
+        -2.70287547e-22,   1.98245659e-24,   9.41028314e-24,
+        -1.31703741e-24,  -1.62366854e-25,   6.86331926e-26,
+        -3.27763986e-27,  -2.02216144e-27,   3.85067715e-28,
+         2.13773021e-29,  -1.66111808e-29,   1.43458903e-30,
+         4.04499843e-31,  -1.04902792e-31,  -5.84838741e-34,
+         3.83160548e-33,  -4.86443978e-34,  -7.27079363e-35,
+         2.70362403e-35])
+
+        np.testing.assert_array_almost_equal(data[0].data.data[::30], testdata)
 
 class TestMDCEdit(unittest.TestCase):
     def setUp(self):

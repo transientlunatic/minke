@@ -503,8 +503,17 @@ class Supernova(Waveform):
                 tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
                 tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
 
-                hp.data.data = np.append(hp.data.data(tail_hp))
-                hx.data.data = np.append(hp.data.data(tail_hx))
+                hp_data = np.append(hp.data.data,tail_hp.data)
+                hx_data = np.append(hp.data.data,tail_hx.data)
+
+                tail_hp = lal.CreateREAL8Vector(len(hp_data))
+                tail_hp.data = hp_data
+                tail_hx = lal.CreateREAL8Vector(len(hx_data))
+                tail_hx.data = hx_data
+
+                hp.data = tail_hp
+                hx.data = tail_hx
+
         
         return hp, hx, hp0, hx0 
     
@@ -1151,12 +1160,13 @@ class BBHRingdown(Ringdown):
     """
     #lalsimfunction = SimBlackHoleRingdown
 
-    def __init__(self, time, hrss,  phi0, mass, spin, massloss, distance, inclination, l, m, sky_dist=uniform_sky, deltaT = 1/16384.0):
+    def __init__(self, time, hrss, azimuth, mass, spin, massloss, distance, inclination, l, m, sky_dist=uniform_sky, deltaT = 1/16384.0):
         self._clear_params()
-        self.time = time
+        self.time = self.params['start_time_gmst'] =  time
         self.sky_dist = sky_dist
         self.params['simulation_id'] = self.simulation_id =  self.sim.get_next_id()
-        self.params['phi0'] = phi0
+        #self.params['phi0'] = phi0
+        self.params['azimuth'] = azimuth
         self.params['deltaT'] = deltaT
         self.params['mass'] = mass # in solar masses
         self.params['spin'] = spin
@@ -1167,7 +1177,7 @@ class BBHRingdown(Ringdown):
         self.params['l'] = self.l = l
         self.params['m'] = self.m = m
 
-    def _generate(self, rate=16384.0):
+    def _generate(self, rate=16384.0, half=False):
         """
         Generate this BBH Ringdown waveform.
 
@@ -1181,12 +1191,25 @@ class BBHRingdown(Ringdown):
         #&epoch, q, dt, M, a, e, r, i, l, m
         
         hp, hx = lalsimulation.SimBlackHoleRingdown(self.time,
-                                           np.deg2rad(self.azimuth),
-                                           dt,
-                                           self.mass*lal.MSUN_SI,
-                                           self.spin,
-                                           self.massloss,
-                                           self.eff_dist_l *  1e6 * lal.PC_SI,
-                                           np.deg2rad(self.inclination),
+                                           np.deg2rad(self.params["azimuth"]),
+                                           self.params['deltaT'],
+                                           self.params['mass']*lal.MSUN_SI,
+                                           self.params['spin'],
+                                           self.params['massloss'],
+                                           self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
+                                           np.deg2rad(self.params['inclination']),
                                            self.l, self.m)
-        return hp, hx
+        if not half:
+                    hp0, hx0 = lalsimulation.SimBlackHoleRingdown(self.time,
+                                           np.deg2rad(self.params["azimuth"]),
+                                           dt,
+                                           self.params['mass']*lal.MSUN_SI,
+                                           self.params['spin'],
+                                           self.params['massloss'],
+                                           self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
+                                           np.deg2rad(self.params['inclination']),
+                                           self.l, self.m)
+        else:
+            hp0, hx0 = hp, hx
+        
+        return hp, hx, hp0, hx0
