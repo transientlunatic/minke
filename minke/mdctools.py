@@ -47,6 +47,29 @@ import matplotlib.pyplot as plt
 import re
 import random
 
+from minke import sources
+sourcemap = {}
+for classin in dir(sources):
+    classin = sources.__dict__[classin]
+    if hasattr(classin, "waveform"):
+        sourcemap[classin.waveform] = classin
+        
+def source_from_row(row):
+    waveform = row.waveform
+    sourceobj = sourcemap[row.waveform].__new__(sourcemap[row.waveform])
+    sourceobj.numrel_data = str("")
+    params = {}
+    for attr in dir(row):
+        if not attr[0] == "_" and not attr[:3] =="get":
+            #print attr
+            params[attr] = getattr(row, attr)
+            setattr(sourceobj, attr, getattr(row, attr))
+    sourceobj.params = params
+    try:
+        sourceobj.time = row.time_geocent_gps
+    except:
+        pass
+    return sourceobj
 
 table_types = {
     # Ad-Hoc
@@ -256,7 +279,9 @@ class MDCSet():
                 self.numrel_file = str(sim_burst_table.waveform)
                 sim_burst_table.waveform = "Dimmelmeier+08"
 
-            self.waveforms.append(simrow)#_burst_table)
+            self.waveforms.append(source_from_row(simrow))
+            #self.waveforms.append(simrow)#_burst_table)
+            #self.waveforms.
             if full:
                 self._measure_hrss(i)
                 self._measure_egw_rsq(i)
@@ -292,26 +317,9 @@ class MDCSet():
         hx0 : 
             A copy of the strain in the x polarisation
         """
-        # This is a temporary kludge to allow LALSimulation to
-        # be bypassed for pre-calculated waveforms.
-        # A more robust solution should be considered.
-        exceptions = ["Ott+13", "Mueller+12", "Scheidegger+10", "ADI"]
         row = self.waveforms[row]
-        swig_row = lalburst.CreateSimBurst()
-        for a in lsctables.SimBurstTable.validcolumns.keys():
-            try:
-                setattr(swig_row, a, getattr( row, a ))
-            except AttributeError: continue # we didn't define it
-            except TypeError: 
-                #print a, getattr(row,a)
-                continue # the structure is different than the TableRow
-        theta, phi = np.cos(swig_row.incl), swig_row.phi
-        swig_row.numrel_data = str(row.numrel_data)
-        
-        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
-        hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate)
+        hp, hx, hp0, hx0 = row._generate()
         return hp, hx, hp0, hx0
-        
     
     def _getDetector(self, det):
         """
@@ -434,7 +442,8 @@ class MDCSet():
         hphx : float
             The hrss of |HpHx| 
         """
-        hp, hx, hp0, hx0 = self._generate_burst(row)# self.hp, self.hx, self.hp0, self.hx0
+        row = self.waveforms[row]
+        hp, hx, hp0, hx0 = row._generate() #self._generate_burst(row)# self.hp, self.hx, self.hp0, self.hx0
 
         hp0.data.data *= 0
         hx0.data.data *= 0

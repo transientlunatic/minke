@@ -36,15 +36,18 @@ except ImportError:
 
 import matplotlib.pyplot as plt
 
+
+
+
 class Waveform(object):
     """
     Generic container for different source types. 
     Currently, it checks for the waveform type and initializes itself appropriately. 
     In the future, different sources should subclass this and override the generation routines.
     """
-
-    sim = lsctables.New(lsctables.SimBurstTable)
+    
     table_type = lsctables.SimBurstTable
+    sim = lsctables.New(table_type)
     
     numrel_data = []
     waveform = "Generic"
@@ -52,7 +55,7 @@ class Waveform(object):
 
     def _clear_params(self):
         self.params = {}
-        for a in lsctables.SimBurstTable.validcolumns.keys():
+        for a in self.table_type.validcolumns.keys():
             self.params[a] = None
         
 
@@ -125,54 +128,41 @@ class Waveform(object):
               A copy of the strain in the + polarisation 
            hx0 : 
                A copy of the strain in the x polarisation 
-        """ 
-        row = self._row() 
-        swig_row = lalburst.CreateSimBurst() 
-        for a in lsctables.SimBurstTable.validcolumns.keys(): 
-            try:
-                setattr(swig_row, a, getattr( row, a )) 
-            except AttributeError: 
-                continue 
-            except TypeError: 
-                continue 
-            try:
-                swig_row.numrel_data = row.numrel_data 
-            except: pass
-        
-        hp, hx = lalburst.GenerateSimBurst(swig_row, 1.0/rate) 
-        # FIXME: Totally inefficent --- but can we deep copy a SWIG SimBurst?  
-        # DW: I tried that, and it doesn't seem to work :/
+        """
+        burstobj = self._burstobj()
+                
+        hp, hx = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
         if not half :
-            hp0, hx0 = lalburst.GenerateSimBurst(swig_row, 1.0/rate) 
+            hp0, hx0 = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
         else: 
             hp0, hx0 = hp, hx
         
-        # detrend supernova waveforms
-        if hasattr(self, "supernova"):
-            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = scipy.signal.detrend(hp.data.data), scipy.signal.detrend(hx.data.data), scipy.signal.detrend(hp0.data.data), scipy.signal.detrend(hx0.data.data)
-            # Rescale for a given distance 
-        if row.amplitude and hasattr(self, "supernova"): 
-            rescale = 1.0 / (self.file_distance / row.amplitude)
-            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = hp.data.data * rescale, hx.data.data * rescale, hp0.data.data * rescale, hx0.data.data * rescale
-
-            if hasattr(self, "has_memory"):
-                # Apply the tail correction for memory
-                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
-                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
-
-                hp_data = np.append(hp.data.data,tail_hp.data)
-                hx_data = np.append(hp.data.data,tail_hx.data)
-
-                tail_hp = lal.CreateREAL8Vector(len(hp_data))
-                tail_hp.data = hp_data
-                tail_hx = lal.CreateREAL8Vector(len(hx_data))
-                tail_hx.data = hx_data
-
-                hp.data = tail_hp
-                hx.data = tail_hx
-        
         return hp, hx, hp0, hx0 
 
+    def _burstobj(self):
+        """
+        Generate a SimBurst object for this waveform.
+        """
+        swig_row = self._row()
+        burstobj = lalburst.CreateSimBurst()
+        
+        for a in self.table_type.validcolumns.keys():
+            try:
+                setattr(burstobj, a, getattr(swig_row,a))
+            except AttributeError:
+                continue
+            except TypeError: 
+                continue
+
+        burstobj.waveform = str(self.waveform)
+            
+        if swig_row.numrel_data:
+            burstobj.numrel_data = str(swig_row.numrel_data)
+        else:
+            burstobj.numrel_data = str("")
+
+        return burstobj
+    
     def _generate_for_detector(self, ifos, sample_rate = 16384.0, nsamp = 2000):
         data = []
         # Loop through each interferometer
@@ -209,11 +199,17 @@ class Waveform(object):
         for a in self.table_type.validcolumns.keys():
             setattr(row, a, self.params[a])
 
+        if self.numrel_data:
+            row.numrel_data = str(self.numrel_data)
+        else:
+            row.numrel_data = ""
+            
         row.waveform = self.waveform
         # Fill in the time
         row.set_time_geocent(GPS(float(self.time)))
         # Get the sky locations
-        row.ra, row.dec, row.psi = self.sky_dist()
+        if not row.ra:
+            row.ra, row.dec, row.psi = self.sky_dist()
         row.simulation_id = sim.get_next_id()
         row.waveform_number = random.randint(0,int(2**32)-1)
         ### !! This needs to be updated.
@@ -459,6 +455,59 @@ class Supernova(Waveform):
 
         return Hlm
 
+    def _generate(self, rate=16384.0, half=False, distance=None): 
+        """
+        Generate the burst described in a given row, so that it can be
+        measured.
+        
+        Parameters 
+        ---------- 
+        rate : float 
+           The sampling rate of the signal, in Hz. 
+           Defaults to 16384.0Hz
+            
+        half : bool 
+           Only compute the hp and hx once if this is true;
+           these are only required if you need to compute the cross
+           products. Defaults to False.
+
+        Returns 
+        ------- 
+           hp : 
+              The strain in the + polarisation 
+           hx : 
+              The strain in the x polarisation
+           hp0 : 
+              A copy of the strain in the + polarisation 
+           hx0 : 
+               A copy of the strain in the x polarisation 
+        """
+        burstobj = self._burstobj()
+                
+        hp, hx = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
+        if not half :
+            hp0, hx0 = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
+        else: 
+            hp0, hx0 = hp, hx
+        
+        # detrend supernova waveforms
+        if hasattr(self, "supernova"):
+            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = scipy.signal.detrend(hp.data.data), scipy.signal.detrend(hx.data.data), scipy.signal.detrend(hp0.data.data), scipy.signal.detrend(hx0.data.data)
+            # Rescale for a given distance 
+        if burstobj.amplitude: 
+            rescale = 1.0 / (self.file_distance / burstobj.amplitude)
+            hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = hp.data.data * rescale, hx.data.data * rescale, hp0.data.data * rescale, hx0.data.data * rescale
+
+            if hasattr(self, "has_memory"):
+                # Apply the tail correction for memory
+                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
+                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
+
+                hp.data.data = np.append(hp.data.data(tail_hp))
+                hx.data.data = np.append(hp.data.data(tail_hx))
+        
+        return hp, hx, hp0, hx0 
+    
     def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23):
         """Generate a "low frequency tail" to append to the end of the
         waveform to overcome problems related to memory in the
