@@ -25,8 +25,7 @@ class TestMinke(unittest.TestCase):
     # Check that failure occurs if the wrong waveforms are inserted into the wrong tables
 
     def test_insert_wrong_waveform_to_table(self):
-        """Test whether adding a ringdown waveform to a SimBurstTable throws an error.
-        """
+        """Test whether adding a ringdown waveform to a SimBurstTable throws an error."""
         mdcset = mdctools.MDCSet(["L1"], table_type = "burst")
         ring = sources.Ringdown()
 
@@ -34,8 +33,7 @@ class TestMinke(unittest.TestCase):
             mdcset + ring
 
     def test_insert_burst_waveform_to_burst_table(self):
-        """Test whether inserting the correct type of waveform into a table works
-        """
+        """Test whether inserting the correct type of waveform into a table works."""
         mdcset = mdctools.MDCSet(["L1"], table_type = "burst")
         waveform = sources.Gaussian(0,0,0)
 
@@ -46,8 +44,7 @@ class TestMinke(unittest.TestCase):
     # Check that the correct XML files are produced for different table types
 
     def test_write_simbursttable(self):
-        """Test writing out a simburst table xml file
-        """
+        """Test writing out a simburst table xml file."""
         mdcset = mdctools.MDCSet(["L1"], table_type = "burst")
         waveform = sources.Gaussian(0.1,1e-23,1000)
 
@@ -56,17 +53,14 @@ class TestMinke(unittest.TestCase):
         mdcset.save_xml("test_simbursttable.xml.gz")
 
     def test_verify_simbursttable(self):
-        """
-        Read-in the xml simburst table.
-        """
+        """Read-in the xml simburst table."""
         mdcset = mdctools.MDCSet(["L1"])
         mdcset.load_xml("test_simbursttable.xml.gz", full = False)
 
         self.assertEqual(len(mdcset.waveforms), 1)
 
     def test_write_simringdowntable(self):
-        """
-        Write out a simburst table xml file
+        """Write out a simringdown table xml file
         """
         mdcset = mdctools.MDCSet(["L1"], table_type = "ringdown")
         waveform = sources.BBHRingdown(1000, 1e-22, 0 ,0.1, 10, 0.1, 0.01, 10, 0, 2, 2,)
@@ -76,9 +70,7 @@ class TestMinke(unittest.TestCase):
         mdcset.save_xml("test_simringdowntable.xml.gz")
 
     def test_verify_simringdowntable(self):
-        """
-        Read-in the xml simburst table.
-        """
+        """Read-in the xml simringdown table. """
         mdcset = mdctools.MDCSet(["L1"], table_type = "ringdown",)
         mdcset.load_xml("test_simringdowntable.xml.gz", full = False)
 
@@ -88,9 +80,7 @@ class TestMinke(unittest.TestCase):
 class TestMDC(unittest.TestCase):
 
     def test_Gaussian_Waveform_generation_in_MDC(self):
-        """
-        Check that waveforms inside an MDC are generated.
-        """
+        """Check that waveforms inside an MDC are generated. """
         ga = sources.Gaussian(1,1,1)
 
         mdcset = mdctools.MDCSet(["L1"])
@@ -124,6 +114,40 @@ class TestMDC(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(data[0].data.data[::5000], gadata)
         
+
+class TestMDCEdit(unittest.TestCase):
+    def setUp(self):
+        ga = sources.Gaussian(1,1,1)
+
+        mdcset = mdctools.MDCSet(["L1"])
+        mdcset + ga
+
+        mdcset.save_xml("testout/gaussian_edit_test.xml")
+
+    def testXMLLoad(self):
+        """Check that XMLs defining an MDC can be loaded."""
+        mdcset = mdctools.MDCSet(["L1"])
+        mdcset.load_xml("testout/gaussian_edit_test.xml")
+
+        self.assertEqual(len(mdcset.waveforms), 1)
+
+        self.assertEqual(type(mdcset.waveforms[0]), minke.sources.Gaussian)
+        
+    def testXMLAddition(self):
+        """Check that rows can be added to an XML."""
+        mdcset = mdctools.MDCSet(["L1"])
+        mdcset.load_xml("testout/gaussian_edit_test.xml")
+        ga = sources.Gaussian(2,2,2)
+        mdcset + ga
+        self.assertEqual(len(mdcset.waveforms), 2)
+
+    def testXMLRowEdit(self):
+        """Check that you can edit the contents of an XML row."""
+        mdcset = mdctools.MDCSet(["L1"])
+        mdcset.load_xml("testout/gaussian_edit_test.xml")
+        mdcset.waveforms[0].amplitude = 3
+
+        self.assertEqual(mdcset.waveforms[0].amplitude, 3)
         
 if __name__ == '__main__':
     import sys
