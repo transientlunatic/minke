@@ -35,9 +35,11 @@ Features
 --------
 
 * Produces burst MDCs with Gaussian, SineGaussian, and White Noise Burst ad-hoc waveforms
+* Produces ringdown waveforms for MDCs
 * Produces numerical relativity burst MDCs for supernovae
 * Produces numerical relativity burst MDCs for long duration searches
 * Produces GWF frame files for MDCs
 * Produces GravEn-format log files for MDCs
 * Produces hardware-injection ready data files
 * Produces SimBurstTable XML files for MDCs
+

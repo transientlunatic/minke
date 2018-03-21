@@ -1021,7 +1021,7 @@ class Ringdown(Waveform):
     A class to handle Rindown waveforms.
     """
     table_type = lsctables.SimRingdownTable
-    waveform = "Ringdown"
+    waveform = "GenericRingdown"
 
         
 
@@ -1159,56 +1159,87 @@ class BBHRingdown(Ringdown):
     A class to represent BBH ringdowns.
     """
     #lalsimfunction = SimBlackHoleRingdown
+    waveform = "BBHRingdown"
+    def __init__(self, time, phi0, mass, spin, massloss, distance, inclination, sky_dist=uniform_sky):
+        """
+        Binary Black Hole (BBH) Ringdown waveform
 
-    def __init__(self, time, hrss, azimuth, mass, spin, massloss, distance, inclination, l, m, sky_dist=uniform_sky, deltaT = 1/16384.0):
+        Parameters
+        ----------
+        time : float
+           The time that the waveform should be generated at, in gps seconds.
+        phi0 : float
+           The starting phase.
+        mass : float
+           The mass of the final black hole in solar masses.
+        spin : float
+           The dimensionless spin parameter for the final black hole.
+        massloss : float
+           The total mass loss of the system. (Also denoted epsilon).
+        distance : float
+           The effective luminosity distance at which the signal should be generated.
+        inlination : float
+            The inclination of the system in degrees.
+        """
         self._clear_params()
-        self.time = self.params['start_time_gmst'] =  time
+        self.time = self.geocent_start_time = self.params['geocent_start_time'] =  time
         self.sky_dist = sky_dist
         self.params['simulation_id'] = self.simulation_id =  self.sim.get_next_id()
-        #self.params['phi0'] = phi0
-        self.params['azimuth'] = azimuth
-        self.params['deltaT'] = deltaT
+        self.params['phase'] = phi0
         self.params['mass'] = mass # in solar masses
         self.params['spin'] = spin
-        self.params['massloss'] = massloss
+        self.params['epsilon'] = massloss
         self.params['eff_dist_l'] = self.eff_dist_l = distance # megaparsec
-        self.params['hrss'] = self.hrss = hrss
-        self.params['inclination'] = self.inclination = inclination
-        self.params['l'] = self.l = l
-        self.params['m'] = self.m = m
+        self.params['inclination'] = self.inclination = float(inclination)
 
-    def _generate(self, rate=16384.0, half=False):
+    def _generate(self, rate=16384.0, half=False, l = 2, m = 2):
         """
         Generate this BBH Ringdown waveform.
 
         Parameters
         ----------
         rate : float
-           The signal sampling rate. Defaults to 16384.0 Hz
+           The signal sampling rate. Defaults to 16384.0 Hz.
+        l : int
+           The azimuthal number of the mode to be generated.
+        m : int 
+           The polar number of the mode to be generated.    
+        half : bool 
+           Only compute the hp and hx once if this is true;
+           these are only required if you need to compute the cross
+           products. Defaults to False.
+
+        Returns 
+        ------- 
+           hp : 
+              The strain in the + polarisation 
+           hx : 
+              The strain in the x polarisation
+           hp0 : 
+              A copy of the strain in the + polarisation 
+           hx0 : 
+               A copy of the strain in the x polarisation 
         """
         dt = 1.0 / rate
-
-        #&epoch, q, dt, M, a, e, r, i, l, m
-        
-        hp, hx = lalsimulation.SimBlackHoleRingdown(self.time,
-                                           np.deg2rad(self.params["azimuth"]),
-                                           self.params['deltaT'],
-                                           self.params['mass']*lal.MSUN_SI,
-                                           self.params['spin'],
-                                           self.params['massloss'],
-                                           self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
-                                           np.deg2rad(self.params['inclination']),
-                                           self.l, self.m)
+        hp, hx = lalsimulation.SimBlackHoleRingdown(self.params['geocent_start_time'],
+                                                    self.params["phase"],
+                                                    dt,
+                                                    self.params['mass']*lal.MSUN_SI,
+                                                    self.params['spin'],
+                                                    self.params['epsilon'],
+                                                    self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
+                                                    np.deg2rad(self.params['inclination']),
+                                                    l, m)
         if not half:
-                    hp0, hx0 = lalsimulation.SimBlackHoleRingdown(self.time,
-                                           np.deg2rad(self.params["azimuth"]),
-                                           dt,
-                                           self.params['mass']*lal.MSUN_SI,
-                                           self.params['spin'],
-                                           self.params['massloss'],
-                                           self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
-                                           np.deg2rad(self.params['inclination']),
-                                           self.l, self.m)
+            hp0, hx0 = lalsimulation.SimBlackHoleRingdown(self.params['geocent_start_time'],
+                                                          self.params["phase"],
+                                                          dt,
+                                                          self.params['mass']*lal.MSUN_SI,
+                                                          self.params['spin'],
+                                                          self.params['epsilon'],
+                                                          self.params['eff_dist_l'] *  1e6 * lal.PC_SI,
+                                                          np.deg2rad(self.params['inclination']),
+                                                          l, m)
         else:
             hp0, hx0 = hp, hx
         

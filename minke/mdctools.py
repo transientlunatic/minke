@@ -68,6 +68,7 @@ def source_from_row(row):
     try:
         sourceobj.time = row.time_geocent_gps
     except:
+        sourceobj.time = row.geocent_start_time
         pass
     return sourceobj
 
@@ -128,7 +129,7 @@ class MDCSet():
                           'adi' : 'ADI',
                           # Ringdown
                           'rng' : "BBHRingdown",
-                          'gng' : "Ringdown",
+                          'gng' : "GenericRingdown",
                           }
 
     inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
@@ -213,10 +214,13 @@ class MDCSet():
             except:
                 row = sim.RowType()
                 for a in self.table_type.validcolumns.keys():
-                    if not hasattr(waveform, a):
-                        setattr(row, a, 0)
+                    if a in waveform.params.keys():
+                        setattr(row, a, waveform.params[a])
                     else:
-                        setattr(row, a, getattr(waveform, a))
+                        if not hasattr(waveform, a):
+                            setattr(row, a, 0)
+                        else:
+                            setattr(row, a, getattr(waveform, a))
 
                 row.waveform = waveform.waveform
                 if self.table_type == lsctables.SimBurstTable:
@@ -280,8 +284,7 @@ class MDCSet():
                 sim_burst_table.waveform = "Dimmelmeier+08"
 
             self.waveforms.append(source_from_row(simrow))
-            #self.waveforms.append(simrow)#_burst_table)
-            #self.waveforms.
+            
             if full:
                 self._measure_hrss(i)
                 self._measure_egw_rsq(i)
