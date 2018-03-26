@@ -4,29 +4,26 @@ Minke: The Burst MDC Factory
 
 .. image:: https://zenodo.org/badge/53331163.svg
    :target: https://zenodo.org/badge/latestdoi/53331163
+..
 
-.. image:: https://img.shields.io/pypi/v/minke.svg
-        :target: https://pypi.python.org/pypi/minke
-
-.. image:: https://img.shields.io/travis/transientlunatic/minke.svg
-        :target: https://travis-ci.org/transientlunatic/minke
+   .. image:: https://img.shields.io/pypi/v/minke.svg
+	   :target: https://pypi.python.org/pypi/minke
 
 .. image:: https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg
 	   :target: https://singularity-hub.org/collections/504
 	   :alt: Singularity image 
-..
-   .. image:: https://readthedocs.org/projects/minke/badge/?version=latest
-	   :target: https://readthedocs.org/projects/minke/?badge=latest
-	   :alt: Documentation Status
 
-		 
-..
-   .. image:: https://coveralls.io/repos/github/transientlunatic/minke/badge.svg?branch=master
-	      :target: https://coveralls.io/github/transientlunatic/minke?branch=master
-	      :alt: Coverage status
-	      
+.. image:: https://git.ligo.org/daniel-williams/minke/badges/master/pipeline.svg
+	   :target: https://git.ligo.org/daniel-williams/minke/commits/master
+	   :alt: Pipeline Status
+		
 .. image:: https://code.daniel-williams.co.uk/minke/_images/minke.png
 	   :alt: Project Minke Logo
+		 
+.. image:: https://git.ligo.org/daniel-williams/minke/badges/master/coverage.svg
+	   :target: https://git.ligo.org/daniel-williams/minke/commits/master"
+	   :alt: Coverage report
+	 
 
 		 
 Minke is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.
