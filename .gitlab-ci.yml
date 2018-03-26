@@ -57,7 +57,7 @@ deploy:wheel:
     - twine upload dist/*
   only:
     - master@daniel-williams/minke
-  #  - tags
+    - tags
   # except:
   #   - pushes
   #   - web
