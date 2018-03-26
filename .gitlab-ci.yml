@@ -15,8 +15,7 @@ test:
     - python setup.py install
     - coverage run setup.py test
     - coverage report -m 
-  coverage:
-    - '/TOTAL.+ ([0-9]{1,3}%)/'
+  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
   artifacts:
     expire_in: 3h
     paths:
