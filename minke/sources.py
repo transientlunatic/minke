@@ -226,6 +226,35 @@ class Waveform(object):
         interpolator = interp.interp1d(x_old, y_old, method)
         return interpolator(x_new)
 
+class StringCusp(Waveform):
+    """
+    A class to represent a StringCusp injection.
+    """
+    waveform = "StringCusp"
+    
+    def __init__(self, amplitude, f_max, time, sky_dist=uniform_sky,):
+        """A class to represent a SineGaussian ad-hoc waveform.
+
+        Parameters
+        ----------
+        amplitude : float
+           The amplitude of the injection.
+
+        f_max : float
+           The maximum frequency of the injection.
+
+        time : float
+           The central time of the injection.
+
+        sky_dist : func
+           The function describing the sky distribution which the injections
+           should be made over. Defaults to a uniform sky.
+        """
+        self._clear_params()
+        self.sky_dist = sky_dist
+        self.params['amplitude'] = amplitude
+        self.params['frequency'] = f_max
+        self.time = time
 
 
 class SineGaussian(Waveform):
