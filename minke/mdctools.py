@@ -83,6 +83,7 @@ table_types = {
     "s10" : lsctables.SimBurstTable,
     "m12" : lsctables.SimBurstTable,
     "o13" : lsctables.SimBurstTable,
+    "y10" : lsctables.SimBurstTable,
     # Long Duration
     "adi" : lsctables.SimBurstTable,
     # Ringdown
@@ -127,6 +128,7 @@ class MDCSet():
                           's10' : 'Scheidegger+10',
                           'm12' : 'Mueller+12',
                           'o13' : 'Ott+13',
+                          'y10' : "Yakunin+10",
                           # Long-duration
                           'adi' : 'ADI',
                           # Ringdown
@@ -402,7 +404,7 @@ class MDCSet():
         row = self.waveforms[row]
         name = ''
         numberspart = ''
-        if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13"):
+        if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13", "Yakunin+10"):
             #print row
             numberspart = os.path.basename(row.numrel_data).split('.')[0]
 
