@@ -219,11 +219,11 @@ class Waveform(object):
 
         return row
     
-    def interpolate(self, x_old, y_old, x_new):
+    def interpolate(self, x_old, y_old, x_new, method="linear"):
         """
         Convenience funtion to avoid repeated code
         """
-        interpolator = interp.interp1d(x_old, y_old)
+        interpolator = interp.interp1d(x_old, y_old, method)
         return interpolator(x_new)
 
 
@@ -1126,11 +1126,23 @@ class ADI(LongDuration):
         self.sky_dist = sky_dist
         if not decomposed_path : decomposed_path = filepath+".dec"
         if not os.path.isfile(decomposed_path) :
-            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
+            decomposed = self.decompose(filepath)
             np.savetxt(decomposed_path, decomposed, header="time\thplus\thcross", fmt='%.8e')
+        #decomposed_path = filepath
         self.params['phi']=0
         self.params['incl']=90
         self.params['numrel_data'] = decomposed_path
+
+    def _generate(self, rate = 16384.0, half=False):
+        data = np.genfromtxt(self.params['numrel_data'])
+        nsamp = len(data)
+        hp = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/rate, lal.StrainUnit, nsamp)
+        hx = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/rate, lal.StrainUnit, nsamp)
+
+        hp.data.data = data[:,1]
+        hx.data.data = data[:,2]
+
+        return hp, hx, np.copy(hp), np.copy(hx)
         
     def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
         """
@@ -1177,12 +1189,14 @@ class ADI(LongDuration):
         end = len(data['hp']) * 1.0 / fs
         # Make the time array
         times = np.arange(start, end, 1.0/fs)
-
-        # Load the hp components   
-        strainp = data['hp']
-        strainc = data['hc']
         # Make the new time vector for the requried sample rate
         target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
+
+        #print len(target_times)
+        # Load the hp components   
+        strainp = data['hp'].T[0].astype(np.float32)
+        strainc = data['hc'].T[0].astype(np.float32)
+        #del data
 
         # Prepare the output matrix
         output = np.zeros((len(target_times), 3))
