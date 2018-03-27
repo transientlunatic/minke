@@ -970,7 +970,6 @@ class Dimmelmeier08(Supernova):
         return output
 
 
-
 class Ringdown(Waveform):
     """
     A class to handle Rindown waveforms.
@@ -1071,9 +1070,9 @@ class Yakunin10(Supernova):
         #
         output[:,5] = strain_new #/*  ( extract_dist * lal.PC_SI * 1.0e6) 
 
+        return output
 
-
-
+    
 class LongDuration(Supernova):
     """
 
