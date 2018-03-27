@@ -77,6 +77,7 @@ table_types = {
     "ga" : lsctables.SimBurstTable,
     "sg" : lsctables.SimBurstTable,
     "wnb" : lsctables.SimBurstTable,
+    "sc" : lsctables.SimBurstTable,
     # Supernova Families
     "d08" : lsctables.SimBurstTable,
     "s10" : lsctables.SimBurstTable,
@@ -120,6 +121,7 @@ class MDCSet():
     inj_families_names = {'ga' : 'Gaussian',
                           'sg' : 'SineGaussian',
                           'wnb': 'BTLWNB',
+                          "sc" : "StringCusp",
                           # Supernova families
                           'd08' : 'Dimmelmeier+08',
                           's10' : 'Scheidegger+10',
@@ -135,6 +137,7 @@ class MDCSet():
     inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
 
     hist_parameters = {
+        "StringCusp": ["amplitude", "ra", "dec"],
         "SineGaussian": ["hrss", "psi", "ra", "dec"],
         "Gaussian": ["hrss", "psi", "ra", "dec"],
         "BTLWNB": ["hrss", "ra", "dec"],

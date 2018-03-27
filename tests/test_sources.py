@@ -129,6 +129,27 @@ class TestMinkeAdHocSources(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(data[0].data.data[::5000], sgdata)
 
+    def test_SC_Waveform_generation(self):
+        """
+        Regression test for StringCusp waveforms
+        """
+        
+        sc = sources.StringCusp(1e-23, 150, 100)
+        data = sc._generate()
+
+        scdata = np.array([  5.70001763e-63,   5.92586457e-32,   2.59625621e-31,
+         1.29668495e-30,   4.86418685e-30,   1.25517562e-29,
+         1.95684680e-29,  -2.79296626e-29,  -3.97865144e-28,
+        -1.98228555e-27,  -5.83672705e-27,  -1.84365082e-27,
+         7.98894273e-26,   2.10292180e-25,  -2.26513533e-24,
+        -1.58525748e-24,  -2.79263187e-25,   1.76952837e-25,
+         2.03163416e-26,  -6.90900890e-27,  -3.64716334e-27,
+        -9.34585595e-28,  -1.33656482e-28,   1.26838192e-29,
+         1.67225169e-29,   7.30560692e-30,   2.67365656e-30,
+         8.41779831e-31,   1.43679337e-31,   6.07001624e-33])
+
+        np.testing.assert_array_almost_equal(data[0].data.data[::5000], scdata)
+        
 class TestMinkeADISources(unittest.TestCase):
     def setUp(self):
         """
