@@ -203,7 +203,7 @@ class Waveform(object):
         if self.numrel_data:
             row.numrel_data = str(self.numrel_data)
         else:
-            row.numrel_data = ""
+            row.numrel_data = self.params['numrel_data']
             
         row.waveform = self.waveform
         # Fill in the time
@@ -428,7 +428,7 @@ class Supernova(Waveform):
     waveform = "Supernova" # We shouldn't ever use this anyway
     supernova = True
     file_distance = 10e-3
-    
+    has_memory = False
 
     def construct_Hlm(self, Ixx, Ixy, Ixz, Iyy, Iyz, Izz, l=2, m=2):
         """
@@ -456,7 +456,7 @@ class Supernova(Waveform):
 
         return Hlm
 
-    def _generate(self, rate=16384.0, half=False, distance=None): 
+    def _generate(self, rate=16384.0, half=False, distance=None, tail = True): 
         """
         Generate the burst described in a given row, so that it can be
         measured.
@@ -499,13 +499,13 @@ class Supernova(Waveform):
             rescale = 1.0 / (self.file_distance / burstobj.amplitude)
             hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = hp.data.data * rescale, hx.data.data * rescale, hp0.data.data * rescale, hx0.data.data * rescale
 
-            if hasattr(self, "has_memory"):
+            if self.has_memory and tail:
                 # Apply the tail correction for memory
                 tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
                 tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
 
                 hp_data = np.append(hp.data.data,tail_hp.data)
-                hx_data = np.append(hp.data.data,tail_hx.data)
+                hx_data = np.append(hx.data.data,tail_hx.data)
 
                 tail_hp = lal.CreateREAL8Vector(len(hp_data))
                 tail_hp.data = hp_data
@@ -710,7 +710,7 @@ class Mueller2012(Supernova):
     waveform = "Mueller+12"
     has_memory = True
     
-    def __init__(self, theta, phi, time, sky_dist=uniform_sky, filepath=None, family="L15-3", decomposed_path=None):
+    def __init__(self, theta, phi, time, distance = 10e-3, sky_dist=uniform_sky, filepath=None, family="L15-3", decomposed_path=None):
         """
 
         Parameters
@@ -754,6 +754,8 @@ class Mueller2012(Supernova):
         
         #self.numrel_data = filepath + "/" + family
         self.params['numrel_data'] = decomposed_path #self.numrel_data
+        self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
+        self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
 
     def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
         """
@@ -818,27 +820,27 @@ class Mueller2012(Supernova):
 
 
 
-    def _generate(self):
-        """
+    # def _generate(self):
+    #     """
 
-        Generate the Mueller waveforms. This must be performed
-        differently to other waveform morphologies, since we require
-        the use of pre-generated text files.
+    #     Generate the Mueller waveforms. This must be performed
+    #     differently to other waveform morphologies, since we require
+    #     the use of pre-generated text files.
 
-        The filepath and the start of the filenames should be provided in
-        the numrel_data column of the SimBurstTable, so we need to contruct
-        the rest of the filename from the theta and phi angles, and then load 
-        that file.
+    #     The filepath and the start of the filenames should be provided in
+    #     the numrel_data column of the SimBurstTable, so we need to contruct
+    #     the rest of the filename from the theta and phi angles, and then load 
+    #     that file.
 
-        """
-        theta, phi = self.params['incl'], self.params['phi']
-        numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-        numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
+    #     """
+    #     theta, phi = self.params['incl'], self.params['phi']
+    #     numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
+    #     numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
 
-        data_hp = np.loadtxt(numrel_file_hp)
-        data_hx = np.loadtxt(numrel_file_hx)
+    #     data_hp = np.loadtxt(numrel_file_hp)
+    #     data_hx = np.loadtxt(numrel_file_hx)
 
-        return data_hp, data_hx, data_hp, data_hx
+    #     return data_hp, data_hx, data_hp, data_hx
 
 class Scheidegger2010(Supernova):
     """
@@ -847,7 +849,7 @@ class Scheidegger2010(Supernova):
 
     waveform = "Scheidegger+10"
 
-    def __init__(self, theta, phi, time, sky_dist=uniform_sky, filepath=None, family="R1E1CA_L", decomposed_path=None):
+    def __init__(self, theta, phi, time, distance = 10e-3, sky_dist=uniform_sky, filepath=None, family="R1E1CA_L", decomposed_path=None):
         """
 
         Parameters
@@ -893,36 +895,8 @@ class Scheidegger2010(Supernova):
         
         #self.numrel_data = filepath + "/" + family
         self.params['numrel_data'] = decomposed_path #self.numrel_data
-
-
-
-    # def _generate(self):
-    #     """
-
-    #     Generate the Scheidegger waveforms. This must be performed
-    #     differently to other waveform morphologies, since we require
-    #     the use of pre-generated text files.
-
-    #     The filepath and the start of the filenames should be provided in
-    #     the numrel_data column of the SimBurstTable, so we need to contruct
-    #     the rest of the filename from the theta and phi angles, and then load 
-    #     that file.
-        
-    #     The file will then need to be resampled and used to form the 
-    #     injected waveform's h+ and hx values.
-
-    #     """
-    #     theta, phi = self.params['incl'], self.params['phi']
-    #     numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-    #     numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
-
-    #     data_hp = np.loadtxt(numrel_file_hp)
-    #     data_hx = np.loadtxt(numrel_file_hx)
-
-    #     return data_hp, data_hx, data_hp, data_hx
-
-        
-    
+        self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
+        self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
         
 class Dimmelmeier08(Supernova):
     """
@@ -931,7 +905,7 @@ class Dimmelmeier08(Supernova):
 
     waveform = "Dimmelmeier+08"
 
-    def __init__(self, time, sky_dist=uniform_sky, filepath="signal_s15a2o05_ls.dat", decomposed_path=None, ):
+    def __init__(self, time, distance = 10e-3, sky_dist=uniform_sky, filepath="signal_s15a2o05_ls.dat", decomposed_path=None, ):
         """
 
         Parameters
@@ -963,7 +937,9 @@ class Dimmelmeier08(Supernova):
             np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
         self.params['phi']=0
         self.params['incl']=90
-        self.params['numrel_data'] = decomposed_path
+        self.params['numrel_data'] = decomposed_path#
+        self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
+        self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
         
     def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
         """
