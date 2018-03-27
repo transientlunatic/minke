@@ -560,7 +560,6 @@ class Supernova(Waveform):
         
         
     def interpolate(self, x_old, y_old, x_new):
-
         """
         Convenience funtion to avoid repeated code
         """
