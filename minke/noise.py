@@ -9,12 +9,15 @@ class PSD():
 
     """
 
-    def __init__(self, filename, fmin = 20, fmax = 3000, df = 0.1):
+    def __init__(self, filename, fmin = 20, fmax = 3000, rate = 16384.0):
         """
         Load in the PSD file, assuming that it is in units of Hertz and strain.
         """
 
+        df = 1.0 / rate
         N = int((fmax - fmin) / df)
+        self.df = df
+        
         self.psd = lal.CreateREAL8FrequencySeries('psd', 
                                                   lal.LIGOTimeGPS(0,0),
                                                   fmin,
@@ -71,3 +74,22 @@ class PSD():
         f = plt.semilogy(frequencies, self.psd.data.data)
 
         return f
+
+class NoiseTimeseries(object):
+    """
+    Create timeseries of noise coloured by a PSD.
+    """
+    def __init__(self, psd, length, epoch, rate = 16384.0):
+        """
+        Create a noisy timeseries.
+        
+        Parameters
+        ----------
+        psd : `minke.noise.PSD`
+           The power spectral density of the noise.
+        """
+        self.psd = psd
+        randomness = lal.gsl_rng("ranlux", seed)
+        seg = lal.CreateREAL8TimeSeries("STRAIN", epoch, 0.0, 1.0/rate, lal.StrainUnit, length)
+
+        #lal.simNoise
