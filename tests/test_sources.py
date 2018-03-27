@@ -136,7 +136,8 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         """
 
         self.datafiles = {}
-        self.datafiles['Ott13'] = 'tests/data/ott_test.dat' #download_nr(ott_data_url)
+        self.datafiles['Ott13'] = 'tests/data/ott_test.dat'
+        self.datafiles['Yakunin10'] = "tests/data/yakunin_test.dat"
 
         mdctools.mkdir("./testout/frames")
 
@@ -144,6 +145,45 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         self.times = distribution.even_time(start = 1126620016, stop = 1136995216, rate = 630720, jitter = 20)
         self.angles = distribution.supernova_angle(len(self.times))
 
+    #### TEST YAKUNIN
+    def test_YakuninWaveform(self):
+        """Test generation of a Yakunin waveform."""
+
+        reg = np.array([
+            -8.15750499e-23,  -5.99101709e-23,  -8.85420897e-23,
+            -7.56873580e-23,  -4.13010667e-23,  -2.76929632e-23,
+            -6.17073634e-23,  -7.84874142e-23,   1.27751700e-23,
+            2.29718421e-23,   4.42735947e-23,   5.19635266e-23,
+            4.74454890e-23,   4.91091850e-23,   4.82164382e-23,
+            4.64586078e-23,   4.59085183e-23,   4.48057968e-23,
+            4.30575525e-23,   4.15572222e-23,   4.61748203e-23,
+            4.09097191e-23,   4.09360107e-23,   3.93016465e-23,
+            3.57392283e-23,   3.03996763e-23,   2.34990480e-23,
+            1.53106213e-23,   6.15487802e-24,  -3.61224433e-24,
+            -1.36123962e-23,  -2.34586878e-23,  -3.27698685e-23,
+            -4.11843030e-23,  -4.83732254e-23,  -5.40527874e-23,
+            -5.79944705e-23,  -6.00334561e-23
+        ])
+        
+        sn = sources.Yakunin10(time=1000, 
+                               filepath = self.datafiles['Yakunin10'],
+        )
+        np.testing.assert_array_almost_equal(sn._generate()[0].data.data[::1000], reg)
+        
+    def test_YakuninWaveform_distance(self):
+        sn_10 = sources.Yakunin10(time=1126620016,
+                             filepath=self.datafiles['Yakunin10'],
+        )
+        sn_100 = sources.Yakunin10(time=1126620016,
+                             filepath=self.datafiles['Yakunin10'],
+                             distance = 100e-3,
+        )
+        self.assertAlmostEqual(sn_10.params['amplitude'],float(0.1 * sn_100.params['amplitude']))
+        sn_10_hp, _, _, _ = sn_10._generate()
+        sn_100_hp, _, _, _ = sn_100._generate()
+        
+        np.testing.assert_almost_equal(10*sn_100_hp.data.data, sn_10_hp.data.data)                           
+        
     #### TEST OTT
 
     def test_OttWaveform(self):
@@ -151,6 +191,8 @@ class TestMinkeSupernovaSources(unittest.TestCase):
                              filepath=self.datafiles['Ott13'],
                              family = "s27fheat1p05",
         )
+
+    
 
     def test_OttWaveform_distance(self):
         sn_10 = sources.Ott2013(theta = 0 , phi = 0, time=1126620016,
