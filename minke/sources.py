@@ -501,8 +501,8 @@ class Supernova(Waveform):
 
             if self.has_memory and tail:
                 # Apply the tail correction for memory
-                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
-                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
+                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1], h_min = hp.data.data[0])
+                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1], h_min = hx.data.data[0])
 
                 hp_data = np.append(hp.data.data,tail_hp.data)
                 hx_data = np.append(hx.data.data,tail_hx.data)
@@ -518,7 +518,7 @@ class Supernova(Waveform):
         
         return hp, hx, hp0, hx0 
     
-    def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23):
+    def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23, h_min = 0):
         """Generate a "low frequency tail" to append to the end of the
         waveform to overcome problems related to memory in the
         waveform.
@@ -550,7 +550,8 @@ class Supernova(Waveform):
 
         times = np.linspace(0, length, length * sampling)
         tail_f = 1.0 / length / 2.0 # Calculate the frequency for a half cosine function over the length of the tail
-        tail = 0.5 * (h_max + h_max * np.cos( 2 * np.pi * tail_f * times))
+
+        tail = 0.5 * (h_max + (h_max-h_min) * np.cos( 2 * np.pi * tail_f * times) + h_min)
 
         tailout = lal.CreateREAL8Vector(len(tail))
         tailout.data = tail
@@ -559,7 +560,6 @@ class Supernova(Waveform):
         
         
     def interpolate(self, x_old, y_old, x_new):
-
         """
         Convenience funtion to avoid repeated code
         """
@@ -679,28 +679,6 @@ class Ott2013(Supernova):
         self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
         self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
 
-
-    # def _generate(self):
-    #     """
-
-    #     Generate the Ott waveforms. This must be performed
-    #     differently to other waveform morphologies, since we require
-    #     the use of pre-generated text files.
-
-    #     The filepath and the start of the filenames should be provided in
-    #     the numrel_data column of the SimBurstTable, so we need to contruct
-    #     the rest of the filename from the theta and phi angles, and then load 
-    #     that file.
-
-    #     """
-    #     theta, phi = self.params['incl'], self.params['phi']
-    #     numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-    #     numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
-
-    #     data_hp = np.loadtxt(numrel_file_hp)
-    #     data_hx = np.loadtxt(numrel_file_hx)
-
-    #     return data_hp, data_hx, data_hp, data_hx
 
 class Mueller2012(Supernova):
     """
@@ -992,7 +970,6 @@ class Dimmelmeier08(Supernova):
         return output
 
 
-
 class Ringdown(Waveform):
     """
     A class to handle Rindown waveforms.
@@ -1001,7 +978,101 @@ class Ringdown(Waveform):
     waveform = "GenericRingdown"
 
         
+class Yakunin10(Supernova):
+    """
+    The Yakunin10 waveform.
+    """
 
+    waveform = "Yakunin+10"
+    
+    def __init__(self, time, distance = 10e-3, sky_dist=uniform_sky, filepath="Yakunin2010/hplus-B12-WH07_tail.txt", decomposed_path=None, ):
+        """
+
+        Parameters
+        ----------
+        time : float or list 
+           The time period over which the injection should be made. If
+           a list is given they should be the start and end times, and
+           the waveform will be produced at some random point in that
+           time range. If a float is given then the injection will be
+           made at that specific time.
+
+        sky_dist : func
+           The function describing the sky distribution which the injections
+           should be made over. Defaults to a uniform sky.
+
+        filepath : str
+           The filepath to the numerical relativity waveform.
+
+        decomposed_path : str
+           The location where the decomposed waveform file should be stored. Optional.
+        """
+
+        self._clear_params()
+        self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
+        self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
+        
+        self.time = time
+        self.sky_dist = sky_dist
+        if not decomposed_path : decomposed_path = filepath+".dec"
+        if not os.path.isfile(decomposed_path) :
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
+            np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
+        self.params['phi']=0
+        self.params['incl']=90
+        self.params['numrel_data'] = decomposed_path
+        
+    def decompose(self, numrel_file, sample_rate = 16384.0, step_back = 0.01):
+        """
+        Produce the spherial harmonic decompositions of the Dimmelmeier numerical
+        waveform. This is a special case since it is axisymmetric.
+        
+        Parameters
+        ----------
+        numrel_file : str
+           The location of the numerical relativity waveform file.
+        
+        sample_rate : float
+           The sample rate of the NR file. Defaults to 16384.0 Hz.
+        
+        step_back : float
+           The amount of time, in seconds, of the data which should be included
+           before the peak amplitude. Defaults to 0.01 sec.
+
+        Returns
+        -------
+        decomposition : ndarray
+           The l=2 mode spherical decompositions of the waveform. 
+        """
+        extract_dist = 10e-3
+        # Load the times from the file
+        data = np.loadtxt(numrel_file)
+        data = data.T
+        times = data[0]
+        times -= times[0]
+        
+        # Load the hp components   
+        strain = data[1]
+        # Make the new time vector for the requried sample rate
+        target_times = np.arange(times[0], times[-1], 1.0/sample_rate)
+
+        # Prepare the output matrix
+        output = np.zeros((len(target_times), 11))
+
+        # Add the times in to the first column of said matrix
+        output[:, 0] = target_times #/ lal.MTSUN_SI
+        #
+        # Resample to uniform spacing at 16384 kHz
+        #
+        strain_new = self.interpolate(times, strain, target_times)
+        #
+        # Make the output, and rescale it into dimensionless strain values
+        #
+        output[:,5] = strain_new #/*  ( extract_dist * lal.PC_SI * 1.0e6) 
+
+        return output
+
+    
 class LongDuration(Supernova):
     """
 
