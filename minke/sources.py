@@ -501,8 +501,8 @@ class Supernova(Waveform):
 
             if self.has_memory and tail:
                 # Apply the tail correction for memory
-                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1])
-                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1])
+                tail_hp = self.generate_tail(length = 1, h_max = hp.data.data[-1], h_min = hp.data.data[0])
+                tail_hx = self.generate_tail(length = 1, h_max = hx.data.data[-1], h_min = hx.data.data[0])
 
                 hp_data = np.append(hp.data.data,tail_hp.data)
                 hx_data = np.append(hx.data.data,tail_hx.data)
@@ -518,7 +518,7 @@ class Supernova(Waveform):
         
         return hp, hx, hp0, hx0 
     
-    def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23):
+    def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23, h_min = 0):
         """Generate a "low frequency tail" to append to the end of the
         waveform to overcome problems related to memory in the
         waveform.
@@ -550,7 +550,8 @@ class Supernova(Waveform):
 
         times = np.linspace(0, length, length * sampling)
         tail_f = 1.0 / length / 2.0 # Calculate the frequency for a half cosine function over the length of the tail
-        tail = 0.5 * (h_max + h_max * np.cos( 2 * np.pi * tail_f * times))
+
+        tail = 0.5 * (h_max + (h_max-h_min) * np.cos( 2 * np.pi * tail_f * times) + h_min)
 
         tailout = lal.CreateREAL8Vector(len(tail))
         tailout.data = tail
@@ -679,28 +680,6 @@ class Ott2013(Supernova):
         self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
         self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
 
-
-    # def _generate(self):
-    #     """
-
-    #     Generate the Ott waveforms. This must be performed
-    #     differently to other waveform morphologies, since we require
-    #     the use of pre-generated text files.
-
-    #     The filepath and the start of the filenames should be provided in
-    #     the numrel_data column of the SimBurstTable, so we need to contruct
-    #     the rest of the filename from the theta and phi angles, and then load 
-    #     that file.
-
-    #     """
-    #     theta, phi = self.params['incl'], self.params['phi']
-    #     numrel_file_hp = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-plus.txt".format(theta, phi)
-    #     numrel_file_hx = self.numrel_data + "_costheta{:.3f}_phi{:.3f}-cross.txt".format(theta, phi)
-
-    #     data_hp = np.loadtxt(numrel_file_hp)
-    #     data_hx = np.loadtxt(numrel_file_hx)
-
-    #     return data_hp, data_hx, data_hp, data_hx
 
 class Mueller2012(Supernova):
     """
@@ -1006,8 +985,8 @@ class Yakunin10(Supernova):
     """
 
     waveform = "Yakunin+10"
-
-    def __init__(self, time, sky_dist=uniform_sky, filepath="s12-time-rhplus_matter.txt", decomposed_path=None, ):
+    
+    def __init__(self, time, distance = 10e-3, sky_dist=uniform_sky, filepath="Yakunin2010/hplus-B12-WH07_tail.txt", decomposed_path=None, ):
         """
 
         Parameters
@@ -1029,8 +1008,11 @@ class Yakunin10(Supernova):
         decomposed_path : str
            The location where the decomposed waveform file should be stored. Optional.
         """
-        
+
         self._clear_params()
+        self.params['amplitude'] = distance # We store the distance in the amplitude column because there isn't a distance column
+        self.params['hrss'] = self.file_distance # Again the hrss value is the distance at which the files are scaled
+        
         self.time = time
         self.sky_dist = sky_dist
         if not decomposed_path : decomposed_path = filepath+".dec"
