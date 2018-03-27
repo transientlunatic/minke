@@ -91,16 +91,17 @@ class Waveform(object):
 
         return pol_ellipse_e, pol_ellipse_angle
 
-    def plot(self):
+    def plot(self, figsize=(10,5),):
         """
         Produce a plot of the injection.
         """
         hp, hx, _, _ = self._generate(half=True)
-        f, ax = plt.subplots(1,2)
+        f, ax = plt.subplots(1,2, figsize=figsize)
         times = np.arange(0, hp.deltaT*len(hp.data.data), hp.deltaT)
         ax[0].plot(times, hp.data.data, label="+ polarisation")
         ax[0].plot(times, hx.data.data, label="x polarisation")
         ax[1].plot(hp.data.data, hx.data.data)
+        return f
 
     def _generate(self, rate=16384.0, half=False, distance=None): 
         """
@@ -887,7 +888,7 @@ class Scheidegger2010(Supernova):
 
         if not decomposed_path : decomposed_path = filepath+".dec"
         if not os.path.isfile(decomposed_path) :
-            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01, distance = 10e-3)
+            decomposed = self.decompose(filepath, sample_rate = 16384.0, step_back = 0.01)
             np.savetxt(decomposed_path, decomposed, header="time (2,-2) (2,-1) (2,0) (2,1) (2,2)", fmt='%.8e')
         
         #self.numrel_data = filepath + "/" + family
