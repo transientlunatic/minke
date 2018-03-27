@@ -129,6 +129,40 @@ class TestMinkeAdHocSources(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(data[0].data.data[::5000], sgdata)
 
+class TestMinkeADISources(unittest.TestCase):
+    def setUp(self):
+        """
+        Set things up for the tests by making the MDC set, and defining the various parameter distributions.
+        """
+
+        self.datafiles = {}
+        self.datafiles['ADI'] = 'tests/data/adi_test.mat'
+
+        mdctools.mkdir("./testout/frames")
+
+        self.mdcset = mdctools.MDCSet(['L1', 'H1'])
+        self.times = distribution.even_time(start = 1126620016, stop = 1136995216, rate = 630720, jitter = 20)
+        self.angles = distribution.supernova_angle(len(self.times))
+
+    def test_ADIWaveform(self):
+        """Check the generation of the ADI waveform."""
+
+        adi  = sources.ADI(time = 100, filepath=self.datafiles['ADI'])
+        adiwave = adi._generate()[0].data.data[::20000]
+        reg = np.array([  0.00000000e+00,   6.62293373e-22,   1.52831641e-21,
+         1.54044027e-21,   1.27707122e-21,  -2.19617692e-22,
+        -1.52414321e-21,   4.69396022e-22,   1.21479442e-21,
+        -1.26396697e-21,  -5.87290821e-22,   1.36010407e-21,
+         1.18247173e-21,   3.76119821e-22,   3.08731444e-22,
+         1.14768993e-21,   1.08488237e-21,  -1.50088643e-21,
+         1.45463205e-21,   1.67209738e-23,  -8.44421117e-22,
+         9.54960410e-23,   1.29069231e-21,  -9.77430178e-22,
+        -1.34761100e-21,  -1.47183099e-21,   4.61589317e-22,
+        -1.18249701e-21,  -3.27337305e-22,  -1.45357383e-21,
+         1.45374218e-21,   4.60667061e-22])
+
+        np.testing.assert_array_almost_equal(adiwave, reg)
+        
 class TestMinkeSupernovaSources(unittest.TestCase):
     def setUp(self):
         """
