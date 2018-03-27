@@ -46,7 +46,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
 import random
-
+import minke
 from minke import sources
 sourcemap = {}
 for classin in dir(sources):
@@ -207,7 +207,7 @@ class MDCSet():
         # This needs to be given the proper metadata once the package has the maturity to
         # write something sensible.
         for waveform in self.waveforms:
-            procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc", {}) # waveform.params)
+            procrow = process.register_to_xmldoc(xmldoc, "minke_burst_mdc+{}".format(minke.__version__), {}) # waveform.params)
             try:
                 waveform_row = waveform._row(sim)
                 waveform_row.process_id = procrow.process_id
