@@ -579,12 +579,15 @@ class MDCSet():
         energy = self.egw[row]
         row = self.waveforms[row]
         output = []
-        
+        if not row.incl:
+            cosincl = ""
+        else:
+            cosincl = np.cos(row.incl)
         output.append(self.name)                  # GravEn_SimID
         output.append(strains[0])                 # SimHrss
         output.append(energy)                     # SimEgwR2
         output.append(strains[0])                 # GravEn_Ampl
-        output.append(np.cos(row.incl))           # Internal_x the cosine of the angle the LOS makes with axis of angular momentum
+        output.append(cosincl)           # Internal_x the cosine of the angle the LOS makes with axis of angular momentum
         output.append(row.phi)                    # Intenal_phi angle between source x-axis and the LOS
         output.append(np.cos(np.pi/2.0 - row.dec)) # cos(External_x) # this needs to be the co-declination
         output.append(row.ra if row.ra < np.pi else row.ra - 2*np.pi)
