@@ -27,7 +27,8 @@ import lalburst, lalsimulation, lalmetaio
 from minke.antenna import response
 
 from lal import TimeDelayFromEarthCenter as XLALTimeDelayFromEarthCenter
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+#from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from lal import LIGOTimeGPS
 from glue.ligolw.utils import process
 import glue
 

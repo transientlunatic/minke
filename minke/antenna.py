@@ -6,6 +6,7 @@ Adapted from the implementation in pylal
 import sys
 from math import *
 import lal
+import lalsimulation
 
 __author__ = "Alexander Dietz <Alexander.Dietz@astro.cf.ac.uk>; Daniel Williams <daniel.williams@ligo.org>"
 
@@ -47,7 +48,7 @@ def response( gpsTime, rightAscension, declination, inclination,
 
   # Get the detector from its prefix
   try:
-    detector=lal.cached_detector_by_prefix[det]
+    detector = lalsimulation.DetectorPrefixToLALDetector(det)
   except KeyError:
     raise ValueError("ERROR. Key %s is not a valid detector prefix." % (det))
 
@@ -113,8 +114,8 @@ def timeDelay( gpsTime, rightAscension, declination, unit, det1, det2 ):
   
   gps = lal.LIGOTimeGPS( gpsTime )
 
-  x1 = lal.cached_detector_by_prefix[det1].location
-  x2 = lal.cached_detector_by_prefix[det2].location
+  x1 = lalsimulation.DetectorPrefixToLALDetector(det1).location
+  x2 = lalsimulation.DetectorPrefixToLALDetector(det2).location
   timedelay = lal.ArrivalTimeDiff(list(x1), list(x2), ra_rad, de_rad, gps)
 
   return timedelay
