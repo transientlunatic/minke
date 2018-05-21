@@ -295,8 +295,8 @@ class MDCSet():
                 self._measure_hrss(i)
                 self._measure_egw_rsq(i)
 
-            if self.table_type == tables["burst"]:
-                self.times = np.append(self.times, float(simrow.time_geocent_gps))
+            #if self.table_type == tables["burst"]:
+            #    self.times = np.append(self.times, float(simrow.time_geocent_gps))
             
     def _generate_burst(self,row,rate=16384.0):
         """
