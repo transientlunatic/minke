@@ -295,8 +295,8 @@ class MDCSet():
                 self._measure_hrss(i)
                 self._measure_egw_rsq(i)
 
-            #if self.table_type == tables["burst"]:
-            #    self.times = np.append(self.times, float(simrow.time_geocent_gps))
+            if self.table_type == tables["burst"]:
+                self.times = np.append(self.times, float(simrow.time_geocent_gps))
             
     def _generate_burst(self,row,rate=16384.0):
         """
@@ -682,7 +682,14 @@ class Frame():
                 if len(rowlist)==0: return
                 for row in rowlist:
                     sim_burst = mdc.waveforms[row]
-                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
+
+                    if sim_burst.hrss > 1:
+                        distance = sim_burst.amplitude
+                    else:
+                        distance = None
+                    
+                    #hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
+                    hp, hx = mdc.waveforms[row]._generate(rate=rate, half=True, distance=distance)
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
                     # Produce the total strains
