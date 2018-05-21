@@ -689,7 +689,7 @@ class Frame():
                         distance = None
                     
                     #hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
-                    hp, hx = mdc.waveforms[row]._generate(rate=rate, half=True, distance=distance)
+                    hp, hx, _, _ = mdc.waveforms[row]._generate(rate=rate, half=True, distance=distance)
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
                     # Produce the total strains
