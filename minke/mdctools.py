@@ -36,7 +36,7 @@ import glue.ligolw
 import gzip 
 
 import lal, lalframe
-from pylal import Fr
+#from pylal import Fr
 
 import numpy as np
 import pandas as pd
@@ -398,6 +398,7 @@ class MDCSet():
            The name of the injection in the cWB format
         """
         row = self.waveforms[row]
+        
         name = ''
         numberspart = ''
         if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13", "Yakunin+10"):
@@ -601,11 +602,19 @@ class Frame():
     """
     Represents a frame, in order to prepare the injection frames
     """
-    def __init__(self, start, duration, ifo):
+    def __init__(self, start, duration, ifo, number = -1):
+        """
+
+        Parameters
+        ----------
+        number : int
+           The frame's number within the project. Defaults to -1.
+        """
         self.start = start
         self.duration = duration
         self.end = self.start + duration
         self.ifos = ifo
+        self.number = -1
         
     def __repr__(self):
         out = ''
@@ -636,7 +645,7 @@ class Frame():
             log += "\n"
         return log
 
-    def generate_gwf(self, mdc, directory, channel="SCIENCE", force=False, rate=16384.0):
+    def generate_gwf(self, mdc, directory, project = "Minke", channel="SCIENCE", force=False, rate=16384.0):
         """
         Produce the gwf file which corresponds to the MDC set over the period of this frame.
 
@@ -649,6 +658,8 @@ class Frame():
            "/home/albert.einstein/data/mdc/frames/"
            would cause the SineGaussian injections to be made in the directories under
            "/home/albert.einstein/data/mdc/frames/sg"
+        project : str
+           The name of the project which this frame is a part of. Defaults to 'Minke'.
         channel : str
            The name of the channel which the injections should be made into. This is prepended by the initials
            for each interferometer, so there will be a channel for each interferometer in the gwf.
@@ -663,25 +674,31 @@ class Frame():
         ifosstr = "".join(set(ifo[0] for ifo in self.ifos))
         family = mdc.waveforms[0].waveform
         filename = "{}-{}-{}-{}.gwf".format(ifosstr, family, self.start, self.duration)
-        
+
+        ifobits = np.array([getattr(lal,"{}_DETECTOR_BIT".format(lal.cached_detector_by_prefix[ifo].frDetector.name.upper()))
+                   for ifo in self.ifos])
+        ifoflag = numpy.bitwise_or.reduce(ifobits)
+        RUN_NUM = -1 # Simulated data should have a negative run number
         head_date = str(self.start)[:5]
         frameloc = directory+"/"+mdc.directory_path()+"/"+head_date+"/"
         #print frameloc, filename
         if not os.path.isfile(frameloc + filename) or force:
+            epoch = lal.LIGOTimeGPS(self.start)
+            frame = lalframe.FrameNew(epoch, self.duration, project, RUN_NUM, self.number, ifoflag)
             data = []
             # Define the start point of the time series top be generated for the injection
-            epoch = lal.LIGOTimeGPS(self.start)
+            
             # Loop through each interferometer
             for ifo in self.ifos:
                 # Calculate the number of samples in the timeseries
                 nsamp = int((self.end-self.start)*rate)
                 # Make the timeseries
-                h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
+                h_resp = lal.CreateREAL8TimeSeries("{}:{}".format(ifo, channel), epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
                 # Loop over all of the injections corresponding to this frame
                 rowlist = self.get_rowlist(mdc)
                 if len(rowlist)==0: return
                 for row in rowlist:
-                    sim_burst = mdc.waveforms[row]
+                    sim_burst = mdc.waveforms[row]._row()
 
                     if sim_burst.hrss > 1:
                         distance = sim_burst.amplitude
@@ -693,23 +710,20 @@ class Frame():
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
                     # Produce the total strains
+                    print hp, hx, sim_burst.ra
                     h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx,
                                                                            sim_burst.ra, sim_burst.dec, sim_burst.psi, det)
                     # Inject the waveform into the overall timeseries
                     lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
 
-                # Write out the data to the list which will eventually become our frame
-                data.append({"name": "%s:%s" % (ifo, channel),
-                             "data": h_resp.data.data,
-                             "start": float(epoch),
-                             "dx": h_resp.deltaT,
-                             "kind": "SIM"})
+                lalframe.FrameAddREAL8TimeSeriesSimData(frame, h_resp)
+                
 
             # Make the directory in which to store the files
             # if it doesn't exist already
             mkdir(frameloc)
             # Write out the frame file
-            Fr.frputvect(frameloc+filename, data)
+            lalframe.FrameWrite(frame, frameloc+filename)
         
 
 class HWInj(Frame):
