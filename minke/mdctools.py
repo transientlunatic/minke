@@ -711,7 +711,7 @@ class Frame():
             frame = lalframe.FrameNew(epoch, self.duration, project, RUN_NUM, self.number, ifoflag)
             data = []
             # Loop through each interferometer
-            print self.ifos
+            
             for ifo in self.ifos:
                 # Calculate the number of samples in the timeseries
                 nsamp = int((self.end-self.start)*rate)
@@ -719,7 +719,7 @@ class Frame():
                 h_resp = lal.CreateREAL8TimeSeries("{}:{}".format(ifo, channel), epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
                 # Loop over all of the injections corresponding to this frame
                 rowlist = self.get_rowlist(mdc)
-                print rowlist
+                
                 if len(rowlist)==0: return
                 for row in rowlist:
                     sim_burst = mdc.waveforms[row]._row()
@@ -734,7 +734,7 @@ class Frame():
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
                     # Produce the total strains
-                    print hp, hx, sim_burst.ra
+                    
                     h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx,
                                                                            sim_burst.ra, sim_burst.dec, sim_burst.psi, det)
                     # Inject the waveform into the overall timeseries
