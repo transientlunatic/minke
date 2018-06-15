@@ -740,16 +740,6 @@ class Frame():
                     # Inject the waveform into the overall timeseries
                     lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
 
-                # Write out the data to the list which will eventually become our frame
-                data = lal.CreateReal8TimeSeries("{}:{}".format(ifo, channel),
-                                          float(epoch),
-                                          0,
-                                          h_resp.deltaT,
-                                          lal.StrainUnit,
-                                          len(h_resp.data.data))
-                data.data.data = h_resp.data.data
-                lalframe.FrameAddREAL8TimeSeriesSimData(self.frame, data)
-
                 lalframe.FrameAddREAL8TimeSeriesSimData(frame, h_resp)
 
             # Make the directory in which to store the files
