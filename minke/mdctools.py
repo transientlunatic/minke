@@ -27,7 +27,8 @@ import lalburst, lalsimulation, lalmetaio
 from minke.antenna import response
 
 from lal import TimeDelayFromEarthCenter as XLALTimeDelayFromEarthCenter
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+#from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from lal import LIGOTimeGPS
 from glue.ligolw.utils import process
 import glue
 
@@ -311,13 +312,8 @@ class MDCSet():
                 self._measure_hrss(i)
                 self._measure_egw_rsq(i)
 
-            if self.table_type == "burst":
+            if self.table_type == tables["burst"]:
                 self.times = np.append(self.times, float(simrow.time_geocent_gps))
-            #np.insert(self.times, len(self.times), sim_burst_table.time_geocent_gps)
-            #if sim_burst_table.next is None: break
-            #sim_burst_table = sim_burst_table.next
-            #i += 1
-        #del(sim_burst_table)
             
     def _generate_burst(self,row,rate=16384.0):
         """
@@ -595,12 +591,15 @@ class MDCSet():
         energy = self.egw[row]
         row = self.waveforms[row]
         output = []
-        
+        if not row.incl:
+            cosincl = ""
+        else:
+            cosincl = np.cos(row.incl)
         output.append(self.name)                  # GravEn_SimID
         output.append(strains[0])                 # SimHrss
         output.append(energy)                     # SimEgwR2
         output.append(strains[0])                 # GravEn_Ampl
-        output.append(np.cos(row.incl))           # Internal_x the cosine of the angle the LOS makes with axis of angular momentum
+        output.append(cosincl)           # Internal_x the cosine of the angle the LOS makes with axis of angular momentum
         output.append(row.phi)                    # Intenal_phi angle between source x-axis and the LOS
         output.append(np.cos(np.pi/2.0 - row.dec)) # cos(External_x) # this needs to be the co-declination
         output.append(row.ra if row.ra < np.pi else row.ra - 2*np.pi)
@@ -705,7 +704,14 @@ class Frame():
                 if len(rowlist)==0: return
                 for row in rowlist:
                     sim_burst = mdc.waveforms[row]
-                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
+
+                    if sim_burst.hrss > 1:
+                        distance = sim_burst.amplitude
+                    else:
+                        distance = None
+                    
+                    #hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
+                    hp, hx, _, _ = mdc.waveforms[row]._generate(rate=rate, half=True, distance=distance)
                     # Apply detector response
                     det = lalsimulation.DetectorPrefixToLALDetector(ifo)
                     # Produce the total strains
