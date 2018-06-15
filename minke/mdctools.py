@@ -35,7 +35,6 @@ import glue.ligolw
 import gzip 
 
 import lal, lalframe
-from pylal import Fr
 
 import numpy as np
 import pandas as pd
@@ -71,6 +70,24 @@ def source_from_row(row):
         sourceobj.time = row.geocent_start_time
         pass
     return sourceobj
+
+def source_from_dict(params):
+    sourceobj = sourcemap[params['morphology']].__new__(sourcemap[params['morphology']])
+    sourceobj.numrel_data = str("")
+    params = {}
+    for attr in dir(row):
+        if not attr[0] == "_" and not attr[:3] =="get":
+            #print attr
+            params[attr] = getattr(row, attr)
+            setattr(sourceobj, attr, getattr(row, attr))
+    sourceobj.params = params
+    try:
+        sourceobj.time = row.time_geocent_gps
+    except:
+        sourceobj.time = row.geocent_start_time
+        pass
+    return sourceobj
+
 
 table_types = {
     # Ad-Hoc
@@ -406,7 +423,7 @@ class MDCSet():
         numberspart = ''
         if row.waveform in ("Dimmelmeier+08", "Scheidegger+10", "Mueller+12", "Ott+13", "Yakunin+10"):
             #print row
-            numberspart = os.path.basename(row.numrel_data).split('.')[0]
+            numberspart = os.path.basename(row.params['numrel_data']).split('.')[0]
 
         if row.waveform == "Gaussian":
             numberspart = "{:.3f}".format(row.duration * 1e3)
@@ -663,16 +680,20 @@ class Frame():
         """
         ifosstr = "".join(set(ifo[0] for ifo in self.ifos))
         family = mdc.waveforms[0].waveform
+        epoch = lal.LIGOTimeGPS(self.start)
         filename = "{}-{}-{}-{}.gwf".format(ifosstr, family, self.start, self.duration)
-        
+        self.frame = lalframe.FrameNew(epoch = epoch,
+                                       duration = self.duration, project='', run=1, frnum=1,
+                                       detectorFlags=lal.LALDETECTORTYPE_ABSENT)
         head_date = str(self.start)[:5]
         frameloc = directory+"/"+mdc.directory_path()+"/"+head_date+"/"
-        #print frameloc, filename
+        mkdir(frameloc)
         if not os.path.isfile(frameloc + filename) or force:
             data = []
             # Define the start point of the time series top be generated for the injection
-            epoch = lal.LIGOTimeGPS(self.start)
+           
             # Loop through each interferometer
+            print self.ifos
             for ifo in self.ifos:
                 # Calculate the number of samples in the timeseries
                 nsamp = int((self.end-self.start)*rate)
@@ -680,6 +701,7 @@ class Frame():
                 h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
                 # Loop over all of the injections corresponding to this frame
                 rowlist = self.get_rowlist(mdc)
+                print rowlist
                 if len(rowlist)==0: return
                 for row in rowlist:
                     sim_burst = mdc.waveforms[row]
@@ -693,17 +715,27 @@ class Frame():
                     lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
 
                 # Write out the data to the list which will eventually become our frame
-                data.append({"name": "%s:%s" % (ifo, channel),
-                             "data": h_resp.data.data,
-                             "start": float(epoch),
-                             "dx": h_resp.deltaT,
-                             "kind": "SIM"})
+                data = lal.CreateReal8TimeSeries("{}:{}".format(ifo, channel),
+                                          float(epoch),
+                                          0,
+                                          h_resp.deltaT,
+                                          lal.StrainUnit,
+                                          len(h_resp.data.data))
+                data.data.data = h_resp.data.data
+                lalframe.FrameAddREAL8TimeSeriesSimData(self.frame, data)
+                # data.append({"name": "%s:%s" % (ifo, channel),
+                #              "data": h_resp.data.data,
+                #              "start": float(epoch),
+                #              "dx": h_resp.deltaT,
+                #              "kind": "SIM"})
 
             # Make the directory in which to store the files
             # if it doesn't exist already
-            mkdir(frameloc)
+
             # Write out the frame file
-            Fr.frputvect(frameloc+filename, data)
+            print "Frame Writing"
+            lalframe.FrameWrite(self.frame, frameloc+filename)
+            #Fr.frputvect(frameloc+filename, data)
         
 
 class HWInj(Frame):

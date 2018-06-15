@@ -278,6 +278,7 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
         mdcset.load_xml('tests/data/ott_test.xml.gz')
         o1 = mdctools.FrameSet('tests/data/frame_list.dat')
+        print o1.frames[0].generate_gwf(mdcset, "/home/daniel")
         mdc_folder = "testout/frames"
         for o1frame in o1.frames:
             o1frame.generate_gwf(mdcset, mdc_folder, 'SCIENCE')
