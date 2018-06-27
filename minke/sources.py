@@ -37,6 +37,10 @@ except ImportError:
 import matplotlib.pyplot as plt
 
 
+if "numrel_data" in lsctables.SimBurstTable.validcolumns.keys():
+    NROK = True
+else:
+    NROK = False
 
 
 class Waveform(object):
@@ -58,7 +62,9 @@ class Waveform(object):
         for a in self.table_type.validcolumns.keys():
             self.params[a] = None
         
-
+    def __getattr__(self, name):
+        return self.params[name]
+            
     def parse_polarisation(self, polarisation):
         """
         Convert a string description of a polarisation to an ellipse eccentricity and an ellipse angle.
@@ -156,11 +162,12 @@ class Waveform(object):
                 continue
 
         burstobj.waveform = str(self.waveform)
-            
-        if swig_row.numrel_data:
-            burstobj.numrel_data = str(swig_row.numrel_data)
-        else:
-            burstobj.numrel_data = str("")
+
+        if NROK:
+            if swig_row.numrel_data:
+                burstobj.numrel_data = str(swig_row.numrel_data)
+            else:
+                burstobj.numrel_data = str("")
 
         return burstobj
     
@@ -200,10 +207,11 @@ class Waveform(object):
         for a in self.table_type.validcolumns.keys():
             setattr(row, a, self.params[a])
 
-        if self.numrel_data:
-            row.numrel_data = str(self.numrel_data)
-        else:
-            row.numrel_data = self.params['numrel_data']
+        if NROK:
+            if self.numrel_data:
+                row.numrel_data = str(self.numrel_data)
+            else:
+                row.numrel_data = self.params['numrel_data']
             
         row.waveform = self.waveform
         # Fill in the time
@@ -211,6 +219,9 @@ class Waveform(object):
         # Get the sky locations
         if not row.ra:
             row.ra, row.dec, row.psi = self.sky_dist()
+            row.ra = row.ra[0]
+            row.dec = row.dec[0]
+            row.psi = row.psi[0]
         row.simulation_id = sim.get_next_id()
         row.waveform_number = random.randint(0,int(2**32)-1)
         ### !! This needs to be updated.
@@ -294,13 +305,13 @@ class SineGaussian(Waveform):
         """
         self._clear_params()
         self.sky_dist = sky_dist
-        self.params['hrss'] = hrss
-        self.params['seed'] = seed
-        self.params['frequency'] = frequency
-        self.params['q'] = q
+        self.hrss = self.params['hrss'] = hrss
+        self.seed = self.params['seed'] = seed
+        self.frequency = self.params['frequency'] = frequency
+        self.q = self.params['q'] = q
         self.time = time
         self.polarisation = polarisation
-        self.params['pol_ellipse_e'], self.params['pol_ellipse_angle'] = self.parse_polarisation(self.polarisation)    
+        self.pol_ellipse_e, self.ellipse_angle = self.params['pol_ellipse_e'], self.params['pol_ellipse_angle'] = self.parse_polarisation(self.polarisation)    
 
 
 
