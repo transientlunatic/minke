@@ -62,8 +62,11 @@ def source_from_row(row):
     for attr in dir(row):
         if not attr[0] == "_" and not attr[:3] =="get":
             #print attr
-            params[attr] = getattr(row, attr)
-            setattr(sourceobj, attr, getattr(row, attr))
+            try:
+                params[attr] = getattr(row, attr)
+                setattr(sourceobj, attr, getattr(row, attr))
+            except AttributeError:
+                print("Error processing the {} column".format(attr))
     sourceobj.params = params
     try:
         sourceobj.time = row.time_geocent_gps
