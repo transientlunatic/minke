@@ -599,6 +599,7 @@ class MDCSet():
             cosincl = ""
         else:
             cosincl = np.cos(row.incl)
+
         output.append(self.name)                  # GravEn_SimID
         output.append(strains[0])                 # SimHrss
         output.append(energy)                     # SimEgwR2
