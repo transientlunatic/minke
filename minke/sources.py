@@ -547,6 +547,8 @@ class Supernova(Waveform):
                 hp_data = np.append(hp.data.data,tail_hp.data)
                 hx_data = np.append(hx.data.data,tail_hx.data)
 
+                del tail_hp, tail_hx
+                
                 tail_hp = lal.CreateREAL8Vector(len(hp_data))
                 tail_hp.data = hp_data
                 tail_hx = lal.CreateREAL8Vector(len(hx_data))
@@ -555,6 +557,7 @@ class Supernova(Waveform):
                 hp.data = tail_hp
                 hx.data = tail_hx
 
+                del tail_hp, tail_hx
         
         return hp, hx, hp0, hx0 
     
