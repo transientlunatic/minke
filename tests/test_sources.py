@@ -149,6 +149,33 @@ class TestMinkeAdHocSources(unittest.TestCase):
          8.41779831e-31,   1.43679337e-31,   6.07001624e-33])
 
         np.testing.assert_array_almost_equal(data[0].data.data[::5000], scdata)
+
+
+class TestMinkeWNBSources(unittest.TestCase):
+    """
+    Run tests on the creation of white noise bursts to 
+    ensure that these are produced as expected.
+    """
+
+    def setUp(self):
+        """
+        Set everything up to make things work.
+        """
+        self.mdcset = mdctools.MDCSet(['L1', 'H1'])
+        self.times = distribution.even_time(start = 1126620016, stop = 1136995216, rate = 630720, jitter = 20)
+
+    def test_random_seed(self):
+        """Check that the WNB source produces the same waveform each time it is
+        called with the same seed."""
+
+        sc = sources.WhiteNoiseBurst(0.1, 10, 1024, 1126620016, hrss=1e-22)
+
+        hp, hx, _, _ = sc._generate()
+        hp2, hx2, _, _ = sc._generate()
+
+        np.testing.assert_array_almost_equal(hp.data.data, hp2.data.data)
+
+    
         
 class TestMinkeADISources(unittest.TestCase):
     def setUp(self):

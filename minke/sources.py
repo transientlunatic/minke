@@ -20,6 +20,7 @@ import scipy.interpolate as interp
 
 import os.path
 
+from scipy import random
 
 import lal
 import lalburst
@@ -530,7 +531,10 @@ class Supernova(Waveform):
             hp0, hx0 = lalburst.GenerateSimBurst(burstobj, 1.0/rate) 
         else: 
             hp0, hx0 = hp, hx
-        
+
+
+        random.seed(0)
+            
         # detrend supernova waveforms
         if hasattr(self, "supernova"):
             hp.data.data, hx.data.data, hp0.data.data, hx0.data.data = scipy.signal.detrend(hp.data.data), scipy.signal.detrend(hx.data.data), scipy.signal.detrend(hp0.data.data), scipy.signal.detrend(hx0.data.data)
@@ -547,6 +551,8 @@ class Supernova(Waveform):
                 hp_data = np.append(hp.data.data,tail_hp.data)
                 hx_data = np.append(hx.data.data,tail_hx.data)
 
+                del tail_hp, tail_hx
+                
                 tail_hp = lal.CreateREAL8Vector(len(hp_data))
                 tail_hp.data = hp_data
                 tail_hx = lal.CreateREAL8Vector(len(hx_data))
@@ -555,6 +561,7 @@ class Supernova(Waveform):
                 hp.data = tail_hp
                 hx.data = tail_hx
 
+                del tail_hp, tail_hx
         
         return hp, hx, hp0, hx0 
     
