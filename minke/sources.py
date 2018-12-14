@@ -65,7 +65,47 @@ class Waveform(object):
         
     def __getattr__(self, name):
         return self.params[name]
-            
+
+    def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23, h_min = 0):
+        """Generate a "low frequency tail" to append to the end of the
+        waveform to overcome problems related to memory in the
+        waveform.
+        
+        This code was adapted from an iPython notebook provided by
+        Marek Szczepanczyk.
+
+        The tail needs to be added to the waveform after all of the
+        other corrections have been applied (DW: I think)
+
+        Parameters
+        ----------
+        sampling : float
+           The sample rate of the injection data. By default this is 16384 Hz, which is the standard advanced LIGO sampling rate.
+
+        length : float
+           The length of the tail to be added, in seconds; defaults to 1.
+
+        h_max : float
+           The strain at the beginning of the tail -- the strain at the end of the NR data.
+
+        Notes
+        -----
+
+        * TODO Confirm that the tail is added-on after the waveform is
+        convolved with the antenna pattern.
+
+        """
+
+        times = np.linspace(0, length, length * sampling)
+        tail_f = 1.0 / length / 2.0 # Calculate the frequency for a half cosine function over the length of the tail
+
+        tail = 0.5 * (h_max + (h_max-h_min) * np.cos( 2 * np.pi * tail_f * times) + h_min)
+
+        tailout = lal.CreateREAL8Vector(len(tail))
+        tailout.data = tail
+        
+        return tailout
+    
     def parse_polarisation(self, polarisation):
         """
         Convert a string description of a polarisation to an ellipse eccentricity and an ellipse angle.
@@ -458,6 +498,114 @@ class WhiteNoiseBurst(Waveform):
         self.params['hrss'] =  lalsimulation.MeasureHrss(hp, hx)
 
 
+class Numerical2Column(Waveform):
+    """
+    A superclass to handle ninja-based numerical relativity waveforms.
+    """
+    waveform = "Numerical" # We shouldn't ever use this anyway
+    supernova = False
+
+    def _make_strain(self, sample_rate=16384):
+        """
+        Calculate the physical strain and time values which correspond to the natural unit
+        values in the data file.
+
+        Parameters
+        ----------
+        distance : float
+           The distance, in megaparsec at which the waveform should be produced.
+        mass : float
+           The total mass, in solar masses of the system to be generated.
+        sample_rate : float
+           The desired sample rate for the waveform.
+
+        Notes
+        -----
+        At the moment this only works for files with h+ and hx in the columns.
+        """
+
+        data = np.copy(self.data)
+
+        time_scale = (self.total_mass * lal.MSUN_SI * (lal.G_SI / lal.C_SI**3 ))
+        mass_geo = (self.total_mass * lal.MSUN_SI * (lal.G_SI / lal.C_SI**2 ))
+        distance_geo = (self.distance * 1e6 * lal.PC_SI )#* (lal.C_SI**2/lal.G_SI))
+        strain_scale = (distance_geo) / (mass_geo) #(self.total_mass* lal.MSUN_SI)
+        
+        data[:,0] *= time_scale
+        data[:, 1:] /= strain_scale
+
+        times = data[:,0]
+
+        target_times = np.arange(times[0], times[-1], 1./sample_rate)
+
+        output = np.zeros((len(target_times), 3))
+        output[:,0] = target_times
+        output[:,1] = self.interpolate(times, data[:,1], target_times)
+        output[:,2] = self.interpolate(times, data[:,2], target_times)
+
+        return output
+        
+    
+    def _generate(self, rate=16384.0, half=False, tail = True): 
+        """
+        Generate the burst described in a given row, so that it can be
+        measured.
+        
+        Parameters 
+        ---------- 
+        rate : float 
+           The sampling rate of the signal, in Hz. 
+           Defaults to 16384.0Hz
+            
+        half : bool 
+           Only compute the hp and hx once if this is true;
+           these are only required if you need to compute the cross
+           products. Defaults to False.
+
+        Returns 
+        ------- 
+           hp : 
+              The strain in the + polarisation 
+           hx : 
+              The strain in the x polarisation
+           hp0 : 
+              A copy of the strain in the + polarisation 
+           hx0 : 
+               A copy of the strain in the x polarisation 
+        """
+
+        data = self._make_strain(rate)
+        nsamp = len(data)
+        hp = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/rate, lal.StrainUnit, nsamp)
+        hx = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/rate, lal.StrainUnit, nsamp)
+        hp.data.data = data[:,1]
+        hx.data.data = data[:,2]
+
+        return hp, hx, np.copy(hp), np.copy(hx)
+        
+    def interpolate(self, x_old, y_old, x_new):
+        """
+        Convenience funtion to avoid repeated code
+        """
+        interpolator = interp.interp1d(x_old, y_old)
+        return interpolator(x_new)
+
+class Hyperbolic(Numerical2Column):
+    def __init__(self, datafile, total_mass, distance):
+        """
+        A class to represent a hyperbolic or parabolic encounter waveform.
+
+        total_mass : float
+           The total mass of the system in solar masses.
+
+        distance : float
+           The distance, in megaparsecs, at which the waveform should be produced.
+        """
+        
+        self.data = np.genfromtxt(datafile)
+        self.total_mass = total_mass 
+        self.distance = distance
+    
 class Supernova(Waveform):
     """
 
