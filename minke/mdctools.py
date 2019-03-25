@@ -828,40 +828,17 @@ class HWInj(Frame):
                 #sim_burst = mdc.waveforms[row]
                 # Check if the file exists, or if we're forcing the creation
                 filename = "{}_{}_{}.txt".format(family, 
-                                                 sim_burst.time_geocent_gps, 
+                                                 sim_burst.time, 
                                                  ifo)
                 if not os.path.isfile(frameloc + filename) or force:
                     data = []
-                    epoch = lal.LIGOTimeGPS(sim_burst.time_geocent_gps)
+                    epoch = lal.LIGOTimeGPS(sim_burst.time)
                     duration = 10
                     nsamp = duration*rate
-                    h_resp = lal.CreateREAL8TimeSeries("inj time series", epoch, 0, 1.0/rate, lal.StrainUnit, nsamp)
-                    # Produce the time domain waveform for this injection
-                    hp, hx = lalburst.GenerateSimBurst(sim_burst, 1.0/rate);
-                    # Apply detector response
-                    det = lalsimulation.DetectorPrefixToLALDetector(ifo)
-                    # Produce the total strains
-                    h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx,
-                                                                           sim_burst.ra, sim_burst.dec, sim_burst.psi, det)
-                    # Inject the waveform into the overall timeseries
-                    #lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
-                    
-                    # Check distance scaling
-                    # This should probably be done in LALSimulation, but
-                    # right now it doesn't seem to be working.
-                    
 
-                    # Check if the distance or the hrss is stored in the hrss field.
-                    if sim_burst.hrss > 1:
-                        distance = sim_burst.amplitude
-                        file_distance = sim_burst.hrss
-                    else:
-                        distance = 1.0
-                        file_distance = 1.0
-                        
+                    h_tot = sim_burst._generate_for_detector([ifo], sample_rate=rate)
                     
                     data = np.array(h_tot.data.data)
-                    data /= (distance / file_distance)
                     np.savetxt(filename, data)
 
 class HWFrameSet():

@@ -182,7 +182,7 @@ class Waveform(object):
             hp, hx = self._generate(half=True)[:2]
             # Get and apply detector response
             det = lalsimulation.DetectorPrefixToLALDetector(ifo)
-            h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx, row.ra[0], row.dec[0], row.psi[0], det)
+            h_tot = lalsimulation.SimDetectorStrainREAL8TimeSeries(hp, hx, row.ra, row.dec, row.psi, det)
             # Inject the waveform into the overall timeseries
             lalsimulation.SimAddInjectionREAL8TimeSeries(h_resp, h_tot, None)
             return h_tot
