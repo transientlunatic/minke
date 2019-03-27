@@ -1,5 +1,5 @@
-Tutorial: Editing an MDC XML file
-=================================
+Editing an MDC XML file
+========================
 
 As well as producing new MDC specifications, Minke is capable of
 editing pre-existing SimBurstTable XML files in a Pythonic way.

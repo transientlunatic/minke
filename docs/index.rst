@@ -7,7 +7,6 @@
 Minke
 =====
 
-.. image:: ../minke.png
 
 Minke is a pipeline to produce Burst Mock Data Challenges for the LIGO
 Scientific Collaboration. It is capable of producing ad-hoc and
@@ -32,17 +31,8 @@ The Minke framework aims to be flexible, and easily extended to
 include new waveform morphologies, and signal distributions, so if you
 find something lacking feel free to make a pull request!
 
-Tutorials
-=========
 
-.. toctree::
-   :maxdepth: 2
-
-   tutorial
-   tutorial-editing
-   tutorial-SNR-threshold
-   tutorial-supernova
-
+   
 User Guide
 ==========
 
@@ -54,7 +44,18 @@ User Guide
    usage
    ringdowns
    numerical
-   
+
+Tutorials
+=========
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorial
+   tutorial-editing
+   tutorial-SNR-threshold
+   tutorial-supernova
+   tutorial-hardware
 
 Developer Guide
 ===============

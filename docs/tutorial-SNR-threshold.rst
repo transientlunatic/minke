@@ -1,5 +1,5 @@
-Tutorial: Signal sets with an SNR cut-off
-=========================================
+Signal sets with an SNR cut-off
+================================
 
 While Minke's primary purpose is to produce MDC sets for analysis, it
 is also capable of producing sets of simulation signals for more
