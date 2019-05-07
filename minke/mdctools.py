@@ -748,7 +748,8 @@ class Frame():
 
             # Make the directory in which to store the files
             # if it doesn't exist already
-
+            mkdir(frameloc)
+            
             # Write out the frame file
             lalframe.FrameWrite(frame, frameloc+filename)
         
