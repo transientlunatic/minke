@@ -1,9 +1,8 @@
 -e git+https://github.com/transientlunatic/sphinx-daniel-theme.git#egg=sphinx-daniel-theme
 wheel
-coverage==4.0
+coverage
 Sphinx
 numpydoc
-cryptography==1.0.1
 PyYAML
 coveralls 
 pytest>=2.8
