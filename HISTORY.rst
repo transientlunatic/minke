@@ -2,6 +2,27 @@
 History
 =======
 
+1.1.6
+-----
+* Provisional Python 3.6 and 3.7 support.
+
+1.1.5
+-----
+* Addition of provisional support for NR hyperbolic waveforms
+* Removal of glue.segments dependency
+
+1.1.4
+-----
+* Bug fix in frame creation for supernovae
+
+1.1.3
+-----
+* Minor fixes to the documentation of the code.
+
+1.1.2
+-----
+* Minor bug-fixes to improve Hardware injection support
+
 1.1.1 (2018-03-27)
 ------------------
 * Made a change to the package meta data to allow upload to PYPI.
