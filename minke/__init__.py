@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 __author__ = 'Daniel Williams'
-__email__ = 'd.williams.2@research.gla.ac.uk'
+__email__ = 'daniel.williams@ligo.org'
 
 from pkg_resources import get_distribution, DistributionNotFound
 try:

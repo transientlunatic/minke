@@ -61,7 +61,34 @@ pages:
 
 
 # Build receipe for standalone wheels on Linux
-wheel:
+wheel-27:
+  image: python:2.7
+  stage: build
+  script:
+    - pip install wheel
+    # Build wheel
+    - python setup.py bdist_wheel --universal
+  dependencies: []
+  artifacts:
+    expire_in: 3h
+    paths:
+      - dist
+
+wheel-36:
+  image: python:3.6
+  stage: build
+  script:
+    - pip install wheel
+    # Build wheel
+    - python setup.py bdist_wheel --universal
+  dependencies: []
+  artifacts:
+    expire_in: 3h
+    paths:
+      - dist
+
+wheel-37:
+  image: python:3.7
   stage: build
   script:
     - pip install wheel
