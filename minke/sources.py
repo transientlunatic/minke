@@ -626,10 +626,10 @@ class Supernova(Waveform):
         """
 
         if l!=2:
-            print "l!=2 not supported"
+            print("l!=2 not supported")
             sys.exit()
             if abs(m)>2:
-                print "Only l=2 supported, |m| must be <=2"
+                print("Only l=2 supported, |m| must be <=2")
                 sys.exit()
 
         if m==-2:

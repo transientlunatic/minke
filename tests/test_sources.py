@@ -22,7 +22,7 @@ def download_nr(url):
         try:
             response = urllib2.urlopen(url, timeout = 5)
             fname = url.split('/')[-1]
-            print "Getting {}".format(url)
+            print("Getting {}".format(url))
             content = response.read()
             with open( fname, 'w' ) as f:
                 f.write( content )
@@ -33,7 +33,6 @@ def download_nr(url):
             break
         except urllib2.URLError as e:
             attempts += 1
-            print type(e)
 
     return fname.strip(".gz")
 
@@ -305,7 +304,7 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
         mdcset.load_xml('tests/data/ott_test.xml.gz')
         o1 = mdctools.FrameSet('tests/data/frame_list.dat')
-        print o1.frames[0].generate_gwf(mdcset, "/home/daniel")
+        print(o1.frames[0].generate_gwf(mdcset, "/home/daniel"))
         mdc_folder = "testout/frames"
         for o1frame in o1.frames:
             o1frame.generate_gwf(mdcset, mdc_folder, 'SCIENCE')
