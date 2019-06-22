@@ -157,7 +157,7 @@ class MDCSet():
                           'gng' : "GenericRingdown",
                           }
 
-    inj_families_abb = dict((v,k) for k,v in inj_families_names.iteritems())
+    inj_families_abb = dict((v,k) for k,v in list(inj_families_names.items()))
 
     hist_parameters = {
         "StringCusp": ["amplitude", "ra", "dec"],
@@ -239,8 +239,8 @@ class MDCSet():
                 waveform_row.process_id = procrow.process_id
             except:
                 row = sim.RowType()
-                for a in self.table_type.validcolumns.keys():
-                    if a in waveform.params.keys():
+                for a in list(self.table_type.validcolumns.keys()):
+                    if a in list(waveform.params.keys()):
                         setattr(row, a, waveform.params[a])
                     else:
                         if not hasattr(waveform, a):

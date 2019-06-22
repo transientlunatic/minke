@@ -148,7 +148,7 @@ def even_time(start, stop, rate, jitter=0):
     """
     expnum_exact = (stop-start) * rate / 365.0 / 24 / 3600
     interval = (stop - start) / expnum_exact
-    time = numpy.array(map(lambda i: start + i*interval + jitter *(random.rand()-0.5), range(1,int(expnum_exact)+1)))
+    time = numpy.array([ start + i*interval + jitter *(random.rand()-0.5) for i in range(1,int(expnum_exact)+1) ])
     return time
 
 def burst_dist(minimum, maximum, size=1):
