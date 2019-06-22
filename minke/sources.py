@@ -9,7 +9,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw import ligolw
 from glue.ligolw import ilwd
-from glue.segments import segment
+#from glue.segments import segment
 from glue.lal import LIGOTimeGPS as GPS
 from glue.ligolw.utils import process
 #from pylal.antenna import response
