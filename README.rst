@@ -4,10 +4,10 @@ Minke: The Burst MDC Factory
 
 .. image:: https://zenodo.org/badge/53331163.svg
    :target: https://zenodo.org/badge/latestdoi/53331163
+	    
 ..
-
    .. image:: https://img.shields.io/pypi/v/minke.svg
-	   :target: https://pypi.python.org/pypi/minke
+	      :target: https://pypi.python.org/pypi/minke
 
 .. image:: https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg
 	   :target: https://singularity-hub.org/collections/504
@@ -29,7 +29,7 @@ Minke: The Burst MDC Factory
 Minke is a Python package to produce Mock Data Challenge data sets for LIGO interferometers.
 
 * Free software: ISC license
-* Documentation: https://code.daniel-williams.co.uk/minke
+* Documentation: https://daniel-williams.docs.ligo.org/minke/
 
 Features
 --------

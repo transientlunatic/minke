@@ -5,7 +5,7 @@ stages:
   - build
   - deploy
 
-test:
+test-python27:
   stage: test
   script:
     - export PYTHONPATH="/usr/local/lib64/python2.7/site-packages"
@@ -24,10 +24,33 @@ test:
       - testout
       - public
 
+test-python-36:
+  stage: test
+  image: python:3.6
+  script:
+    - pip install -r requirements.txt
+    - pip install coverage
+    - python setup.py install
+    - coverage run setup.py test
+    - coverage report -m
+  allow_failure: true
+
+test-python-37:
+  stage: test
+  image: python:3.7
+  script:
+    - pip install -r requirements.txt
+    - pip install coverage
+    - python setup.py install
+    - coverage run setup.py test
+    - coverage report -m
+  allow_failure: true
+
 pages:
   stage: build
   script:
-  - pip install sphinx sphinx-bootstrap-theme numpydoc # sphinxcontrib-versioning
+  - pip install -r requirements_dev.txt
+  - pip install sphinx numpydoc # sphinxcontrib-versioning
   - make docs
   - mv docs/_build/html/ public/
   artifacts:
