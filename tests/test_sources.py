@@ -4,12 +4,25 @@ from minke import mdctools
 from minke import distribution
 import numpy as np
 
-
+from glue.ligolw import lsctables
 
 ott_data_url = "http://www.stellarcollapse.org/gwdata/ottetal2012b/s27WHW02_LS220_j0_rx3_full_cc_fheat1.05_HlmD.dat.gz"
 
+def check_no_nr_support():
+    """
+    Check to see if this installation does not come with the LALSuite support for NR waveforms.
+    """
+    if "numrel_data" in lsctables.SimBurstTable.validcolumns.keys():
+        NROK = True
+    else:
+        NROK = False
+
+    return ~NROK
+
+NO_NR_REASON = "This test was skipped as the installation has no support for NR waveforms."
 
 
+@unittest.skipIf(check_no_nr_support(), NO_NR_REASON)
 def download_nr(url):
     """
     Download the datafile for an NR waveform, and extract it from a gzip if relevent
@@ -209,7 +222,7 @@ class TestMinkeADISources(unittest.TestCase):
          1.45374218e-21,   4.60667061e-22])
 
         np.testing.assert_array_almost_equal(adiwave, reg)
-        
+
 class TestMinkeSupernovaSources(unittest.TestCase):
     def setUp(self):
         """
@@ -227,6 +240,7 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         self.angles = distribution.supernova_angle(len(self.times))
 
     #### TEST YAKUNIN
+    @unittest.skipIf(check_no_nr_support(), NO_NR_REASON)
     def test_YakuninWaveform(self):
         """Test generation of a Yakunin waveform."""
 
@@ -250,7 +264,8 @@ class TestMinkeSupernovaSources(unittest.TestCase):
                                filepath = self.datafiles['Yakunin10'],
         )
         np.testing.assert_array_almost_equal(sn._generate()[0].data.data[::1000], reg)
-        
+
+    @unittest.skipIf(check_no_nr_support(), NO_NR_REASON)
     def test_YakuninWaveform_distance(self):
         sn_10 = sources.Yakunin10(time=1126620016,
                              filepath=self.datafiles['Yakunin10'],
@@ -266,7 +281,7 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         np.testing.assert_almost_equal(10*sn_100_hp.data.data, sn_10_hp.data.data)                           
         
     #### TEST OTT
-
+    @unittest.skipIf(check_no_nr_support(), NO_NR_REASON)
     def test_OttWaveform(self):
         sn = sources.Ott2013(theta = 0 , phi = 0, time=1126620016,
                              filepath=self.datafiles['Ott13'],
@@ -274,7 +289,7 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         )
 
     
-
+    @unittest.skipIf(check_no_nr_support(), NO_NR_REASON)
     def test_OttWaveform_distance(self):
         sn_10 = sources.Ott2013(theta = 0 , phi = 0, time=1126620016,
                              filepath=self.datafiles['Ott13'],
@@ -290,7 +305,8 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         sn_100_hp, _, _, _ = sn_100._generate()
         
         np.testing.assert_almost_equal(10*sn_100_hp.data.data, sn_10_hp.data.data)
-
+    
+    @unittest.skipIf(check_no_nr_support(), NO_NR_REASON)    
     def test_OttXML(self):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
         sn = sources.Ott2013(theta = 0 , phi = 0, time=1126620016,
@@ -300,6 +316,7 @@ class TestMinkeSupernovaSources(unittest.TestCase):
 
         mdcset.save_xml('testout/ott13.xml.gz')
 
+    @unittest.skipIf(check_no_nr_support(), NO_NR_REASON)
     def test_OttFrame(self):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
         mdcset.load_xml('tests/data/ott_test.xml.gz')
@@ -309,6 +326,7 @@ class TestMinkeSupernovaSources(unittest.TestCase):
         for o1frame in o1.frames:
             o1frame.generate_gwf(mdcset, mdc_folder, 'SCIENCE')
 
+    @unittest.skipIf(check_no_nr_support(), NO_NR_REASON)
     def test_OttGraven(self):
         mdcset = mdctools.MDCSet(['L1', 'H1'])
         mdcset.load_xml('tests/data/ott_test.xml.gz')
