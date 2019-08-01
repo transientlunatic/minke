@@ -79,7 +79,7 @@ class NoiseTimeseries(object):
     """
     Create timeseries of noise coloured by a PSD.
     """
-    def __init__(self, psd, length, epoch, rate = 16384.0):
+    def __init__(self, psd, length, epoch, rate = 16384.0, seed=0):
         """
         Create a noisy timeseries.
         
