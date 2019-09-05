@@ -5,24 +5,24 @@ stages:
   - build
   - deploy
 
-test-python27:
-  stage: test
-  script:
-    - export PYTHONPATH="/usr/local/lib64/python2.7/site-packages"
-    - echo "pandas" > requirements.txt
-    - pip install -r requirements.txt
-    - pip install coverage
-    - python setup.py install
-    - coverage run setup.py test
-    - coverage report -m
-    #- coverage html	
-    #- mv htmlcov public/coverage
-  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
-  artifacts:
-    expire_in: 3h
-    paths:
-      - testout
-      - public
+# test-python27:
+#   stage: test
+#   script:
+#     - export PYTHONPATH="/usr/local/lib64/python2.7/site-packages"
+#     - echo "pandas" > requirements.txt
+#     - pip install -r requirements.txt
+#     - pip install coverage
+#     - python setup.py install
+#     - coverage run setup.py test
+#     - coverage report -m
+#     #- coverage html	
+#     #- mv htmlcov public/coverage
+#   coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
+#   artifacts:
+#     expire_in: 3h
+#     paths:
+#       - testout
+#       - public
 
 test-python-36:
   stage: test
@@ -60,19 +60,19 @@ pages:
   - master
 
 
-# Build receipe for standalone wheels on Linux
-wheel-27:
-  image: python:2.7
-  stage: build
-  script:
-    - pip install wheel
-    # Build wheel
-    - python setup.py bdist_wheel --universal
-  dependencies: []
-  artifacts:
-    expire_in: 3h
-    paths:
-      - dist
+# # Build receipe for standalone wheels on Linux
+# wheel-27:
+#   image: python:2.7
+#   stage: build
+#   script:
+#     - pip install wheel
+#     # Build wheel
+#     - python setup.py bdist_wheel --universal
+#   dependencies: []
+#   artifacts:
+#     expire_in: 3h
+#     paths:
+#       - dist
 
 wheel-36:
   image: python:3.6
