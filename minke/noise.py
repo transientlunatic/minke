@@ -90,6 +90,7 @@ class NoiseTimeseries(object):
         """
         self.psd = psd
         randomness = lal.gsl_rng("ranlux", seed)
-        seg = lal.CreateREAL8TimeSeries("STRAIN", epoch, 0.0, 1.0/rate, lal.StrainUnit, length)
+        self.seg = lal.CreateREAL8TimeSeries("STRAIN", epoch, 0.0, 1.0/rate, lal.StrainUnit, length)
 
+        
         #lal.simNoise

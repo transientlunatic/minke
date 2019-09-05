@@ -15,9 +15,17 @@ def sky_params(net, time, ra, dec, psi, incl=numpy.pi):
 
 def uniform_dec(num):
     """
-    Declination distribution: uniform in sin(dec). num controls the number of draws.
+    Declination distribution: uniform in sin(dec), which leads to a uniform distribution across all declinations.
+
+    Parameters
+    ----------
+    num : int
+       The number of random declinations to produce.
     """
     return (numpy.pi / 2.) - numpy.arccos(2 * random.random_sample(num) - 1)
+
+
+
 
 def uniform_theta(num):
     """
@@ -44,7 +52,21 @@ def supernova_angle(num, divisions = 10):
 
 def uniform_sky(number=1):
     """
-    Get a set of (RA, declination, polarization) randomized appopriately to astrophysical sources isotropically distributed in the sky.
+    Get a set of (RA, declination, polarization) drawn from an isotropic distribution over the whole sky.
+
+    Parameters
+    ----------
+    number : int
+       The number of random sky locations and polarisations to be produced.
+
+    Returns
+    -------
+    ra : array of float
+       Randomly drawn right ascensions.
+    dec : array of float
+       Randomly drawn declinations.
+    pol : array of float
+       Randomly drawn polarisations.
     """
     expnum = number
     ra = uniform_phi(expnum)
@@ -54,7 +76,8 @@ def uniform_sky(number=1):
 
 def favorable_sky(net, time):
     """
-    Wander through the skies, searching for a most favorable location --- draw extrinsic parameters as if the network antenna pattern magnitude were the PDF.
+
+    Wander through the skies, searching for a most favorable location. --- draw extrinsic parameters as if the network antenna pattern magnitude were the PDF.
     """
     ndraws = len(time)
     ra_out, dec_out, psi_out = numpy.empty((3, len(time)))
@@ -153,9 +176,18 @@ def even_time(start, stop, rate, jitter=0):
 
 def burst_dist(minimum, maximum, size=1):
     """
-    Generate an hrss drawn from the distribution
+    Generate an hrss drawn from the distance distribution
     \[ r + 50/r \]
-    as desired by the Burst group for observing MDCs
+    used for Burst allsky mock data challenges.
+
+    Parameters
+    ----------
+    minimum : float
+       The lowest hrss to be produced.
+    maximum : float
+       The largest hrss to be produced.
+    size : int
+       The number of draws to produce. Defaults to 1.
     """
     #extent = numpy.log10(maximum) - numpy.log10(minimum)
     # Convert hrss to distance

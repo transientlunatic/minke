@@ -31,37 +31,68 @@ The Minke framework aims to be flexible, and easily extended to
 include new waveform morphologies, and signal distributions, so if you
 find something lacking feel free to make a pull request!
 
-
-   
-User Guide
+User guide
 ==========
 
 .. toctree::
    :maxdepth: 2
-
-   
+   :caption: User guide
+	     
    installation
    usage
+   other-software
+
+Supported waveforms
+===================
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Waveforms
+
+   burst
    ringdowns
    numerical
 
-Tutorials
-=========
+Parameter distributions
+=======================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
+   :caption: Parameter distributions
 
+   distributions
+   
+Data Challenge Construction
+===========================
+.. toctree::
+   :maxdepth: 3
+   :caption: Data Challenges
+
+   software-injections
+   hardware-injections
+
+   
+Tutorials
+=========
+   
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+	     
    tutorial
    tutorial-editing
    tutorial-SNR-threshold
    tutorial-supernova
    tutorial-hardware
 
-Developer Guide
+Developer guide
 ===============
+
+Minke is under continuous development, and more help is always needed! 
 
 .. toctree::
    :maxdepth: 2
+   :caption: Development guide
 
    contributing
 
