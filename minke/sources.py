@@ -546,7 +546,7 @@ class Numerical2Column(Waveform):
         return output
         
     
-    def _generate(self, rate=16384.0, half=False, tail = True): 
+    def _generate(self, epoch="0.0", rate=16384.0, half=False, tail = True): 
         """
         Generate the burst described in a given row, so that it can be
         measured.
@@ -562,6 +562,11 @@ class Numerical2Column(Waveform):
            these are only required if you need to compute the cross
            products. Defaults to False.
 
+        epoch : str 
+           The signal injection epoch. 
+           This should be given as a string, which will then be 
+           split at the decimal to preserve precision.
+
         Returns 
         ------- 
            hp : 
@@ -574,10 +579,13 @@ class Numerical2Column(Waveform):
                A copy of the strain in the x polarisation 
         """
 
+        epoch_sec, epoch_ms = list(map(int, epoch.split(".")))
+
+
         data = self._make_strain(rate)
         nsamp = len(data)
-        hp = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/rate, lal.StrainUnit, nsamp)
-        hx = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(0,0), 0, 1.0/rate, lal.StrainUnit, nsamp)
+        hp = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(epoch_sec,epoch_ms), 0, 1.0/rate, lal.StrainUnit, nsamp)
+        hx = lal.CreateREAL8TimeSeries("inj time series", lal.LIGOTimeGPS(epoch_sec,epoch_ms), 0, 1.0/rate, lal.StrainUnit, nsamp)
         hp.data.data = data[:,1]
         hx.data.data = data[:,2]
 
