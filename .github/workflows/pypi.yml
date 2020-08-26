@@ -46,7 +46,7 @@ jobs:
       uses: horochx/deploy-via-scp@v1.0.1
       with:
         local: docs/_build/html/
-        remote: /home/danwilliams/code.daniel-williams.co.uk/rugby
+        remote: /home/danwilliams/code.daniel-williams.co.uk/minke
         host: ${{ secrets.sshhost }}
         user: ${{ secrets.sshuser }}
         key: ${{ secrets.sshkey }}
