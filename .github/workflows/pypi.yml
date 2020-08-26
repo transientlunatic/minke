@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build wheel
+      run: |
+        pip install -r requirements.txt
+        pip install wheel
+        python setup.py bdist_wheel 
+        
+    - name: pypi-publish
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@v1.3.1
+      with:
+        password: ${{ secrets.pypitoken }}
+
+    - name: Build HTML Docs
+      run: |
+        pip install sphinx
+        pip install kentigern
+        pip install -r requirements.txt
+        pip install -r requirements_dev.txt
+        pip install .
+        cd docs
+        make html
+        
+    - name: SCP Deploy HTML Docs
+      uses: horochx/deploy-via-scp@v1.0.1
+      with:
+        local: docs/_build/html/
+        remote: /home/danwilliams/code.daniel-williams.co.uk/rugby
+        host: ${{ secrets.sshhost }}
+        user: ${{ secrets.sshuser }}
+        key: ${{ secrets.sshkey }}
