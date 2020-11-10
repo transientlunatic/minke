@@ -57,6 +57,7 @@ class Waveform(object):
     numrel_data = []
     waveform = "Generic"
     expnum = 1
+    params = {}
 
     def _clear_params(self):
         self.params = {}
@@ -64,7 +65,10 @@ class Waveform(object):
             self.params[a] = None
         
     def __getattr__(self, name):
-        return self.params[name]
+        if name in self.params:
+            return self.params[name]
+        else:
+            raise ValueError(f"The parameter {name} isn't located in this object.")
 
     def generate_tail(self, sampling=16384.0, length = 1, h_max = 1e-23, h_min = 0):
         """Generate a "low frequency tail" to append to the end of the
@@ -599,7 +603,7 @@ class Numerical2Column(Waveform):
         return interpolator(x_new)
 
 class Hyperbolic(Numerical2Column):
-    def __init__(self, datafile, total_mass, distance):
+    def __init__(self, datafile, total_mass, distance, sky_dist=uniform_sky, **kwargs):
         """
         A class to represent a hyperbolic or parabolic encounter waveform.
 
@@ -609,10 +613,12 @@ class Hyperbolic(Numerical2Column):
         distance : float
            The distance, in megaparsecs, at which the waveform should be produced.
         """
-        
+        self._clear_params()
         self.data = np.genfromtxt(datafile)
         self.total_mass = total_mass 
         self.distance = distance
+        self.sky_dist = sky_dist
+        self.params.update(kwargs)
     
 class Supernova(Waveform):
     """
