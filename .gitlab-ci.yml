@@ -1,5 +1,5 @@
 #image: lpmn/minke:latest
-
+image: python
 stages:
   - test
   - build
