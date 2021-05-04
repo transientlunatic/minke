@@ -1,4 +1,4 @@
--e git+https://github.com/transientlunatic/sphinx-daniel-theme.git#egg=sphinx-daniel-theme
+kentigern
 wheel
 coverage
 Sphinx
