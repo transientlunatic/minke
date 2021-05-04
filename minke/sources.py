@@ -509,6 +509,8 @@ class Numerical2Column(Waveform):
     waveform = "Numerical" # We shouldn't ever use this anyway
     supernova = False
 
+    extraction = None
+    
     def _make_strain(self, sample_rate=16384):
         """
         Calculate the physical strain and time values which correspond to the natural unit
@@ -534,6 +536,9 @@ class Numerical2Column(Waveform):
         mass_geo = (self.total_mass * lal.MSUN_SI * (lal.G_SI / lal.C_SI**2 ))
         distance_geo = (self.distance * 1e6 * lal.PC_SI )#* (lal.C_SI**2/lal.G_SI))
         strain_scale = (distance_geo) / (mass_geo) #(self.total_mass* lal.MSUN_SI)
+
+        if self.extraction:
+            strain_scale /= (self.extraction)
         
         data[:,0] *= time_scale
         data[:, 1:] /= strain_scale
@@ -603,7 +608,7 @@ class Numerical2Column(Waveform):
         return interpolator(x_new)
 
 class Hyperbolic(Numerical2Column):
-    def __init__(self, datafile, total_mass, distance, sky_dist=uniform_sky, **kwargs):
+    def __init__(self, datafile, total_mass, distance, extraction, sky_dist=uniform_sky, **kwargs):
         """
         A class to represent a hyperbolic or parabolic encounter waveform.
 
@@ -612,12 +617,16 @@ class Hyperbolic(Numerical2Column):
 
         distance : float
            The distance, in megaparsecs, at which the waveform should be produced.
+
+        extraction : float
+           The extraction radius of the waveform.
         """
         self._clear_params()
         self.data = np.genfromtxt(datafile)
         self.total_mass = total_mass 
         self.distance = distance
         self.sky_dist = sky_dist
+        self.extraction = extraction
         self.params.update(kwargs)
     
 class Supernova(Waveform):
