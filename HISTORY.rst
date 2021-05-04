@@ -2,6 +2,11 @@
 History
 =======
 
+1.1.9 (2021-05-04)
+------------------
+
+* Corrects behaviour of numerical relativity waveforms in geometric units by incorporating the extraction radius.
+
 1.1.6
 -----
 * Provisional Python 3.6 and 3.7 support.
