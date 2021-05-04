@@ -49,6 +49,8 @@ test-python-37:
 pages:
   stage: build
   script:
+  - pip install -r requirements.txt
+  - pip install .
   - pip install sphinx numpydoc  kentigern # sphinxcontrib-versioning
   - pip install -r requirements_dev.txt
   - make docs
