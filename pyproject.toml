@@ -1,0 +1,54 @@
+[build-system]
+requires = [
+	"setuptools>=61.0",
+	"setuptools_scm[toml]>=3.4.3",
+	"wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"
+
+[project]
+name = "minke"
+dynamic = ["version"]
+
+authors = [
+	{ name = "Daniel Williams", email = "daniel.williams@ligo.org" }
+]
+description = "An asimov plugin to make generating injections easier."
+#readme = "README.md"
+license = { text = "MIT" }
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"License :: OSI Approved :: MIT License",
+	"Operating System :: OS Independent"
+]
+requires-python = ">=3.7"
+dependencies = [
+	"asimov>=0.4.0",
+	"otter-report",
+	"pandas",
+	"lalsuite",
+	"lscsoft-glue",
+]
+
+[project.optional-dependencies]
+docs = [
+	"sphinx",
+	"kentigern",
+]
+
+[project.scripts]
+minke = "minke.__main__:main"
+
+[project.urls]
+"Source code" = "https://git.ligo.org/daniel-williams/minke"
+
+[tool.setuptools]
+packages = [
+	"minke",
+]
+
+[project.entry-points.'asimov.pipelines']
+minke = 'minke.asimov:Asimov'
