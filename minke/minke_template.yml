@@ -40,3 +40,5 @@ waveform:
   {{ waveform }}
 report:
   location: {{ config['general']['webroot'] }}/{{ production.event.name }}/{{ production.name }}
+
+rundir: {{ production.rundir }}
