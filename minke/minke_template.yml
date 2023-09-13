@@ -1,0 +1,42 @@
+{%- if production.event.repository -%}
+{%- assign repo_dir = production.event.repository.directory -%}
+{%- else -%}
+{%- assign repo_dir = "." -%}
+{%- endif -%}
+{%- if production.meta['likelihood'] contains "calibration" -%}
+{%- assign calibration_on = production.meta['likelihood']['calibration']['sample'] -%}
+{%- else -%}
+{%- assign calibration_on = True %}
+{%- endif -%}
+{%- assign meta = production.meta -%}
+{%- assign sampler = production.meta['sampler'] -%}
+{%- assign scheduler = production.meta['scheduler'] -%}
+{%- assign likelihood = production.meta['likelihood'] -%}
+{%- assign priors = production.meta['priors'] -%}
+{%- assign data = production.meta['data'] -%}
+{%- assign quality = production.meta['quality'] -%}
+{%- assign ifos = production.meta['interferometers'] -%}
+name: {{ production.name }}
+event: {{ production.event.name }}
+interferometers: {{ ifos }}
+data: {{ data }}
+
+injection:
+  epoch: 2000
+  spin 1z: 0.4
+  spin2z: 0.4
+  eccentricity: 0.4
+  declination: 0.65
+  right ascension: 4.67
+  polarization: 2.34
+
+quality:
+  {{ quality }}
+likelihood:
+  {{ likelihood }}
+
+{%- assign waveform = production.meta['waveform'] %}
+waveform:
+  {{ waveform }}
+report:
+  location: {{ config['general']['webroot'] }}/{{ production.event.name }}/{{ production.name }}
