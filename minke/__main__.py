@@ -121,9 +121,9 @@ def create_frames(settings):
 
         gwpy_ts = TimeSeries(data=ts.data+strain_pad.data, times=strain_pad.sample_times, channel=f"{detector}:Injection", name=f"{detector}:Injection", dtype=np.float64)
 
-        directory = f"frames/{event_name}/"
-        
-        gwpy_ts.write(f"{detector}-injection.gwf", format="gwf")
+        directory = os.path.join(self.production.rundir, "frames", {event_name})
+        os.makedirs(directory, exist_ok=True)
+        gwpy_ts.write(os.path.join(directory, f"{detector}-injection.gwf"), format="gwf")
 
         if report:
             with report:
