@@ -1,6 +1,7 @@
 import asimov.pipeline
 import importlib
 import os
+import glob
 import htcondor
 from asimov.utils import set_directory
 from asimov import config
@@ -112,6 +113,19 @@ class Asimov(asimov.pipeline.Pipeline):
 
             self.production.event.meta['data']['data files'] = frames
 
+        if os.path.exists(os.path.join(self.production.rundir, "cache")):
+            results_dir = glob.glob(os.path.join(self.production.rundir, "cache", "*"))
+            frames = {}
+
+            for frame in results_dir:
+                ifo = frame.split("/")[-1].split("_")[0].split("-")[1]
+                frames[ifo] = frame
+
+            outputs["cache"] = frames
+
+            self.production.event.meta['data']['cache files'] = frames
+
+            
         return outputs
 
     def html(self):
