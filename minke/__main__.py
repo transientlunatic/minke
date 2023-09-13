@@ -143,8 +143,11 @@ def create_frames(settings):
                 plot = specgram.plot(norm='log', cmap='viridis', yscale='log')
                 report += "## Spectrogram"
                 report += otter.plot.Figure(plot)
-        # TODO fix the paths for these
-        with open(f"{detector}.cache", "w") as f:
+
+        directory = os.path.join(settings['rundir'], "cache", event_name)
+        os.makedirs(directory, exist_ok=True)
+                
+        with open(os.path.join(directory, f"{detector}.cache"), "w") as f:
            absolute = os.path.abspath(f"{detector}-injection.gwf")
            f.write(f"{detector[0]}\t{detector}_Injection\t{int(epoch-segment_length/2)}\t{segment_length}\tfile://localhost{absolute}\n")
 
