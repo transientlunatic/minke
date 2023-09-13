@@ -121,7 +121,7 @@ def create_frames(settings):
 
         gwpy_ts = TimeSeries(data=ts.data+strain_pad.data, times=strain_pad.sample_times, channel=f"{detector}:Injection", name=f"{detector}:Injection", dtype=np.float64)
 
-        directory = os.path.join(settings['rundir'], "frames", event_name)
+        directory = os.path.join(settings['rundir'], "frames")
         os.makedirs(directory, exist_ok=True)
         gwpy_ts.write(os.path.join(directory, f"{detector}-injection.gwf"), format="gwf")
 
@@ -144,7 +144,7 @@ def create_frames(settings):
                 report += "## Spectrogram"
                 report += otter.plot.Figure(plot)
 
-        directory = os.path.join(settings['rundir'], "cache", event_name)
+        directory = os.path.join(settings['rundir'], "cache")
         os.makedirs(directory, exist_ok=True)
                 
         with open(os.path.join(directory, f"{detector}.cache"), "w") as f:
