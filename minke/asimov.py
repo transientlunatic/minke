@@ -106,7 +106,7 @@ class Asimov(asimov.pipeline.Pipeline):
             frames = {}
 
             for frame in results_dir:
-                ifo = frame.split("/")[-1].split("_")[0].split("-")[1]
+                ifo = frame.split("/")[-1].split("-")[0]
                 frames[ifo] = frame
 
             outputs["frames"] = frames
@@ -118,7 +118,7 @@ class Asimov(asimov.pipeline.Pipeline):
             frames = {}
 
             for frame in results_dir:
-                ifo = frame.split("/")[-1].split("_")[0].split("-")[1]
+                ifo = frame.split("/")[-1].split(".")[0]
                 frames[ifo] = frame
 
             outputs["cache"] = frames
