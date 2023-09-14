@@ -144,6 +144,10 @@ def create_frames(settings):
                 report += "## Spectrogram"
                 report += otter.plot.Figure(plot)
 
+        directory = os.path.join(settings['rundir'], "psds")
+        os.makedirs(directory, exist_ok=True)
+        psd.save(os.path.join(directory, f'{ifo}-psd.txt'))
+                
         directory = os.path.join(settings['rundir'], "cache")
         os.makedirs(directory, exist_ok=True)
                 

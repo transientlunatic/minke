@@ -125,6 +125,16 @@ class Asimov(asimov.pipeline.Pipeline):
 
             self.production.event.meta['data']['cache files'] = frames
 
+        if os.path.exists(os.path.join(self.production.rundir, "psds")):
+            results_dir = glob.glob(os.path.join(self.production.rundir, "psds", "*"))
+            frames = {}
+
+            for frame in results_dir:
+                ifo = frame.split("/")[-1].split("-")[0]
+                frames[ifo] = frame
+
+            outputs["psds"] = frames
+
             
         return outputs
 
