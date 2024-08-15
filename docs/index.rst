@@ -38,6 +38,15 @@ Supported waveforms
    ringdowns
    numerical
 
+Noise
+=====
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Noise
+
+   noise
+   
 Parameter distributions
 =======================
 

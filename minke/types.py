@@ -40,7 +40,7 @@ class Waveform(WaveformBase):
     def __new__(self, variance=None, covariance=None, *args, **kwargs):
         # if "covariance" in kwargs:
         #     self.covariance = kwargs.pop("covariance")
-        waveform = super(Waveform, self).__new__(TimeSeries, *args, **kwargs)
+        waveform = super(Waveform, self).__new__(TimeSeriesBase, *args, **kwargs)
         waveform.covariance = covariance
         waveform.variance = variance
 

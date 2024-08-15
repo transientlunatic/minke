@@ -44,6 +44,14 @@ minke.distribution module
    :undoc-members:
    :show-inheritance:
 
+minke.injection module
+----------------------
+
+.. automodule:: minke.injection
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 minke.mdctools module
 ---------------------
 
@@ -72,6 +80,14 @@ minke.types module
 ------------------
 
 .. automodule:: minke.types
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+minke.utils module
+------------------
+
+.. automodule:: minke.utils
    :members:
    :undoc-members:
    :show-inheritance:

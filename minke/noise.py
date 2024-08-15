@@ -1,96 +1,139 @@
+"""
+Noise models from lalsimulation.
+"""
+
+import torch
+import scipy
 import numpy as np
-import lal, lalsimulation
+
+import lal
+import lalsimulation
+
+from ..types import PSD, TimeSeries
+from . import PSDApproximant
 
 
-class PSD():
-    """
-    Create a power spectral distribution from a file which specifies
-    the PSD.
+class LALSimulationPSD(PSDApproximant):
+    """A class to generate power spectral densities using LALSimulation."""
 
-    """
+    def __init__(self):
 
-    def __init__(self, filename, fmin = 20, fmax = 3000, rate = 16384.0):
+        super().__init__()
+
+    def frequency_domain(
+        self,
+        df=1,
+        frequencies=None,
+        lower_frequency=20,
+        upper_frequency=1024,
+        mask_below=20,
+    ):
+        if frequencies is None:
+            frequencies = torch.arange(lower_frequency, upper_frequency + df, df)
+
+        N = int(len(frequencies))
+        df = float(frequencies[1] - frequencies[0])
+        psd_data = lal.CreateREAL8FrequencySeries(
+            None, lal.LIGOTimeGPS(0), lower_frequency, df, lal.HertzUnit, N
+        )
+        self.psd_function(psd_data, flow=lower_frequency)
+        psd_data = psd_data.data.data
+        #psd_data[frequencies < mask_below] = psd_data[frequencies > mask_below][0]
+        psd = PSD(psd_data, frequencies=frequencies)
+        return psd
+
+    def twocolumn(self, *args, **kwargs):
         """
-        Load in the PSD file, assuming that it is in units of Hertz and strain.
+        Produce the PSD in two-column format.
         """
+        psd = self.frequency_domain(*args, **kwargs)
+        frequencies = psd.frequencies.value
+        data = np.array(psd.data)
 
-        df = 1.0 / rate
-        N = int((fmax - fmin) / df)
-        self.df = df
-        
-        self.psd = lal.CreateREAL8FrequencySeries('psd', 
-                                                  lal.LIGOTimeGPS(0,0),
-                                                  fmin,
-                                                  df,
-                                                  lal.HertzUnit,
-                                                  N)
-        lalsimulation.SimNoisePSDFromFile(self.psd, fmin, filename)
+        return np.vstack([frequencies, data]).T
 
-        
-    def SNR(self, waveform, detectors, fmin=0, fmax=-1):
+    
+    def covariance_matrix(self, times):
         """
-        Calculate the SNR for a given waveform compared to this SNR.
-
-        Parameters
-        ==========
-        waveform : minke source object
-           The waveform which should have its snr measured
-        detectors : list
-           A list of detector names in the format "L1" for the Livingston 4km detector, etc.
-        fmin : float
-           The minimum frequency at which to evaluate the SNR. If 0 the lower frequency is unbounded.
-        fmax : float
-           The maximum frequency at which the SNR is evaluated. If negative the upper frequency is unbounded.
-
-
-        Returns
-        =======
-        network snr : float
-           The SNR over the whole network described by the detector list
-        SNRs : list
-           A list of SNRs for each detector
+        Return a time-domain representation of this power spectral density.
         """
-        snrs = []
-        for detector in detectors:
-            snrs.append(lalsimulation.MeasureSNR(waveform._generate_for_detector([detector]), self.psd, fmin, fmax))
+                
+        dt = times[1] - times[0]
+        N = len(times)
+        T = times[-1] - times[0]
+        df = 1 / T
+        frequencies = torch.arange(len(times) // 2 + 1) * df.value
+        psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
+        psd[-1] = psd[-2]
+        # import matplotlib.pyplot as plt
+        # f, ax = plt.subplots(1,1)
+        # ax.plot(frequencies, psd)
+        # f.savefig("psd.png")
+        # Calculate the autocovariance from a one-sided PSD
+        acf = 0.5*np.real(np.fft.irfft(psd*df, n=(N)))*T
+        # The covariance is then the Toeplitz matrix formed from the acf
+        # f, ax = plt.subplots(1,1)
+        # ax.plot(acf)
+        # f.savefig("acf.png")
+        return scipy.linalg.toeplitz(acf)
 
-        snrs_r = np.array(snrs)
-        snrs_r = snrs_r**2
-        return np.sqrt(snrs_r.sum()), snrs
-        
+    def time_domain(self, times):
+        return self.covariance_matrix(times)
 
-    def plot(self):
-        """
-        Plot the PSD
-        """
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        fmin = self.psd.f0
-        length = len(self.psd.data.data)
-        df = self.psd.deltaF
-        frequencies = np.linspace(fmin, fmin + length * df, length)
-
-        f = plt.semilogy(frequencies, self.psd.data.data)
-
-        return f
-
-class NoiseTimeseries(object):
-    """
-    Create timeseries of noise coloured by a PSD.
-    """
-    def __init__(self, psd, length, epoch, rate = 16384.0, seed=0):
-        """
-        Create a noisy timeseries.
-        
+    def time_series(self, times=None, duration=None, sample_rate=None, **kwargs):
+        """Create a timeseries filled with noise from a specific PSD.
         Parameters
         ----------
-        psd : `minke.noise.PSD`
-           The power spectral density of the noise.
-        """
-        self.psd = psd
-        randomness = lal.gsl_rng("ranlux", seed)
-        self.seg = lal.CreateREAL8TimeSeries("STRAIN", epoch, 0.0, 1.0/rate, lal.StrainUnit, length)
+        psd : `heron:PSD`
+           The power spectral density of the noise to be generated in the time
+           series.
+        times : array-like
+           The time axis of the timeseries.
+        device : str or torch.device
+           The device which the noise series should be stored in.
 
-        
-        #lal.simNoise
+        Notes
+        -----
+        In order to follow with the conventions in lalsuite this has been
+        adapted from the code in lalnoise.
+        """
+
+        if times is None and sample_rate is not None and duration is not None:
+            dt = 1./sample_rate
+            N = int(duration * sample_rate)
+            df = 1/duration
+            times = np.linspace(0, duration, N)
+            T = duration
+        else:
+            dt = times[1] - times[0]
+            N = len(times)
+            T = times[-1] - times[0]
+            df = 1 / T
+            
+        frequencies = torch.arange(0, N // 2 + 1) * df
+        reals = np.random.randn(len(frequencies))
+        imags = np.random.randn(len(frequencies))
+        psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
+        psd[-1] = psd[-2]
+
+        S = 0.5 * np.sqrt(psd)# / df) #* T inside sqrt # np.sqrt(N * N / 4 / (T) * psd.value)
+
+        noise_r = S * (reals)
+        noise_i = S * (imags)
+
+        noise_f = noise_r + 1j * noise_i
+
+        times += (kwargs.get("epoch", 0))
+
+        return TimeSeries(data=np.fft.irfft(noise_f, n=(N))*df*N, times=times)
+
+
+class AdvancedLIGODesignSensitivity2018(LALSimulationPSD):
+    psd_function = lalsimulation.SimNoisePSDaLIGODesignSensitivityT1800044
+
+
+class AdvancedLIGO(AdvancedLIGODesignSensitivity2018):
+    pass
+
+
+KNOWN_PSDS = {"AdvancedLIGO": AdvancedLIGO}

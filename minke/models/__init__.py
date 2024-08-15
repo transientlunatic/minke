@@ -1,4 +1,4 @@
-import torch
+import numpy as np
 from lal import antenna, MSUN_SI
 from astropy import units as u
 
@@ -74,8 +74,10 @@ class WaveformSurrogate(WaveformModel):
 
 
 class PSDModel:
-    pass
 
+    def to_file(self, filename, *args, **kwargs):
+        data = self.twocolumn(*args, **kwargs)
+        np.savetxt(filename, data)
 
 class PSDApproximant(PSDModel):
     pass

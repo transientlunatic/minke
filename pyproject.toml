@@ -41,7 +41,7 @@ docs = [
 ]
 
 [project.scripts]
-minke = "minke.__main__:main"
+minke = "minke.__main__:minke"
 
 [project.urls]
 "Source code" = "https://git.ligo.org/daniel-williams/minke"

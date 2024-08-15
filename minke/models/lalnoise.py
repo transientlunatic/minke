@@ -42,6 +42,17 @@ class LALSimulationPSD(PSDApproximant):
         psd = PSD(psd_data, frequencies=frequencies)
         return psd
 
+    def twocolumn(self, *args, **kwargs):
+        """
+        Produce the PSD in two-column format.
+        """
+        psd = self.frequency_domain(*args, **kwargs)
+        frequencies = psd.frequencies.value
+        data = np.array(psd.data)
+
+        return np.vstack([frequencies, data]).T
+
+    
     def covariance_matrix(self, times):
         """
         Return a time-domain representation of this power spectral density.
@@ -69,7 +80,7 @@ class LALSimulationPSD(PSDApproximant):
     def time_domain(self, times):
         return self.covariance_matrix(times)
 
-    def time_series(self, times):
+    def time_series(self, times=None, duration=None, sample_rate=None, **kwargs):
         """Create a timeseries filled with noise from a specific PSD.
         Parameters
         ----------
@@ -87,22 +98,32 @@ class LALSimulationPSD(PSDApproximant):
         adapted from the code in lalnoise.
         """
 
-        dt = times[1] - times[0]
-        N = len(times)
-        T = times[-1] - times[0]
-        df = 1 / T
-        frequencies = torch.arange(len(times) // 2 + 1) * df
+        if times is None and sample_rate is not None and duration is not None:
+            dt = 1./sample_rate
+            N = int(duration * sample_rate)
+            df = 1/duration
+            times = np.linspace(0, duration, N)
+            T = duration
+        else:
+            dt = times[1] - times[0]
+            N = len(times)
+            T = times[-1] - times[0]
+            df = 1 / T
+            
+        frequencies = torch.arange(0, N // 2 + 1) * df
         reals = np.random.randn(len(frequencies))
         imags = np.random.randn(len(frequencies))
         psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
         psd[-1] = psd[-2]
 
-        S = 0.5 * np.sqrt(psd / df) #* T inside sqrt # np.sqrt(N * N / 4 / (T) * psd.value)
+        S = 0.5 * np.sqrt(psd)# / df) #* T inside sqrt # np.sqrt(N * N / 4 / (T) * psd.value)
 
         noise_r = S * (reals)
         noise_i = S * (imags)
 
         noise_f = noise_r + 1j * noise_i
+
+        times += (kwargs.get("epoch", 0))
 
         return TimeSeries(data=np.fft.irfft(noise_f, n=(N))*df*N, times=times)
 
