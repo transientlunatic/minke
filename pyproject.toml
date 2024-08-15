@@ -26,11 +26,12 @@ classifiers = [
 ]
 requires-python = ">=3.7"
 dependencies = [
-	"asimov>=0.4.0",
+	"asimov>=0.5.0",
 	"otter-report",
 	"pandas",
 	"lalsuite",
 	"lscsoft-glue",
+	"gwpy",
 ]
 
 [project.optional-dependencies]
