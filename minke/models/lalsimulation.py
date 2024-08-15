@@ -118,10 +118,13 @@ class LALSimulationApproximant(WaveformApproximant):
                 args.pop(key)
         return args
 
-    def time_domain(self, parameters, times=None):
+    def time_domain(self, parameters=None, times=None, **kwargs):
         """
         Retrieve a time domain waveform for a given set of parameters.
         """
+        if parameters is None:
+            parameters = kwargs
+        
         self._args.update(parameters)
         epoch = parameters.get("gpstime", 0)
 

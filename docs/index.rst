@@ -7,29 +7,13 @@
 Minke
 =====
 
+Minke is a package which aims to make it easier to produce gravitational waveforms in python.
+It works with waveform models in the ``lalsimulation`` library maintained by the LIGO-Virgo-Kagra collaborations, and makes them available in a format which is easy to work with while using modern python packages including ``astropy`` and ``gwpy``.
 
-Minke is a pipeline to produce Burst Mock Data Challenges for the LIGO
-Scientific Collaboration. It is capable of producing ad-hoc and
-numerical relativity burst injections.
+You can use Minke as part of your own code if you need to generate a waveform, or you can use it as part of a larger workflow thanks to its integration with ``asimov``.
+It can produce waveform injections for sensitivity and recovery studies, and it can produce large data sets for training machine learning algorithms.
 
-Minke is designed to simplify the production processes for MDCs, and
-to facilitate the automated production of injection frames during
-observing runs.
-
-In order to run Minke you'll need to have LALSuite installed, and at
-the moment you'll need to have the `simburst-rel` branch of it
-installed specifically, so that you can make supernova (and other
-numerical relativity) injections.
-
-If you're looking to make MDC injection sets for a burst analysis, but
-you aren't concerned with contributing new code take a look at the
-User Guide. If you need a feature which isn't currently implemented
-then please have a look at the "Contributing" section of the Developer
-Guide.
-
-The Minke framework aims to be flexible, and easily extended to
-include new waveform morphologies, and signal distributions, so if you
-find something lacking feel free to make a pull request!
+The Minke framework aims to be flexible, and easily extended to include new waveform morphologies, and signal distributions, so if you find something lacking feel free to make a pull request!
 
 User guide
 ==========
@@ -39,7 +23,7 @@ User guide
    :caption: User guide
 	     
    installation
-   usage
+   quickstart
    other-software
 
 Supported waveforms

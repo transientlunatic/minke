@@ -16,7 +16,7 @@ dynamic = ["version"]
 authors = [
 	{ name = "Daniel Williams", email = "daniel.williams@ligo.org" }
 ]
-description = "An asimov plugin to make generating injections easier."
+description = "A package to make generating gravitational waveforms easier."
 #readme = "README.md"
 license = { text = "MIT" }
 classifiers = [
