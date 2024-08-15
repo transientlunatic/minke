@@ -1,1 +1,1 @@
-from lalburst import SineGaussian
+from .lalburst import SineGaussian

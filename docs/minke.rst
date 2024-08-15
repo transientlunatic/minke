@@ -28,6 +28,14 @@ minke.bilby module
    :undoc-members:
    :show-inheritance:
 
+minke.cli module
+----------------
+
+.. automodule:: minke.cli
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 minke.detector module
 ---------------------
 

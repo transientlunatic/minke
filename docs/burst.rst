@@ -37,8 +37,43 @@ The model used in gls:ligo searches for such signals is:
    
 for a strain :math:`h` at time :math:`t`, with :math:`A` the amplitude of the signal, :math:`t_{0}` its central time, :math:`Q` the quality factor of the burst, and :math:`f` is frequency.
 
-.. autoclass:: minke.models.bursts.SineGaussian
 
+A SineGaussian burst can be produced with a short script such as this ::
+
+  import minke
+  import astropy.units as u
+
+  from minke.models.bursts import SineGaussian
+  from minke.detector import AdvancedLIGOHanford
+
+  model = SineGaussian()
+
+  parameters = {"centre_frequency": 20,
+		"phase": 0,
+		"eccentricity": 0,
+		"q": 1.,
+		"sample_rate": 4096 * u.Hertz,
+		"gsptime": 998,
+		"hrss": 1e-22,
+		"duration": 2*u.second}
+
+  data = model.time_domain(parameters)
+
+  detector = AdvancedLIGOHanford()
+
+  projected = data.project(detector,
+	       ra=1, dec=0.5,
+	       iota=0.4,
+	       phi_0=0,
+	       psi=0
+	       )
+
+  f = projected.plot()
+  f.savefig("projected_sinegaussian.png")
+
+  
+.. image:: images/bursts/projected_sinegaussian.png
+  
 
 Band-limited white noise bursts
 -------------------------------

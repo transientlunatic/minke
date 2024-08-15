@@ -70,8 +70,8 @@ class SineGaussian(LALBurstApproximant):
                                                   deltaT.value,
                                                   )
 
-        hp_ts = Waveform(data=hp.data.data, dt=hp.deltaT.value, t0=hp.epoch + epoch)
-        hx_ts = Waveform(data=hx.data.data, dt=hx.deltaT.value, t0=hx.epoch + epoch)
+        hp_ts = Waveform(data=hp.data.data, dt=hp.deltaT, t0=hp.epoch + epoch)
+        hx_ts = Waveform(data=hx.data.data, dt=hx.deltaT, t0=hx.epoch + epoch)
 
         waveform = WaveformDict(parameters=parameters, plus=hp_ts, cross=hx_ts)
         

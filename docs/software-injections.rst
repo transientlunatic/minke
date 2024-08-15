@@ -1,6 +1,3 @@
-Injection book-keeping
-======================
-
 Injection frames
 ================
 
@@ -146,6 +143,3 @@ You can then create the injection files by running ``minke injection --settings 
 As a step in an asimov workflow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   
-
-Frame production
-================
