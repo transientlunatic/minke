@@ -49,6 +49,8 @@ We can also produce burst-like waveforms using the ``minke.models.bursts`` modul
 
 For example we can produce a sine-Gaussian with ::
 
+  from minke.models.bursts import SineGaussian
+  
   model = SineGaussian()
 
   parameters = {"centre_frequency": 20,

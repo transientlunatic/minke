@@ -34,6 +34,7 @@ Supported waveforms
    :caption: Waveforms
 
    burst
+   cbc
    ringdowns
    numerical
 

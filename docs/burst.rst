@@ -37,7 +37,7 @@ The model used in gls:ligo searches for such signals is:
    
 for a strain :math:`h` at time :math:`t`, with :math:`A` the amplitude of the signal, :math:`t_{0}` its central time, :math:`Q` the quality factor of the burst, and :math:`f` is frequency.
 
-.. autoclass:: minke.sources.SineGaussian
+.. autoclass:: minke.models.bursts.SineGaussian
 
 
 Band-limited white noise bursts
