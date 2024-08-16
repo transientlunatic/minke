@@ -180,7 +180,13 @@ class LALSimulationApproximant(WaveformApproximant):
 
         return self._cache
 
-
+class IMRPhenomPv1(LALSimulationApproximant):
+    def __init__(self):
+        super().__init__()
+        self._args["approximant"] = lalsimulation.GetApproximantFromString(
+            "IMRPhenomP"
+        )
+    
 class IMRPhenomPv2(LALSimulationApproximant):
     def __init__(self):
         super().__init__()
@@ -188,22 +194,14 @@ class IMRPhenomPv2(LALSimulationApproximant):
             "IMRPhenomPv2"
         )
 
-
+class SEOBNRv2(LALSimulationApproximant):
+    def __init__(self):
+        super().__init__()
+        self._args["approximant"] = lalsimulation.GetApproximantFromString("SEOBNRv2")
+        
 class SEOBNRv3(LALSimulationApproximant):
     def __init__(self):
         super().__init__()
         self._args["approximant"] = lalsimulation.GetApproximantFromString("SEOBNRv3")
 
 
-class IMRPhenomPv2_FakeUncertainty(IMRPhenomPv2):
-    def __init__(self, covariance=1e-24):
-        super().__init__()
-        self.covariance = covariance
-
-    def time_domain(self, parameters, times=None):
-        waveform_dict = super().time_domain(parameters, times)
-        covariance = torch.eye(len(waveform_dict["plus"].times)) * self.covariance
-        for wave in waveform_dict.waveforms.values():
-            # Artificially add a covariance function to each of these
-            wave.covariance = covariance
-        return waveform_dict
