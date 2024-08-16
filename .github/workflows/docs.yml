@@ -9,7 +9,7 @@ on:
     branches: [ master, v2-preview ]
 
 jobs:
-  build documentation:
+  build_documentation:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
