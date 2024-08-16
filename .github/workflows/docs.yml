@@ -1,0 +1,43 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+on:
+  push:
+    branches: [ master v2-preview ]
+  pull_request:
+    branches: [ master v2-preview ]
+
+jobs:
+  build documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+
+    - name: Build HTML Docs
+      run: |
+        pip install sphinx sphinx-multiversion
+        pip install kentigern
+        pip install -r requirements.txt
+        pip install -r requirements_dev.txt
+        pip install .
+        cd docs
+        make multi
+
+    - name: Add redirect to current version
+      run: |
+        echo "<!DOCTYPE html><html><head><title>Redirecting to master branch</title><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"0; url=./master/index.html\">    <link rel=\"canonical\" href=\"https://asimov.docs.ligo.org/asimov/master/index.html\"></head></html>" > docs/_build/index.html
+        
+    - name: SCP Deploy HTML Docs
+      uses: horochx/deploy-via-scp@v1.0.1
+      with:
+        local: docs/_build/html/*
+        remote: /home/danwilliams/code.daniel-williams.co.uk/minke
+        host: ${{ secrets.sshhost }}
+        user: ${{ secrets.sshuser }}
+        key: ${{ secrets.sshkey }}
