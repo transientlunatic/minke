@@ -4,9 +4,9 @@ name: CI
 
 on:
   push:
-    branches: [ master v2-preview ]
+    branches: [ master, v2-preview ]
   pull_request:
-    branches: [ master v2-preview ]
+    branches: [ master, v2-preview ]
 
 jobs:
   build documentation:
