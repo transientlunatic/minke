@@ -10,6 +10,8 @@ import numpy as np
 
 import astropy.units as u
 
+import otter
+
 from .models.lalsimulation import SEOBNRv3, IMRPhenomPv2
 from .models.lalnoise import KNOWN_PSDS
 from .detector import KNOWN_IFOS
@@ -38,7 +40,6 @@ def make_injection(
     parameters.update(injection_parameters)
 
     waveform_model = waveform()
-
 
     injections = {}
     for detector, psd_model in detectors.items():
@@ -151,10 +152,18 @@ def injection(settings):
         }
 
         logging.basicConfig(level=LOGGER_LEVELS[level])
-
+    settings_ = settings
     settings = settings["injection"]
     parameters = injection_parameters_add_units(settings["parameters"])
 
+    report = otter.Otter(os.path.join(settings_.get("pages directory", "."), "injection.html")
+                         title="Minke Injection"
+                         )
+
+    with report:
+        report + "# Injection frames"
+        report + settings
+    
     detector_dict = {
         settings["interferometers"][ifo]: settings["psds"][ifo]
         for ifo in settings["interferometers"]
@@ -171,3 +180,8 @@ def injection(settings):
         psdfile="psd",
     )
     data = injections
+
+    for injection in injections:
+        f = injection.plot()
+        with report:
+            report + f

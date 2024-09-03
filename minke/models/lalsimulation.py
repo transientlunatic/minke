@@ -179,13 +179,6 @@ class LALSimulationApproximant(WaveformApproximant):
             self._cache = WaveformDict(parameters=parameters, plus=hp_ts, cross=hx_ts)
 
         return self._cache
-
-class IMRPhenomPv1(LALSimulationApproximant):
-    def __init__(self):
-        super().__init__()
-        self._args["approximant"] = lalsimulation.GetApproximantFromString(
-            "IMRPhenomP"
-        )
     
 class IMRPhenomPv2(LALSimulationApproximant):
     def __init__(self):
@@ -203,5 +196,3 @@ class SEOBNRv3(LALSimulationApproximant):
     def __init__(self):
         super().__init__()
         self._args["approximant"] = lalsimulation.GetApproximantFromString("SEOBNRv3")
-
-
