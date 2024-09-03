@@ -69,7 +69,8 @@ def make_injection(
         if psdfile:
             # Write the PSD file to an ascii file
             filename = f"{detector.abbreviation}_{psdfile}.dat"
-            psd_model.to_file(filename, upper_frequency=sample_rate/2)
+            psd_model.to_file(filename, upper_frequency=sample_rate/2,
+                              lower_frequency=0, df=1/sample_rate)
 
         
         if framefile:
