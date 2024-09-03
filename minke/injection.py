@@ -182,7 +182,7 @@ def injection(settings):
     )
     data = injections
 
-    for injection in injections:
+    for injection in injections.items():
         f = injection.plot()
         with report:
             report + f
