@@ -12,6 +12,7 @@ import numpy as np
 import astropy.units as u
 
 import otter
+import matplotlib.pyplot as plt
 
 from .models.lalsimulation import SEOBNRv3, IMRPhenomPv2
 from .models.lalnoise import KNOWN_PSDS
@@ -182,7 +183,10 @@ def injection(settings):
     )
     data = injections
 
-    for injection in injections.items():
-        f = injection.plot()
+    for injection in injections.values():
+        print(injection)
+        f, ax = plt.subplots(1,1, dpi=300)
+        ax.plot(injection.times, np.array(injection.data))
+        
         with report:
             report + f
