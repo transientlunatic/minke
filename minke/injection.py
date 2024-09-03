@@ -156,7 +156,7 @@ def injection(settings):
     settings = settings["injection"]
     parameters = injection_parameters_add_units(settings["parameters"])
 
-    report = otter.Otter(os.path.join(settings_.get("pages directory", "."), "injection.html")
+    report = otter.Otter(os.path.join(settings_.get("pages directory", "."), "injection.html"),
                          title="Minke Injection"
                          )
 
