@@ -37,22 +37,3 @@ jobs:
       uses: pypa/gh-action-pypi-publish@v1.3.1
       with:
         password: ${{ secrets.pypitoken }}
-
-    - name: Build HTML Docs
-      run: |
-        pip install sphinx
-        pip install kentigern
-        pip install -r requirements.txt
-        pip install -r requirements_dev.txt
-        pip install .
-        cd docs
-        make html
-        
-    - name: SCP Deploy HTML Docs
-      uses: horochx/deploy-via-scp@v1.0.1
-      with:
-        local: docs/_build/html/*
-        remote: /home/danwilliams/code.daniel-williams.co.uk/minke
-        host: ${{ secrets.sshhost }}
-        user: ${{ secrets.sshuser }}
-        key: ${{ secrets.sshkey }}
