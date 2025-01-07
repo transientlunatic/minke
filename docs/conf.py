@@ -57,7 +57,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Minke'
-copyright = u'2016, Daniel Williams'
+copyright = u'2024, Daniel Williams'
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -98,7 +98,7 @@ exclude_patterns = ['_build']
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+#pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
