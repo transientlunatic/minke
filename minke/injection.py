@@ -63,7 +63,7 @@ def make_injection(
         injection = data + waveform.project(detector)
         injection.channel = channel_n
 
-        duration = injection.times[-1] - injection.times[0]
+        #duration = injection.times[-1] - injection.times[0]
         
         print("length of injection", len(injection.data))
         print("duration of injection", (duration))
@@ -72,7 +72,7 @@ def make_injection(
             # Write the PSD file to an ascii file
             filename = f"{detector.abbreviation}_{psdfile}.dat"
             psd_model.to_file(filename, upper_frequency=sample_rate/2,
-                              lower_frequency=0, df=1./duration)
+                              lower_frequency=0, df=1./duration.value)
 
         
         if framefile:
