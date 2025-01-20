@@ -144,6 +144,7 @@ class WaveformDict:
             elif isinstance(psi, type(None)):
                 raise ValueError("Polarisation must be specified!")
 
+            print(psi)
             response = detector.antenna_response(ra, dec, psi, time=time)
 
             plus_prefactor = (
