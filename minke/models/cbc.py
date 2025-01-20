@@ -1,6 +1,6 @@
 from .lalsimulation import (
-    IMRPhenomPv1,
     IMRPhenomPv2,
+    IMRPhenomXPHM,
     SEOBNRv2,
     SEOBNRv3,
 )

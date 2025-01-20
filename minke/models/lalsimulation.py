@@ -187,6 +187,13 @@ class IMRPhenomPv2(LALSimulationApproximant):
             "IMRPhenomPv2"
         )
 
+class IMRPhenomXPHM(LALSimulationApproximant):
+    def __init__(self):
+        super().__init__()
+        self._args["approximant"] = lalsimulation.GetApproximantFromString(
+            "IMRPhenomXPHM"
+        )
+        
 class SEOBNRv2(LALSimulationApproximant):
     def __init__(self):
         super().__init__()
