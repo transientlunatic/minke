@@ -3,6 +3,23 @@ Minke Changelog
 
 Please accept my apologies for the rattiness of this CHANGELOG; this is an old project and it didn't have the most organised of starts.
 
+2.0.1
+=====
+
+This is a bug-fix release and does not introduce any backwards-incompatible changes.
+
+Breaking changes
+----------------
+
+This release is not believed to introduce any breaking changes.
+
+Pull requests
+-------------
+
+This release contains the following PRs:
+
++ `github!5<https://github.com/transientlunatic/minke/pull/5>`_ Minor bug fixes.
+
 2.0.0
 =====
 
