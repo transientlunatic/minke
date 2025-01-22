@@ -110,13 +110,14 @@ class LALSimulationPSD(PSDApproximant):
             T = times[-1] - times[0]
             df = 1 / T
             
-        frequencies = torch.arange(0, N // 2 + 1) * df
+        frequencies = np.arange(0, N // 2 + 1) * df
         reals = np.random.randn(len(frequencies))
         imags = np.random.randn(len(frequencies))
         psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
         psd[-1] = psd[-2]
 
-        S = 0.5 * np.sqrt(psd)# / df) #* T inside sqrt # np.sqrt(N * N / 4 / (T) * psd.value)
+        # Prepare the colouring ASD
+        S = np.sqrt(2 * psd)
 
         noise_r = S * (reals)
         noise_i = S * (imags)
@@ -125,7 +126,7 @@ class LALSimulationPSD(PSDApproximant):
 
         times += (kwargs.get("epoch", 0))
 
-        return TimeSeries(data=np.fft.irfft(noise_f, n=(N))*df*N, times=times)
+        return TimeSeries(data=np.fft.irfft(noise_f * sample_rate, n=(N)), times=times)
 
 
 class AdvancedLIGODesignSensitivity2018(LALSimulationPSD):
