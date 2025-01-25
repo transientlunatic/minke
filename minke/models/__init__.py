@@ -77,7 +77,7 @@ class PSDModel:
 
     def to_file(self, filename, *args, **kwargs):
         data = self.twocolumn(*args, **kwargs)
-        np.savetxt(filename, data)
+        np.savetxt(filename, data, fmt="%.2f %.5e")
 
 class PSDApproximant(PSDModel):
     pass

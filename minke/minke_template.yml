@@ -14,30 +14,25 @@
 {%- assign likelihood = production.meta['likelihood'] -%}
 {%- assign priors = production.meta['priors'] -%}
 {%- assign data = production.meta['data'] -%}
-{%- assign quality = production.meta['quality'] -%}
-{%- assign ifos = production.meta['interferometers'] -%}
+{%- assign inj = production.meta['injection'] -%}
+{%- assign ifos = production.meta['injection']['interferometers'] -%}
+{%- assign psds = production.meta['injection']['psds'] -%}
 name: {{ production.name }}
 event: {{ production.event.name }}
-interferometers: {{ ifos }}
-data: {{ data }}
 
 injection:
-  epoch: 2000
-  spin 1z: 0.4
-  spin2z: 0.4
-  eccentricity: 0.4
-  declination: 0.65
-  right ascension: 4.67
-  polarization: 2.34
-
-quality:
-  {{ quality }}
-likelihood:
-  {{ likelihood }}
-
-{%- assign waveform = production.meta['waveform'] %}
-waveform:
-  {{ waveform }}
+  duration: {{ inj['duration'] }}
+  sample_rate: {{ inj['sample rate'] }}
+  epoch: {{ inj['epoch'] }}
+  channel: {{ inj['channel'] }}
+  parameters: {{ inj['parameters'] }}
+  {%- assign waveform = production.meta['waveform'] %}
+  waveform: {{ waveform['approximant'] }}
+  interferometers:
+    {{ ifos }}
+  psds:
+    {{ psds }}
+    
 report:
   location: {{ config['general']['webroot'] }}/{{ production.event.name }}/{{ production.name }}
 
