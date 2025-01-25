@@ -102,7 +102,7 @@ class LALSimulationPSD(PSDApproximant):
             dt = 1./sample_rate
             N = int(duration * sample_rate)
             df = 1/duration
-            times = np.linspace(0, duration, N)
+            times = np.linspace(0, duration-dt, N)
             T = duration
         else:
             dt = times[1] - times[0]
@@ -125,7 +125,7 @@ class LALSimulationPSD(PSDApproximant):
 
         times += (kwargs.get("epoch", 0))
 
-        return TimeSeries(data=np.fft.irfft(noise_f, n=(N))*df*N, times=times)
+        return TimeSeries(data=2*np.fft.irfft(noise_f, n=(N))*df*N, times=times, dt=dt)
 
 
 class AdvancedLIGODesignSensitivity2018(LALSimulationPSD):

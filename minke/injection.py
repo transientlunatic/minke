@@ -65,6 +65,7 @@ def make_injection(
         else:
             kwargs = {"duration": duration, "sample_rate": sample_rate, "epoch": epoch}
         data = psd_model.time_series(**kwargs)
+        print("data length", len(data))
 
         channel_n = f"{detector.abbreviation}:{channel}"
         
@@ -79,18 +80,22 @@ def make_injection(
         
         print("length of injection", len(injection.data))
         print("duration of injection", (duration))
+
+        print("duration in TS", data.times[-1] - data.times[0])
+        print("duration by calc", data.dt * len(data.data))
+        print("dt", data.dt)
         
         if psdfile:
             # Write the PSD file to an ascii file
             filename = f"{detector.abbreviation}_{psdfile}.dat"
-            psd_model.to_file(filename, upper_frequency=sample_rate/2,
+            psd_model.to_file(filename, upper_frequency=(sample_rate/2)-1./duration,
                               lower_frequency=0, df=1./duration)
 
         
         if framefile:
             filename = f"{detector.abbreviation}_{framefile}.gwf"
             logger.info(f"Saving framefile to {filename}")
-            injection.write(filename, format="gwf")
+            injection.write(filename, format="gwf.lalframe")
         injections[detector.abbreviation] = injection
     return injections
 

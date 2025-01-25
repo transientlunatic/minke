@@ -21,10 +21,9 @@ class Asimov(asimov.pipeline.Pipeline):
         name = self.production.name
         ini = self.production.event.repository.find_prods(name, self.category)[0]
         executable = os.path.join(config.get('pipelines', 'environment'), 'bin', self._pipeline_command)
-        command = ["--settings", ini]
+        command = ["injection", "--settings", ini]
         full_command = executable + " " + " ".join(command)
         self.logger.info(full_command)
-
         description = {
             "executable": f"{executable}",
             "arguments": f"{' '.join(command)}",
@@ -101,40 +100,39 @@ class Asimov(asimov.pipeline.Pipeline):
         Collect the assets for this job.
         """
         outputs = {}
-        if os.path.exists(os.path.join(self.production.rundir, "frames")):
-            results_dir = glob.glob(os.path.join(self.production.rundir, "frames", "*"))
+        if os.path.exists(os.path.join(self.production.rundir)):
+            results_dir = glob.glob(os.path.join(self.production.rundir, "*.gwf"))
             frames = {}
 
             for frame in results_dir:
-                ifo = frame.split("/")[-1].split("-")[0]
+                ifo = frame.split("/")[-1].split("-")[0][0:2]
                 frames[ifo] = frame
 
             outputs["frames"] = frames
 
             self.production.event.meta['data']['data files'] = frames
 
-        if os.path.exists(os.path.join(self.production.rundir, "cache")):
-            results_dir = glob.glob(os.path.join(self.production.rundir, "cache", "*"))
+        if os.path.exists(os.path.join(self.production.rundir)):
+            results_dir = glob.glob(os.path.join(self.production.rundir, "*.cache"))
             frames = {}
-
             for frame in results_dir:
-                ifo = frame.split("/")[-1].split(".")[0]
+                ifo = frame.split("/")[-1].split(".")[0][0:2]
                 frames[ifo] = frame
 
             outputs["cache"] = frames
 
             self.production.event.meta['data']['cache files'] = frames
 
-        if os.path.exists(os.path.join(self.production.rundir, "psds")):
-            results_dir = glob.glob(os.path.join(self.production.rundir, "psds", "*"))
+        if os.path.exists(os.path.join(self.production.rundir)):
+            results_dir = glob.glob(os.path.join(self.production.rundir, "*_psd.dat"))
             frames = {}
 
             for frame in results_dir:
-                ifo = frame.split("/")[-1].split("-")[0]
+                ifo = frame.split("/")[-1].split("_")[0]
                 frames[ifo] = frame
 
             outputs["psds"] = frames
-
+            self.production.event.meta['psds'] = frames
             
         return outputs
 
