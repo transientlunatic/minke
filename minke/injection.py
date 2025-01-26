@@ -24,7 +24,7 @@ logger = logging.getLogger("minke.injection")
 
 
 def make_injection(
-        waveform=IMRPhenomPv2,
+        waveform=IMRPhenomXPHM,
         injection_parameters={},
         times=None,
         epoch=None,
