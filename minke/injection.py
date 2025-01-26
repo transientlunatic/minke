@@ -18,12 +18,13 @@ from .models.lalsimulation import SEOBNRv3, IMRPhenomPv2, IMRPhenomXPHM
 from .models.lalnoise import KNOWN_PSDS
 from .detector import KNOWN_IFOS
 from .utils import load_yaml
+from .filters import inner_product
 
 logger = logging.getLogger("minke.injection")
 
 
 def make_injection(
-        waveform=IMRPhenomPv2,
+        waveform=IMRPhenomXPHM,
         injection_parameters={},
         times=None,
         epoch=None,
@@ -73,10 +74,19 @@ def make_injection(
             parameters,
             times=data.times
         )
-        injection = data + waveform.project(detector)
+        injection_data = waveform.project(detector)
+        injection = data + injection_data
         injection.channel = channel_n
 
-        #duration = injection.times[-1] - injection.times[0]
+        injection_data_f = np.fft.fft(injection_data.data, n=len(data.times)//2)/sample_rate
+        
+        N = len(data.times)
+        df = 1./sample_rate
+        frequencies = np.arange(0, N // 2) * df
+        print(len(frequencies))
+        
+        psd_f = psd_model.frequency_domain(frequencies = frequencies)
+        print("Optimal SNR", np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data))))
         
         print("length of injection", len(injection.data))
         print("duration of injection", (duration))
@@ -182,14 +192,26 @@ def injection(settings):
                          title="Minke Injection"
                          )
 
-    with report:
-        report + "# Injection frames"
-        report + settings
-    
     detector_dict = {
         settings["interferometers"][ifo]: settings["psds"][ifo]
         for ifo in settings["interferometers"]
     }
+
+    
+    with report:
+        report + "# PSDs"
+
+        for detector, psd in detector_dict.items():
+            psd_o = KNOWN_PSDS[psd]()
+            data = psd_o.frequency_domain()
+            f, ax = plt.subplots(1,1, dpi=300)
+            ax.plot(data.frequencies, np.array(data.data))
+            report + f 
+    
+    with report:
+        report + "# Injection frames"
+        report + settings
+    
     injections = make_injection(
         channel=settings['channel'],
         duration=settings['duration'],
@@ -204,7 +226,6 @@ def injection(settings):
     data = injections
 
     for injection in injections.values():
-        print(injection)
         f, ax = plt.subplots(1,1, dpi=300)
         ax.plot(injection.times, np.array(injection.data))
         
