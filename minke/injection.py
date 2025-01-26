@@ -14,7 +14,7 @@ import astropy.units as u
 import otter
 import matplotlib.pyplot as plt
 
-from .models.lalsimulation import SEOBNRv3, IMRPhenomPv2
+from .models.lalsimulation import SEOBNRv3, IMRPhenomPv2, IMRPhenomXPHM
 from .models.lalnoise import KNOWN_PSDS
 from .detector import KNOWN_IFOS
 from .utils import load_yaml
@@ -44,6 +44,18 @@ def make_injection(
 
     waveform_model = waveform()
 
+    default_units = {"m1": u.solMass,
+                     "m2": u.solMass,
+                     "luminosity_distance": u.megaparsec,
+                     }
+
+    for p in parameters.keys():
+        if p in default_units.keys() and not isinstance(parameters[p], u.Quantity):
+            parameters[p] *= default_units[p]
+
+    # if not isinstance(duration, u.Quantity):
+    #     duration *= u.second
+            
     injections = {}
     for detector, psd_model in detectors.items():
         logger.info(f"Making injection for {detector}")
@@ -200,7 +212,7 @@ def injection(settings):
         duration=settings['duration'],
         sample_rate=settings['sample_rate'],
         epoch=settings['epoch'],
-        waveform=IMRPhenomPv2,
+        waveform=IMRPhenomXPHM,
         injection_parameters=parameters,
         detectors=detector_dict,
         framefile=settings['channel'],
