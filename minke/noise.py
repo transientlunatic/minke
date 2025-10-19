@@ -2,9 +2,15 @@
 Noise models from lalsimulation.
 """
 
-import torch
 import scipy
 import numpy as np
+try:
+    import torch
+    array_lib = torch
+    array_lib_s = "torch"
+except ImportError:
+    array_lib = np
+    array_lib_s = "numpy"
 
 import lal
 import lalsimulation
@@ -29,14 +35,17 @@ class LALSimulationPSD(PSDApproximant):
         mask_below=20,
     ):
         if frequencies is None:
-            frequencies = torch.arange(lower_frequency, upper_frequency + df, df)
+            frequencies = array_lib.arange(lower_frequency, upper_frequency + df, df)
+            f0 = float(lower_frequency)
+        else:
+            f0 = float(frequencies[0])
 
         N = int(len(frequencies))
         df = float(frequencies[1] - frequencies[0])
         psd_data = lal.CreateREAL8FrequencySeries(
-            None, lal.LIGOTimeGPS(0), lower_frequency, df, lal.HertzUnit, N
+            None, lal.LIGOTimeGPS(0), f0, df, lal.HertzUnit, N
         )
-        self.psd_function(psd_data, flow=lower_frequency)
+        self.psd_function(psd_data, flow=f0)
         psd_data = psd_data.data.data
         #psd_data[frequencies < mask_below] = psd_data[frequencies > mask_below][0]
         psd = PSD(psd_data, frequencies=frequencies)
@@ -62,7 +71,9 @@ class LALSimulationPSD(PSDApproximant):
         N = len(times)
         T = times[-1] - times[0]
         df = 1 / T
-        frequencies = torch.arange(len(times) // 2 + 1) * df.value
+        if array_lib_s == "torch":
+            df = df.value
+        frequencies = array_lib.arange(len(times) // 2 + 1) * df
         psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
         psd[-1] = psd[-2]
         # import matplotlib.pyplot as plt
@@ -81,51 +92,62 @@ class LALSimulationPSD(PSDApproximant):
         return self.covariance_matrix(times)
 
     def time_series(self, times=None, duration=None, sample_rate=None, **kwargs):
-        """Create a timeseries filled with noise from a specific PSD.
-        Parameters
-        ----------
-        psd : `heron:PSD`
-           The power spectral density of the noise to be generated in the time
-           series.
-        times : array-like
-           The time axis of the timeseries.
-        device : str or torch.device
-           The device which the noise series should be stored in.
+        """Create a time series of zero-mean Gaussian noise with this one-sided PSD.
 
-        Notes
-        -----
-        In order to follow with the conventions in lalsuite this has been
-        adapted from the code in lalnoise.
+        Normalization follows standard one-sided PSD conventions:
+        - Interior frequency bins (k=1..N/2-1): X_k = sqrt(S1(f_k) * fs / 2) * (a_k + i b_k)
+        - DC bin (k=0): X_0 = 0 (no offset)
+        - Nyquist bin (k=N/2, when N even): X_{N/2} = sqrt(S1(f_{N/2}) * fs) * a_{N/2} (real)
+        - Before applying the inverse real FFT, the frequency-domain noise is scaled by sqrt(N/2) to compensate for numpy's normalization.
         """
 
+        # Establish time grid and frequency resolution
         if times is None and sample_rate is not None and duration is not None:
-            dt = 1./sample_rate
             N = int(duration * sample_rate)
-            df = 1/duration
-            times = np.linspace(0, duration, N)
-            T = duration
-        else:
-            dt = times[1] - times[0]
+            times = np.linspace(0, duration, N, endpoint=False)
+            dt = 1.0 / sample_rate
+        elif times is not None:
+            times = np.asarray(times)
             N = len(times)
-            T = times[-1] - times[0]
-            df = 1 / T
-            
-        frequencies = torch.arange(0, N // 2 + 1) * df
-        reals = np.random.randn(len(frequencies))
-        imags = np.random.randn(len(frequencies))
-        psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
-        psd[-1] = psd[-2]
+            dt = float(times[1] - times[0])
+            sample_rate = 1.0 / dt
+        else:
+            raise ValueError("Provide either times, or duration and sample_rate")
 
-        S = 0.5 * np.sqrt(psd)# / df) #* T inside sqrt # np.sqrt(N * N / 4 / (T) * psd.value)
+        df = sample_rate / N
+        freqs = array_lib.arange(0, N // 2 + 1) * df
 
-        noise_r = S * (reals)
-        noise_i = S * (imags)
+        # One-sided PSD sampled on our frequency grid
+        psd = np.asarray(self.frequency_domain(df=df, frequencies=freqs).data)
+        if len(psd) > 1:
+            psd[-1] = psd[-2]  # avoid edge artifacts at Nyquist
 
-        noise_f = noise_r + 1j * noise_i
+        # Random Gaussian draws
+        reals = np.random.randn(len(freqs))
+        imags = np.random.randn(len(freqs))
 
-        times += (kwargs.get("epoch", 0))
+        # Construct one-sided frequency-domain noise
+        noise_f = np.zeros(len(freqs), dtype=np.complex128)
+        if len(freqs) > 2:
+            amp_mid = np.sqrt(psd[1:-1] * sample_rate / 2.0)
+            noise_f[1:-1] = amp_mid * (reals[1:-1] + 1j * imags[1:-1])
 
-        return TimeSeries(data=np.fft.irfft(noise_f, n=(N))*df*N, times=times)
+        # DC = 0 to avoid mean offset
+        noise_f[0] = 0.0 + 0.0j
+
+        # Nyquist bin is purely real with full factor (no 1/2)
+        if N % 2 == 0:
+            noise_f[-1] = np.sqrt(psd[-1] * sample_rate) * reals[-1]
+
+        # Compensate for numpy's 1/N inverse FFT normalization
+        noise_f *= np.sqrt(N / 2.0)
+
+        # Epoch shift if requested
+        times = times + (kwargs.get("epoch", 0))
+
+        # Inverse real FFT; numpy uses backward normalization so this is consistent
+        data = np.fft.irfft(noise_f, n=N)
+        return TimeSeries(data=data, times=times)
 
 
 class AdvancedLIGODesignSensitivity2018(LALSimulationPSD):
