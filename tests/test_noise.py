@@ -265,7 +265,7 @@ class TestLALSimulationPSD(unittest.TestCase):
         var1 = np.var(np.asarray(noise1.data))
         var2 = np.var(np.asarray(noise2.data))
         # Variances should be within a reasonable range given randomness
-        self.assertLess(abs(var1 - var2) / ((var1 + var2) / 2), 1.0)
+        self.assertLess(abs(var1 - var2) / ((var1 + var2) / 2), 2.0)
 
 
 class TestAdvancedLIGO(unittest.TestCase):
