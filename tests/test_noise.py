@@ -325,11 +325,11 @@ class TestBilbyComparison(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures and check if bilby is available."""
-        import bilby
-        self.bilby = bilby
-        self.bilby_available = True
-
-            
+        try:
+            import bilby
+            self.bilby = bilby
+        except ImportError:
+            self.skipTest('bilby is not installed')
         self.psd = AdvancedLIGO()
         
     def test_noise_mean_comparison_with_bilby(self):
