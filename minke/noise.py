@@ -98,7 +98,7 @@ class LALSimulationPSD(PSDApproximant):
         - Interior frequency bins (k=1..N/2-1): X_k = sqrt(S1(f_k) * fs / 2) * (a_k + i b_k)
         - DC bin (k=0): X_0 = 0 (no offset)
         - Nyquist bin (k=N/2, when N even): X_{N/2} = sqrt(S1(f_{N/2}) * fs) * a_{N/2} (real)
-        - Time series is inverse real FFT of X without any extra scaling.
+        - Before applying the inverse real FFT, the frequency-domain noise is scaled by sqrt(N/2) to compensate for numpy's normalization.
         """
 
         # Establish time grid and frequency resolution
