@@ -71,7 +71,7 @@ class LALSimulationPSD(PSDApproximant):
         N = len(times)
         T = times[-1] - times[0]
         df = 1 / T
-        if array_lib_s is torch:
+        if array_lib_s == "torch":
             df = df.value
         frequencies = array_lib.arange(len(times) // 2 + 1) * df
         psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
