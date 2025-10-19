@@ -116,12 +116,18 @@ class LALSimulationPSD(PSDApproximant):
         psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
         psd[-1] = psd[-2]
 
-        S = 0.5 * np.sqrt(psd)# / df) #* T inside sqrt # np.sqrt(N * N / 4 / (T) * psd.value)
+        S = np.sqrt(psd) * (2*np.sqrt(df) * sample_rate)
 
         noise_r = S * (reals)
         noise_i = S * (imags)
 
         noise_f = noise_r + 1j * noise_i
+
+        # Remove DC
+        noise_f[0] = 0.0 + 0.0j
+        # Remove Nyquist if even
+        if N % 2 == 0:
+            noise_f[-1] = 0.0 + 0.0j
 
         times += (kwargs.get("epoch", 0))
 
