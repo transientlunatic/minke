@@ -415,7 +415,7 @@ class TestBilbyComparison(unittest.TestCase):
             
             get_noise = getattr(bilby_psd, 'get_noise_realisation', None)
             if get_noise is None:
-                self.skipTest("bilby.PowerSpectralDensity.get_noise_realization not available in this version")
+                self.skipTest("bilby.PowerSpectralDensity.get_noise_realisation not available in this version")
             # bilby returns (frequency_domain_noise, frequencies) tuple
             bilby_noise_fd, _ = get_noise(sample_rate, duration)
             # Convert to time domain
