@@ -78,6 +78,8 @@ Tutorials
    tutorial-SNR-threshold
    tutorial-supernova
    tutorial-hardware
+   tutorial-noise-psd
+   tutorial-asimov
 
 Developer guide
 ===============
@@ -89,6 +91,7 @@ Minke is under continuous development, and more help is always needed!
    :caption: Development guide
 
    contributing
+   doctest-examples
 
 Credits and Information
 =======================

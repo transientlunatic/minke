@@ -49,32 +49,57 @@ A SineGaussian burst can be produced with a short script such as this ::
   model = SineGaussian()
 
   parameters = {"centre_frequency": 20,
-		"phase": 0,
-		"eccentricity": 0,
-		"q": 1.,
-		"sample_rate": 4096 * u.Hertz,
-		"gsptime": 998,
-		"hrss": 1e-22,
-		"duration": 2*u.second}
+                "phase": 0,
+                "eccentricity": 0,
+                "q": 1.,
+                "sample_rate": 4096 * u.Hertz,
+                "gpstime": 998,
+                "hrss": 1e-22,
+                "duration": 2*u.second}
 
   data = model.time_domain(parameters)
 
   detector = AdvancedLIGOHanford()
 
   projected = data.project(detector,
-	       ra=1, dec=0.5,
-	       iota=0.4,
-	       phi_0=0,
-	       psi=0
-	       )
+                ra=1, dec=0.5,
+                iota=0.4,
+                phi_0=0,
+                psi=0
+                )
 
-  f = projected.plot()
-  f.savefig("projected_sinegaussian.png")
+Visualizing the projected signal:
+
+.. plot::
+   :include-source:
+
+   from minke.models.burst import SineGaussian
+   from minke.detector import AdvancedLIGOHanford
+   import astropy.units as u
+
+   model = SineGaussian()
+   parameters = {"centre_frequency": 20,
+                 "phase": 0,
+                 "eccentricity": 0,
+                 "q": 1.,
+                 "sample_rate": 4096 * u.Hertz,
+                 "gpstime": 998,
+                 "hrss": 1e-22,
+                 "duration": 2*u.second}
+
+   data = model.time_domain(parameters)
+   detector = AdvancedLIGOHanford()
+   projected = data.project(detector,
+                 ra=1, dec=0.5,
+                 iota=0.4,
+                 phi_0=0,
+                 psi=0
+                 )
+
+   fig = projected.plot()
+   plt.tight_layout()
 
   
-.. image:: images/bursts/projected_sinegaussian.png
-  
-
 Band-limited white noise bursts
 -------------------------------
 
