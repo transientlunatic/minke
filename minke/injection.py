@@ -8,6 +8,7 @@ import os
 import click
 
 import numpy as np
+from scipy.optimize import brentq
 
 import astropy.units as u
 
@@ -22,6 +23,49 @@ from .filters import inner_product
 
 logger = logging.getLogger("minke.injection")
 
+def calculate_network_snr_for_distance(distance, waveform_model, parameters, detectors, psd_models, times):
+    """Calculate the network SNR for a given luminosity distance."""
+    params = parameters.copy()
+    params['luminosity_distance'] = distance * u.megaparsec
+    
+    waveform = waveform_model.time_domain(params, times=times)
+    
+    network_snr_squared = 0.0
+    sample_rate = 1.0 / (times[1] - times[0])
+    
+    for detector, psd_model in zip(detectors, psd_models):
+        injection_data = waveform.project(detector)
+        
+        # Calculate SNR for this detector
+        injection_data_f = np.fft.fft(injection_data.data, n=len(times)//2) / sample_rate
+        
+        N = len(times)
+        df = 1. / sample_rate
+        frequencies = np.arange(0, N // 2) * df
+        psd_f = psd_model.frequency_domain(frequencies=frequencies)
+        
+        snr_squared = inner_product(injection_data_f, injection_data_f, np.array(psd_f.data))
+        network_snr_squared += snr_squared
+    
+    return np.sqrt(network_snr_squared)
+
+
+def find_distance_for_network_snr(target_snr, waveform_model, parameters, detectors, psd_models, times):
+    """Find the luminosity distance that produces the target network SNR."""
+    
+    def snr_residual(distance):
+        return calculate_network_snr_for_distance(distance, waveform_model, parameters, 
+                                                  detectors, psd_models, times) - target_snr
+    
+    # Search between 10 Mpc and 10000 Mpc
+    try:
+        distance = brentq(snr_residual, 10, 10000, xtol=0.1)
+        return distance * u.megaparsec
+    except ValueError:
+        snr_at_10 = calculate_network_snr_for_distance(10, waveform_model, parameters, 
+                                                       detectors, psd_models, times)
+        logger.error(f"Could not find distance for network SNR={target_snr}. Network SNR at 10 Mpc = {snr_at_10:.1f}")
+        raise
 
 def make_injection(
         waveform=IMRPhenomXPHM,
@@ -53,10 +97,33 @@ def make_injection(
         if p in default_units.keys() and not isinstance(parameters[p], u.Quantity):
             parameters[p] *= default_units[p]
 
-    # if not isinstance(duration, u.Quantity):
-    #     duration *= u.second
-            
+
+    target_snr = injection_parameters.get("snr", None)
+    if target_snr is not None:
+        logger.info(f"Finding luminosity distance for target network SNR={target_snr}")
+        
+        # Prepare detector and PSD objects for all detectors
+        detector_objects = []
+        psd_objects = []
+        
+        for det_name, psd_name in detectors.items():
+            detector_objects.append(KNOWN_IFOS[det_name]())
+            psd_objects.append(KNOWN_PSDS[psd_name]())
+        
+        # Get times array
+        if times is not None:
+            times_array = times
+        else:
+            psd_temp = psd_objects[0].time_series(duration=duration, sample_rate=sample_rate, epoch=epoch)
+            times_array = psd_temp.times
+        
+        parameters['luminosity_distance'] = find_distance_for_network_snr(
+            target_snr, waveform_model, parameters, detector_objects, psd_objects, times_array
+        )
+        logger.info(f"Required luminosity distance for network SNR: {parameters['luminosity_distance']:.2f}")
+
     injections = {}
+    detector_snrs = {}
     for detector, psd_model in detectors.items():
         logger.info(f"Making injection for {detector}")
         psd_model = KNOWN_PSDS[psd_model]()
@@ -66,6 +133,8 @@ def make_injection(
         else:
             kwargs = {"duration": duration, "sample_rate": sample_rate, "epoch": epoch}
         data = psd_model.time_series(**kwargs)
+
+       
         print("data length", len(data))
 
         channel_n = f"{detector.abbreviation}:{channel}"
@@ -86,7 +155,9 @@ def make_injection(
         print(len(frequencies))
         
         psd_f = psd_model.frequency_domain(frequencies = frequencies)
-        print("Optimal SNR", np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data))))
+        det_snr = np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)))
+        detector_snrs[detector.abbreviation] = det_snr
+        print(f"Optimal SNR for {detector.abbreviation}: {det_snr:.2f}")
         
         print("length of injection", len(injection.data))
         print("duration of injection", (duration))
@@ -107,6 +178,11 @@ def make_injection(
             logger.info(f"Saving framefile to {filename}")
             injection.write(filename, format="gwf.lalframe")
         injections[detector.abbreviation] = injection
+
+    network_snr = np.sqrt(sum(snr**2 for snr in detector_snrs.values()))
+    logger.info(f"Network SNR: {network_snr:.2f}")
+    print(f"Network SNR: {network_snr:.2f}")
+    
     return injections
 
 

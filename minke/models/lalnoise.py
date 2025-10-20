@@ -2,7 +2,11 @@
 Noise models from lalsimulation.
 """
 
-import torch
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 import scipy
 import numpy as np
 
@@ -29,7 +33,10 @@ class LALSimulationPSD(PSDApproximant):
         mask_below=20,
     ):
         if frequencies is None:
-            frequencies = torch.arange(lower_frequency, upper_frequency + df, df)
+            if TORCH_AVAILABLE:
+                frequencies = torch.arange(lower_frequency, upper_frequency + df, df)
+            else:
+                frequencies = np.arange(lower_frequency, upper_frequency + df, df)
 
         N = int(len(frequencies))
         df = float(frequencies[1] - frequencies[0])
@@ -62,7 +69,10 @@ class LALSimulationPSD(PSDApproximant):
         N = len(times)
         T = times[-1] - times[0]
         df = 1 / T
-        frequencies = torch.arange(len(times) // 2 + 1) * df.value
+        if TORCH_AVAILABLE:
+            frequencies = torch.arange(len(times) // 2 + 1) * df.value
+        else:
+            frequencies = np.arange(len(times) // 2 + 1) * df
         psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
         psd[-1] = psd[-2]
         # import matplotlib.pyplot as plt
@@ -110,7 +120,10 @@ class LALSimulationPSD(PSDApproximant):
             T = times[-1] - times[0]
             df = 1 / T
             
-        frequencies = torch.arange(0, N // 2 + 1) * df
+        if TORCH_AVAILABLE:
+            frequencies = torch.arange(0, N // 2 + 1) * df
+        else:
+            frequencies = np.arange(0, N // 2 + 1) * df
         reals = np.random.randn(len(frequencies))
         imags = np.random.randn(len(frequencies))
         psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
