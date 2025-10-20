@@ -20,34 +20,37 @@ Pankow and others, and is built around the LALSimulation library.
 
 
 """
-from glue.ligolw import ligolw, utils, lsctables
-lsctables.use_in(ligolw.LIGOLWContentHandler);
+from igwn_ligolw import ligolw, utils, lsctables
+from igwn_ligolw.table import Table
+from igwn_ligolw.utils import process
+
 import numpy
-import lalburst, lalsimulation, lalmetaio
+import lalsimulation
 from minke.antenna import response
 
 from lal import TimeDelayFromEarthCenter as XLALTimeDelayFromEarthCenter
-#from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from lal import LIGOTimeGPS
-from glue.ligolw.utils import process
+
 import glue
 
-import glue.ligolw
-import gzip 
 
-import lal, lalframe
+import lal
+import lalframe
 
 import numpy as np
 import pandas as pd
 import os
 import os.path
 import matplotlib
-matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
-import re
 import random
 import minke
 from minke import sources
+
+lsctables.use_in(ligolw.LIGOLWContentHandler)
+matplotlib.use('Agg')
+
 sourcemap = {}
 for classin in dir(sources):
     classin = sources.__dict__[classin]
@@ -298,10 +301,10 @@ class MDCSet():
         i = 0
         #sim_burst_table = lalburst.SimBurstTableFromLIGOLw(filename, start, stop)
 
-        xml = glue.ligolw.utils.load_filename(filename, 
-                                              contenthandler = glue.ligolw.ligolw.LIGOLWContentHandler,
+        xml = utils.load_filename(filename, 
+                                              contenthandler = ligolw.LIGOLWContentHandler,
                                               verbose = True)
-        sim_burst_table = glue.ligolw.table.get_table(xml, self.table_type.tableName)
+        sim_burst_table = Table.get_table(xml, self.table_type.tableName)
         
         for i,simrow in enumerate(sim_burst_table):
             # This is an ugly kludge to get around the poor choice of wavform name in the xmls, and

@@ -30,7 +30,8 @@ dependencies = [
 	"otter-report",
 	"pandas",
 	"lalsuite",
-	"lscsoft-glue",
+	"ligotimegps",
+	"igwn-ligolw",
 	"gwpy",
 ]
 

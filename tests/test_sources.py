@@ -4,7 +4,7 @@ from minke import mdctools
 from minke import distribution
 import numpy as np
 
-from glue.ligolw import lsctables
+from igwn_ligolw import lsctables
 
 ott_data_url = "http://www.stellarcollapse.org/gwdata/ottetal2012b/s27WHW02_LS220_j0_rx3_full_cc_fheat1.05_HlmD.dat.gz"
 

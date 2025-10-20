@@ -1,33 +1,27 @@
 import sys
-import math
-from optparse import OptionParser, Option, OptionGroup
 import scipy
 from scipy import random
 import numpy
-np = numpy
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw import ligolw
-from glue.ligolw import ilwd
-#from glue.segments import segment
-from glue.lal import LIGOTimeGPS as GPS
-from glue.ligolw.utils import process
-#from pylal.antenna import response
-from minke.antenna import response
 
-import scipy.signal as signal
+import matplotlib.pyplot as plt
+
+from igwn_ligolw import lsctables
+from igwn_ligolw.utils import ilwd
+#from glue.segments import segment
+from ligotimegps import LIGOTimeGPS as GPS
+
 import scipy.interpolate as interp
 
 import os.path
 
-from scipy import random
-
 import lal
 import lalburst
 import lalsimulation
-lalsim = lalsimulation
 
 from minke.distribution import *
+
+lalsim = lalsimulation
+np = numpy
 
 try:
     import tkinter as tk
@@ -35,7 +29,6 @@ except ImportError:
     import matplotlib
     matplotlib.use("agg")
 
-import matplotlib.pyplot as plt
 
 
 if "numrel_data" in lsctables.SimBurstTable.validcolumns.keys():
