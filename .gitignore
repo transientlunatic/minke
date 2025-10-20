@@ -1,3 +1,22 @@
+docs/_build/
+docs/lvk/
+docs/build
+environment/
+
+.vscode/
+.python-version
+
+
+# GW things
+*.gwf
+*.dat 
+
+# Images
+*.png
+
+# Development scratch space
+scratch/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
