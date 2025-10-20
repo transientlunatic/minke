@@ -2,9 +2,12 @@ import logging
 
 import numpy as array_library
 import numpy as np
-import torch
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 from scipy.interpolate import CubicSpline
-import scipy
 
 # Astropy to handle units sanely
 from astropy import units as u

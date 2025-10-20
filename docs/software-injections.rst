@@ -69,6 +69,48 @@ The `make_injections` Functions
    fig = injection.plot()
    plt.tight_layout()
 
+SNR-Based Injections
+^^^^^^^^^^^^^^^^^^^^
+
+Instead of specifying a luminosity distance, you can specify a target network signal-to-noise ratio (SNR).
+Minke will automatically calculate the required luminosity distance to achieve that SNR across all detectors.
+
+.. plot::
+   :include-source:
+
+   from minke.injection import make_injection
+   import astropy.units as u
+
+   detectors = {"AdvancedLIGOHanford": "AdvancedLIGO", 
+                "AdvancedLIGOLivingston": "AdvancedLIGO"}
+
+   parameters = {"m1": 30,
+                 "m2": 30,
+                 "snr": 20,  # Specify SNR instead of luminosity_distance
+                 "ra": 0,
+                 "dec": 0.5,
+                 "theta_jn": 0.4,
+                 "phase": 0,
+                 "psi": 0}
+
+   injections = make_injection(detectors=detectors, 
+                                injection_parameters=parameters, 
+                                duration=4, sample_rate=4096, epoch=998)
+
+   # The network SNR will be approximately 20
+   # Individual detector SNRs will depend on antenna patterns
+   for det_name, injection in injections.items():
+       print(f"{det_name}: SNR calculated from distance")
+
+.. note::
+   When using SNR-based injection, the ``snr`` parameter should be provided instead of ``luminosity_distance``.
+   The network SNR is calculated as the quadrature sum of individual detector SNRs:
+   
+   .. math::
+      \text{SNR}_{\text{network}} = \sqrt{\sum_i \text{SNR}_i^2}
+   
+   Minke uses a root-finding algorithm to determine the luminosity distance that produces the target network SNR.
+
 We can also produce injections into zero noise:
 
 ::
@@ -108,7 +150,7 @@ The Command-line interface
 
 To use the command line interface you'll need to create a YAML-formatted configuration file.
 
-For example ::
+For example, using luminosity distance::
   
    injection:
      duration: 4
@@ -119,6 +161,30 @@ For example ::
        luminosity_distance: 400
        m1: 35
        m2: 30
+     waveform: IMRPhenomPv2
+     interferometers:
+       H1: AdvancedLIGOHanford
+       L1: AdvancedLIGOLivingston
+     psds:
+       H1: AdvancedLIGO
+       L1: AdvancedLIGO
+
+Alternatively, you can specify a target network SNR instead of luminosity distance::
+
+   injection:
+     duration: 4
+     sample_rate: 4096
+     epoch: 998
+     channel: Injection
+     parameters:
+       snr: 20  # Target network SNR
+       m1: 35
+       m2: 30
+       ra: 0
+       dec: 0
+       psi: 0
+       theta_jn: 0
+       phase: 0
      waveform: IMRPhenomPv2
      interferometers:
        H1: AdvancedLIGOHanford

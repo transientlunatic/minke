@@ -83,3 +83,44 @@ For example, if we want to project in for LIGO Hanford we need to specify the de
   f = projected.plot()
   f.savefig("projected_waveform.png")
 
+Creating Injections with Target SNR
+------------------------------------
+
+When creating injections for testing parameter estimation pipelines, you may want to specify a target signal-to-noise ratio (SNR) rather than a luminosity distance.
+Minke can automatically calculate the required luminosity distance to achieve a specific network SNR.
+
+To create an injection with a target SNR of 20 across multiple detectors::
+
+  from minke.injection import make_injection
+
+  detectors = {"AdvancedLIGOHanford": "AdvancedLIGO", 
+               "AdvancedLIGOLivingston": "AdvancedLIGO"}
+
+  parameters = {"m1": 30,
+                "m2": 30,
+                "snr": 20,  # Target network SNR instead of luminosity_distance
+                "ra": 0,
+                "dec": 0,
+                "psi": 0,
+                "theta_jn": 0,
+                "phase": 0}
+
+  injections = make_injection(detectors=detectors, 
+                              injection_parameters=parameters, 
+                              duration=4, 
+                              sample_rate=4096, 
+                              epoch=998)
+
+The ``make_injection`` function will determine the luminosity distance needed to produce a network SNR of 20.
+The network SNR is the quadrature sum of the individual detector SNRs, so each detector will have an SNR that depends on its antenna pattern and the source sky location.
+
+You can access individual detector injections::
+
+  h1_injection = injections['H1']
+  l1_injection = injections['L1']
+
+  # Plot the injection
+  f = h1_injection.plot()
+  f.savefig("h1_snr_injection.png")
+
+
