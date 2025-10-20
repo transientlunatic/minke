@@ -13,49 +13,41 @@ IMRPhenomPv2
 
 IMRPhenomPv2 is a precessing, spinning black hole model.
 
-::
+.. plot::
+   :include-source:
 
    import minke
    import astropy.units as u
-
    from minke.models.cbc import IMRPhenomPv2
-   from minke.detector import AdvancedLIGOHanford
 
    model = IMRPhenomPv2()
-
-   parameters = {"mass_ratio": 0.7, "total_mass": 100*u.solMass, "luminosity_distance": 10*u.megaparsec}
+   parameters = {"mass_ratio": 0.7, 
+                 "total_mass": 100*u.solMass, 
+                 "luminosity_distance": 10*u.megaparsec}
 
    data = model.time_domain(parameters)
 
-   data = model.time_domain(mass_ratio=0.7, total_mass=100*u.solMass)
-
-   f = data['plus'].plot()
-   f.savefig("waveform.png")
-
-.. image:: images/cbc/waveform-imrphenompv2.png   
-
+   fig = data['plus'].plot()
+   plt.tight_layout()
 
 	   
 SEOBNRv3
 ^^^^^^^^
 
-::
+.. plot::
+   :include-source:
 
    import minke
    import astropy.units as u
-
    from minke.models.cbc import SEOBNRv3
-   from minke.detector import AdvancedLIGOHanford
 
    model = SEOBNRv3()
-
-   parameters = {"mass_ratio": 0.7, "total_mass": 100*u.solMass, "luminosity_distance": 10*u.megaparsec}
+   parameters = {"mass_ratio": 0.7, 
+                 "total_mass": 100*u.solMass, 
+                 "luminosity_distance": 10*u.megaparsec}
 
    data = model.time_domain(parameters)
 
-   data = model.time_domain(mass_ratio=0.7, total_mass=100*u.solMass)
-
-   f = data['plus'].plot()
-   f.savefig("waveform.png")
-
-.. image:: images/cbc/waveform-seobnrv3.png      
+   fig = data['plus'].plot()
+   plt.tight_layout()
+      

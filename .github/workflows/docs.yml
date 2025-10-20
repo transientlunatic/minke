@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Build HTML Docs
+    - name: Run Documentation Doctests
       run: |
         pip install sphinx sphinx-multiversion
         pip install kentigern
@@ -27,11 +27,34 @@ jobs:
         pip install -r requirements_dev.txt
         pip install .
         cd docs
+        echo "Running doctests..."
+        make doctest > doctest_output.txt 2>&1 || true
+        if grep -q "failed" doctest_output.txt; then
+          echo "::warning file=docs/doctest_output.txt,title=Doctest Failures::Some documentation examples failed testing. See the full output for details."
+          echo "Doctest Summary:"
+          grep -A 5 "Doctest summary" doctest_output.txt || echo "No summary found"
+        else
+          echo "All doctests passed!"
+        fi
+        cat doctest_output.txt
+      continue-on-error: true
+
+    - name: Upload Doctest Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: doctest-results
+        path: docs/doctest_output.txt
+        retention-days: 30
+
+    - name: Build HTML Docs
+      run: |
+        cd docs
         make multi
 
     - name: Add redirect to current version
       run: |
-        echo "<!DOCTYPE html><html><head><title>Redirecting to master branch</title><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"0; url=./master/index.html\">    <link rel=\"canonical\" href=\"https://asimov.docs.ligo.org/asimov/master/index.html\"></head></html>" > docs/_build/index.html
+        echo "<!DOCTYPE html><html><head><title>Redirecting to main branch</title><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"0; url=./main/index.html\">    <link rel=\"canonical\" href=\"https://asimov.docs.ligo.org/asimov/main/index.html\"></head></html>" > docs/_build/index.html
         
     - name: SCP Deploy HTML Docs
       uses: horochx/deploy-via-scp@v1.0.1

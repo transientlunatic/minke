@@ -15,6 +15,7 @@
 
 import sys
 import os
+import doctest
 
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
@@ -41,7 +42,14 @@ import kentigern# -- General configuration -------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'numpydoc', 'sphinx.ext.autosummary']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'numpydoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'matplotlib.sphinxext.plot_directive',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -57,7 +65,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Minke'
-copyright = u'2024, Daniel Williams'
+copyright = u'2013-2025, Daniel Williams'
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -82,31 +90,37 @@ release = minke.__version__
 # directories to ignore when looking for source files.
 exclude_patterns = ['_build']
 
-# The reST default role (used for this markup: `text`) to use for all
-# documents.
-#default_role = None
+# -- Doctest configuration ---------------------------------------------
 
-# If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+# Doctest global setup code - executed before each doctest block
+doctest_global_setup = """
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for testing
+import matplotlib.pyplot as plt
+"""
 
-# If true, the current module name will be prepended to all description
-# unit titles (such as .. function::).
-#add_module_names = True
+# Doctest flags to apply to all doctests
+doctest_default_flags = (
+    doctest.NORMALIZE_WHITESPACE |
+    doctest.ELLIPSIS |
+    doctest.IGNORE_EXCEPTION_DETAIL
+)
 
-# If true, sectionauthor and moduleauthor directives will be shown in the
-# output. They are ignored by default.
-#show_authors = False
+# Test groups to allow selective testing
+doctest_test_doctest_blocks = 'default'
 
-# The name of the Pygments (syntax highlighting) style to use.
-#pygments_style = 'sphinx'
+# -- Matplotlib plot directive configuration ---------------------------
 
-# A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
-
-# If true, keep warnings as "system message" paragraphs in the built
-# documents.
-#keep_warnings = False
-
+# Configuration for matplotlib plot_directive
+plot_include_source = True
+plot_html_show_source_link = False
+plot_formats = ['png']
+plot_html_show_formats = False
+plot_pre_code = """
+import numpy as np
+import matplotlib.pyplot as plt
+"""
 
 # -- Options for HTML output -------------------------------------------
 
@@ -114,86 +128,12 @@ exclude_patterns = ['_build']
 # a list of builtin themes.
 
 html_theme = 'kentigern'
-html_theme_path = kentigern.get_html_theme_path()
-
-# Theme options are theme-specific and customize the look and feel of a
-# theme further.  For a list of options available for each theme, see the
-# documentation.
-#html_theme_options = {}
-
-# Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
-
-# The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
-#html_title = None
-
-# A shorter title for the navigation bar.  Default is the same as
-# html_title.
-#html_short_title = None
-
-# The name of an image file (relative to this directory) to place at the
-# top of the sidebar.
-#html_logo = None
-
-# The name of an image file (within the static path) to use as favicon
-# of the docs.  This file should be a Windows icon file (.ico) being
-# 16x16 or 32x32 pixels large.
-#html_favicon = None
-
-# Add any paths that contain custom static files (such as style sheets)
-# here, relative to this directory. They are copied after the builtin
-# static files, so a file named "default.css" will overwrite the builtin
-# "default.css".
 html_static_path = ['_static']
 templates_path = ['_templates']
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page
-# bottom, using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
-
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
 html_use_smartypants = True
-
-# Custom sidebar templates, maps document names to template names.
 
 html_sidebars = {'**': ['localtoc.html', 'sourcelink.html', 'searchbox.html']}
 
-
-# Additional templates that should be rendered to pages, maps page names
-# to template names.
-#html_additional_pages = {}
-
-# If false, no module index is generated.
-#html_domain_indices = True
-
-# If false, no index is generated.
-#html_use_index = True
-
-# If true, the index is split into individual pages for each letter.
-#html_split_index = False
-
-# If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
-
-# If true, "Created using Sphinx" is shown in the HTML footer.
-# Default is True.
-#html_show_sphinx = True
-
-# If true, "(C) Copyright ..." is shown in the HTML footer.
-# Default is True.
-#html_show_copyright = True
-
-# If true, an OpenSearch description file will be output, and all pages
-# will contain a <link> tag referring to it.  The value of this option
-# must be the base URL from which the finished HTML is served.
-#html_use_opensearch = ''
-
-# This is the file name suffix for HTML files (e.g. ".xhtml").
-#html_file_suffix = None
-
-# Output file base name for HTML help builder.
 htmlhelp_basename = 'minkedoc'
 
 
