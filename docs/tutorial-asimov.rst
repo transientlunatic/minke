@@ -113,46 +113,9 @@ Updating the Event Ledger
 
 Add the production to your event in the Asimov ledger:
 
-.. code-block:: yaml
+.. code-block:: console
 
-   # events/GW150914.yaml
-   name: GW150914
-   repository: /path/to/analysis/repository
-   
-   productions:
-     - name: injection-O1
-       pipeline: minke
-       status: ready
-       comment: Generate injections for O1 sensitivity study
-       
-       meta:
-         injection:
-           duration: 16
-           sample_rate: 4096
-           epoch: 1126259462
-           channel: INJECTION
-           parameters:
-             m1: 36
-             m2: 29
-             luminosity_distance: 410
-             ra: 1.95
-             dec: -1.27
-             theta_jn: 0.4
-             phase: 0
-             psi: 0.82
-             gpstime: 1126259478
-           interferometers:
-             H1: AdvancedLIGOHanford
-             L1: AdvancedLIGOLivingston
-           psds:
-             H1: AdvancedLIGO
-             L1: AdvancedLIGO
-         
-         waveform:
-           approximant: IMRPhenomXPHM
-         
-         scheduler:
-           accounting_group: ligo.dev.o4.cbc.pe.lalinference
+   $ asimov apply -e GW150914_095045 --file injection-O1.yaml
 
 Running the Production
 ----------------------
