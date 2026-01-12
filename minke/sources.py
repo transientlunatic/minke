@@ -1,6 +1,6 @@
 import sys
 import scipy
-from scipy import random
+from numpy import random
 import numpy
 
 import matplotlib.pyplot as plt
@@ -189,7 +189,7 @@ class Waveform(object):
         Generate a SimBurst object for this waveform.
         """
         swig_row = self._row()
-        burstobj = lalburst.CreateSimBurst()
+        burstobj = swig_row
         
         for a in self.table_type.validcolumns.keys():
             try:
@@ -253,7 +253,7 @@ class Waveform(object):
             
         row.waveform = self.waveform
         # Fill in the time
-        row.set_time_geocent(GPS(float(self.time)))
+        row.time_geocent_gps = GPS(float(self.time))
         # Get the sky locations
         if not row.ra:
             row.ra, row.dec, row.psi = self.sky_dist()
@@ -264,7 +264,7 @@ class Waveform(object):
         row.waveform_number = random.randint(0,int(2**32)-1)
         ### !! This needs to be updated.
         row.process_id = "process:process_id:0" #procrow.process_id
-        row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:%d" % slide_id)
+        row.time_slide_id = slide_id #ilwd.ilwdchar("time_slide:time_slide_id:%d" % slide_id)
 
         return row
     

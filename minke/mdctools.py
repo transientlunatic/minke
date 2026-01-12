@@ -26,7 +26,7 @@ from igwn_ligolw.utils import process
 
 import numpy
 import lalsimulation
-from minke.antenna import response
+from lal.antenna import AntennaResponse as response
 
 from lal import TimeDelayFromEarthCenter as XLALTimeDelayFromEarthCenter
 from lal import LIGOTimeGPS
@@ -254,7 +254,8 @@ class MDCSet():
                 row.waveform = waveform.waveform
                 if self.table_type == lsctables.SimBurstTable:
                     # Fill in the time
-                    row.set_time_geocent(GPS(float(waveform.time)))
+                    #row.set_time_geocent(GPS(float(waveform.time)))
+                    row.time_geocent_gps(GPS(float(waveform.time)))
                     # Get the sky locations
                     row.ra, row.dec, row.psi = waveform.ra, waveform.dec, waveform.psi
                 row.simulation_id = waveform.simulation_id

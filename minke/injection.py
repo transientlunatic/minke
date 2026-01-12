@@ -42,9 +42,9 @@ def calculate_network_snr_for_distance(distance, waveform_model, parameters, det
         N = len(times)
         df = 1. / sample_rate
         frequencies = np.arange(0, N // 2) * df
-        psd_f = psd_model.frequency_domain(frequencies=frequencies)
+        psd_f = psd_model.frequency_domain(frequencies=frequencies.value)
         
-        snr_squared = inner_product(injection_data_f, injection_data_f, np.array(psd_f.data))
+        snr_squared = inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)).value
         network_snr_squared += snr_squared
     
     return np.sqrt(network_snr_squared)
@@ -121,6 +121,7 @@ def make_injection(
             target_snr, waveform_model, parameters, detector_objects, psd_objects, times_array
         )
         logger.info(f"Required luminosity distance for network SNR: {parameters['luminosity_distance']:.2f}")
+        print(f"Required luminosity distance for network SNR: {parameters['luminosity_distance']:.2f}")
 
     injections = {}
     detector_snrs = {}
@@ -133,9 +134,6 @@ def make_injection(
         else:
             kwargs = {"duration": duration, "sample_rate": sample_rate, "epoch": epoch}
         data = psd_model.time_series(**kwargs)
-
-       
-        print("data length", len(data))
 
         channel_n = f"{detector.abbreviation}:{channel}"
         
@@ -152,11 +150,11 @@ def make_injection(
         N = len(data.times)
         df = 1./sample_rate
         frequencies = np.arange(0, N // 2) * df
-        print(len(frequencies))
         
         psd_f = psd_model.frequency_domain(frequencies = frequencies)
         det_snr = np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)))
         detector_snrs[detector.abbreviation] = det_snr
+
         print(f"Optimal SNR for {detector.abbreviation}: {det_snr:.2f}")
         
         print("length of injection", len(injection.data))
