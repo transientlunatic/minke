@@ -1,4 +1,4 @@
-from scipy import random
+from numpy import random
 import numpy
 
 def sky_params(net, time, ra, dec, psi, incl=numpy.pi):

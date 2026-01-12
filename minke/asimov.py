@@ -6,6 +6,7 @@ import htcondor
 from asimov.utils import set_directory
 from asimov import config
 import configparser
+import pprint
 
 class Asimov(asimov.pipeline.Pipeline):
 
