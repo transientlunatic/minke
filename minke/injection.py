@@ -121,7 +121,6 @@ def make_injection(
             target_snr, waveform_model, parameters, detector_objects, psd_objects, times_array
         )
         logger.info(f"Required luminosity distance for network SNR: {parameters['luminosity_distance']:.2f}")
-        print(f"Required luminosity distance for network SNR: {parameters['luminosity_distance']:.2f}")
 
     injections = {}
     detector_snrs = {}
@@ -154,7 +153,6 @@ def make_injection(
         psd_f = psd_model.frequency_domain(frequencies = frequencies)
         det_snr = np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)))
         detector_snrs[detector.abbreviation] = det_snr
-
         print(f"Optimal SNR for {detector.abbreviation}: {det_snr:.2f}")
         
         print("length of injection", len(injection.data))
