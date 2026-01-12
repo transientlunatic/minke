@@ -35,6 +35,7 @@ dependencies = [
 	"ligotimegps",
 	"igwn-ligolw",
 	"gwpy",
+	"astropy",
 ]
 
 [project.optional-dependencies]
