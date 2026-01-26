@@ -2,11 +2,22 @@ import asimov.pipeline
 import importlib
 import os
 import glob
-import htcondor
-from asimov.utils import set_directory
-from asimov import config
+import warnings
 import configparser
 import pprint
+
+# HTCondor import with fallback support for both htcondor2 and htcondor
+try:
+    warnings.filterwarnings("ignore", module="htcondor2")
+    import htcondor2 as htcondor  # NoQA
+    import classad2 as classad  # NoQA
+except ImportError:
+    warnings.filterwarnings("ignore", module="htcondor")
+    import htcondor  # NoQA
+    import classad  # NoQA
+
+from asimov.utils import set_directory
+from asimov import config
 
 class Asimov(asimov.pipeline.Pipeline):
 
@@ -35,7 +46,7 @@ class Asimov(asimov.pipeline.Pipeline):
             "request_memory": "1024",
             "batch_name": f"{self.name}/{self.production.event.name}/{name}",
             "+flock_local": "True",
-            "+DESIRED_Sites": htcondor.classad.quote("nogrid"),
+            "+DESIRED_Sites": classad.quote("nogrid"),
         }
 
         accounting_group = self.production.meta.get("scheduler", {}).get("accounting group", None)
