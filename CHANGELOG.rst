@@ -3,6 +3,20 @@ Minke Changelog
 
 Please accept my apologies for the rattiness of this CHANGELOG; this is an old project and it didn't have the most organised of starts.
 
+2.1.1
+=====
+
+This is a bug-fix release and does not introduce any backwards-incompatible changes.
+
+Breaking changes
+----------------
+This release is not believed to introduce any breaking changes.
+
+Pull requests
+-------------
+This release contains the following PRs:
++ `github#17 <https://github.com/transientlunatic/minke/pull/17>`_ Fix the interface with htcondor to allow htcondor2 bindings.
+
 2.1.0
 =====
 
