@@ -177,6 +177,13 @@ def make_injection(
             filename = f"{detector.abbreviation}_{framefile}.gwf"
             logger.info(f"Saving framefile to {filename}")
             injection.write(filename, format="gwf.lalframe")
+            os.makedirs("cache", exist_ok=True)
+            abs_path = os.path.abspath(filename)
+            cache_entry = f"{detector.abbreviation}\t{framefile}\t{int(epoch)}\t{int(duration)}\tfile://localhost{abs_path}\n"
+            cache_path = os.path.join("cache", f"{detector.abbreviation}.cache")
+            with open(cache_path, "w") as cache_file:
+                cache_file.write(cache_entry)
+            logger.info(f"Wrote cache file to {cache_path}")
         injections[detector.abbreviation] = injection
 
     network_snr = np.sqrt(sum(snr**2 for snr in detector_snrs.values()))

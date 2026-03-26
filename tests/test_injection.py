@@ -8,7 +8,10 @@ test_injection
 Tests for `minke.injection` module.
 """
 
+import os
+import tempfile
 import unittest
+import unittest.mock
 import numpy as np
 import astropy.units as u
 
@@ -389,6 +392,87 @@ class TestInjectionParametersAddUnits(unittest.TestCase):
         self.assertNotIsInstance(result['ra'], u.Quantity)
         self.assertNotIsInstance(result['dec'], u.Quantity)
         self.assertNotIsInstance(result['phase'], u.Quantity)
+
+
+class TestCacheFileCreation(unittest.TestCase):
+    """Tests that make_injection writes cache files alongside frame files."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self._orig_dir = os.getcwd()
+        os.chdir(self.tmpdir.name)
+
+        self.detectors = {
+            'AdvancedLIGOHanford': 'AdvancedLIGO',
+            'AdvancedLIGOLivingston': 'AdvancedLIGO',
+        }
+        self.parameters = {'m1': 30, 'm2': 30, 'luminosity_distance': 100}
+        self.duration = 4
+        self.sample_rate = 4096
+        self.epoch = 1000000000
+
+    def tearDown(self):
+        os.chdir(self._orig_dir)
+        self.tmpdir.cleanup()
+
+    def _run_injection_with_mock_write(self, framefile="Injection"):
+        """Run make_injection with the TimeSeries.write method mocked out."""
+        with unittest.mock.patch("gwpy.timeseries.TimeSeries.write"):
+            make_injection(
+                waveform=IMRPhenomXPHM,
+                injection_parameters=self.parameters,
+                detectors=self.detectors,
+                duration=self.duration,
+                sample_rate=self.sample_rate,
+                epoch=self.epoch,
+                framefile=framefile,
+                channel=framefile,
+            )
+
+    def test_cache_directory_created(self):
+        """Cache subdirectory is created when framefile is specified."""
+        self._run_injection_with_mock_write()
+        self.assertTrue(os.path.isdir("cache"))
+
+    def test_cache_files_created_per_detector(self):
+        """One cache file per detector is written into cache/."""
+        self._run_injection_with_mock_write()
+        for ifo in ("H1", "L1"):
+            self.assertTrue(os.path.exists(os.path.join("cache", f"{ifo}.cache")))
+
+    def test_cache_file_format(self):
+        """Cache file contains a tab-separated line with the correct fields."""
+        framefile = "Injection"
+        self._run_injection_with_mock_write(framefile=framefile)
+
+        cache_path = os.path.join("cache", "H1.cache")
+        with open(cache_path) as f:
+            line = f.readline().rstrip("\n")
+
+        parts = line.split("\t")
+        self.assertEqual(len(parts), 5, f"Expected 5 tab-separated fields, got: {parts}")
+
+        ifo, channel, gps_start, duration, url = parts
+        self.assertEqual(ifo, "H1")
+        self.assertEqual(channel, framefile)
+        self.assertEqual(int(gps_start), int(self.epoch))
+        self.assertEqual(int(duration), self.duration)
+        self.assertTrue(url.startswith("file://localhost/"))
+        self.assertTrue(url.endswith("H1_Injection.gwf"))
+
+    def test_no_cache_without_framefile(self):
+        """No cache directory is created when framefile is not specified."""
+        with unittest.mock.patch("gwpy.timeseries.TimeSeries.write"):
+            make_injection(
+                waveform=IMRPhenomXPHM,
+                injection_parameters=self.parameters,
+                detectors=self.detectors,
+                duration=self.duration,
+                sample_rate=self.sample_rate,
+                epoch=self.epoch,
+                channel="Injection",
+            )
+        self.assertFalse(os.path.exists("cache"))
 
 
 if __name__ == '__main__':
