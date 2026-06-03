@@ -71,6 +71,15 @@ from __future__ import annotations
 
 import numpy as np
 
+import math
+
+try:
+    import yaml
+except ImportError as exc:
+    raise ImportError(
+        "minke.bagpuss requires PyYAML.  Install it with 'pip install pyyaml'."
+    ) from exc
+
 try:
     import h5py
 except ImportError as exc:
@@ -95,7 +104,7 @@ except ImportError as exc:
 
 from puddin import lalsim as _puddin_lalsim
 
-__all__ = ["read_injection_parameters"]
+__all__ = ["read_injection_parameters", "make_blueprint", "write_blueprints"]
 
 
 def read_injection_parameters(
@@ -211,3 +220,116 @@ def read_injection_parameters(
         })
 
     return params
+
+
+def make_blueprint(
+    param: dict,
+    name: str | None = None,
+    chirp_mass_margin: float = 0.5,
+) -> dict:
+    """Generate a minimal asimov event blueprint from a single injection.
+
+    Produces a ``kind: event`` blueprint containing the GPS event time and a
+    broad chirp-mass prior centred on the true injected value.  All other
+    fields (data channels, interferometers, likelihood settings) are left for
+    the analyst to fill in via asimov's own configuration system.
+
+    Parameters
+    ----------
+    param : dict
+        A single-event parameter dict as returned by
+        :func:`read_injection_parameters`.
+    name : str or None, optional
+        Event name to embed in the blueprint.  Defaults to
+        ``inj_{gpstime:.3f}`` if not given.
+    chirp_mass_margin : float, optional
+        Fractional margin applied symmetrically around the true chirp mass
+        to define the prior range:
+
+        .. code-block:: text
+
+            minimum = Mc / (1 + margin)
+            maximum = Mc * (1 + margin)
+
+        Default 0.5 gives a range of [Mc/1.5, Mc*1.5] — broad enough to
+        encompass typical measurement uncertainty at moderate SNR.
+
+    Returns
+    -------
+    dict
+        Asimov event blueprint ready for serialisation with
+        :func:`write_blueprints` or ``yaml.dump``.
+
+    Examples
+    --------
+    >>> from minke.bagpuss import read_injection_parameters, make_blueprint
+    >>> params = read_injection_parameters("injections.h5")
+    >>> bp = make_blueprint(params[0])
+    >>> bp["kind"]
+    'event'
+    >>> bp["priors"]["chirp mass"]
+    {'minimum': ..., 'maximum': ...}
+    """
+    m1_msun = param["m1"].value  # astropy Quantity → float in solar masses
+    m2_msun = param["m2"].value
+    gpstime  = param["gpstime"]
+
+    # Chirp mass in solar masses — cast to plain float for YAML serialisation
+    mc = float((m1_msun * m2_msun) ** 0.6 / (m1_msun + m2_msun) ** 0.2)
+
+    event_name = name if name is not None else f"inj_{gpstime:.3f}"
+
+    return {
+        "kind":       "event",
+        "name":       event_name,
+        "event time": float(gpstime),
+        "priors": {
+            "chirp mass": {
+                "minimum": round(mc / (1.0 + chirp_mass_margin), 6),
+                "maximum": round(mc * (1.0 + chirp_mass_margin), 6),
+            },
+        },
+    }
+
+
+def write_blueprints(
+    params: list[dict],
+    path: str,
+    name_prefix: str | None = None,
+    chirp_mass_margin: float = 0.5,
+) -> None:
+    """Write asimov event blueprints for a list of injections to a YAML file.
+
+    Each injection produces one YAML document separated by ``---``, following
+    the multi-document format expected by ``asimov apply``.
+
+    Parameters
+    ----------
+    params : list[dict]
+        List of injection parameter dicts as returned by
+        :func:`read_injection_parameters`.
+    path : str or path-like
+        Output file path.  An existing file is overwritten.
+    name_prefix : str or None, optional
+        If given, events are named ``{name_prefix}_{i:04d}`` where *i* is the
+        zero-based index.  If *None* (default), names are derived from the GPS
+        time: ``inj_{gpstime:.3f}``.
+    chirp_mass_margin : float, optional
+        Passed to :func:`make_blueprint`.  Default 0.5.
+
+    Examples
+    --------
+    >>> from minke.bagpuss import read_injection_parameters, write_blueprints
+    >>> params = read_injection_parameters("injections.h5")
+    >>> write_blueprints(params, "blueprints.yaml")
+    """
+    blueprints = []
+    for i, p in enumerate(params):
+        if name_prefix is not None:
+            name = f"{name_prefix}_{i:04d}"
+        else:
+            name = None
+        blueprints.append(make_blueprint(p, name=name, chirp_mass_margin=chirp_mass_margin))
+
+    with open(path, "w") as f:
+        yaml.safe_dump_all(blueprints, f, default_flow_style=False, sort_keys=False)
