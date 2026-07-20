@@ -14,12 +14,14 @@ import unittest
 import unittest.mock
 import numpy as np
 import astropy.units as u
+from gwpy.timeseries import TimeSeries
 
 from minke.injection import (
     calculate_network_snr_for_distance,
     find_distance_for_network_snr,
     make_injection,
-    injection_parameters_add_units
+    injection_parameters_add_units,
+    _write_gwf_epoch_safe,
 )
 from minke.models.lalsimulation import IMRPhenomXPHM
 from minke.models.lalnoise import KNOWN_PSDS
@@ -473,6 +475,65 @@ class TestCacheFileCreation(unittest.TestCase):
                 channel="Injection",
             )
         self.assertFalse(os.path.exists("cache"))
+
+
+class TestWriteGwfEpochSafe(unittest.TestCase):
+    """Regression tests for the LALFrame epoch-precision bug in
+    ``_write_gwf_epoch_safe``.
+
+    ``lalframe.FrameNew`` derives the frame's start epoch from the raw
+    Python ``float`` GPS time via a direct double->``LIGOTimeGPS``
+    conversion, while ``gwpy.time.to_gps`` (used to compute the series
+    epoch) round-trips the same float through ``str()`` first. At GPS
+    epochs around 1.26e9 seconds this string round-trip frequently loses
+    the last ~1-2 significant digits, so the two conversions disagree by
+    tens to hundreds of nanoseconds. Whenever the series epoch ends up
+    earlier than the frame epoch, LALFrame rejects the write with
+    "Series start time ... is earlier than frame start time ...". In a
+    real run this hit close to half of all events.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    # GPS epochs, all with fractional parts near 1.26e9 seconds, that
+    # reliably triggered the frame/series epoch mismatch before the fix.
+    FAILING_EPOCHS = [
+        1264316116.5118215,
+        1264316116.9486494,
+        1264316116.8277025,
+        1264316116.4091992,
+        1264316116.027559,
+    ]
+
+    def test_write_does_not_raise_for_known_bad_epochs(self):
+        """_write_gwf_epoch_safe must succeed for epochs that previously
+        triggered the frame/series epoch mismatch."""
+        for epoch in self.FAILING_EPOCHS:
+            with self.subTest(epoch=epoch):
+                ts = TimeSeries(
+                    np.zeros(4096 * 4), sample_rate=4096, epoch=epoch, channel="H1:TEST"
+                )
+                filename = os.path.join(self.tmpdir.name, f"test_{epoch}.gwf")
+                _write_gwf_epoch_safe(ts, filename)
+                self.assertTrue(os.path.exists(filename))
+
+    def test_write_succeeds_across_random_epochs(self):
+        """Across many random sub-second GPS epochs, the write should
+        always succeed (previously failed roughly half the time)."""
+        rng = np.random.default_rng(1)
+        for i in range(30):
+            epoch = 1264316116.0 + rng.random()
+            with self.subTest(epoch=epoch):
+                ts = TimeSeries(
+                    np.zeros(4096 * 4), sample_rate=4096, epoch=epoch, channel="H1:TEST"
+                )
+                filename = os.path.join(self.tmpdir.name, f"random_{i}.gwf")
+                _write_gwf_epoch_safe(ts, filename)
+                self.assertTrue(os.path.exists(filename))
 
 
 if __name__ == '__main__':

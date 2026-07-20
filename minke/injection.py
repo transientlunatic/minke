@@ -27,25 +27,30 @@ logger = logging.getLogger("minke.injection")
 def _write_gwf_epoch_safe(injection, filename):
     """Write a GWpy TimeSeries to a GWF file with correct epoch precision.
 
-    GWpy's to_lal() calls LIGOTimeGPS(float(t0)) which loses precision when
-    the GPS integer part is large: subtracting ~1.26e9 before multiplying by
-    1e9 introduces a ~64 ns error.  The frame-start uses to_gps(), which
-    converts via str(float) first and gets the right nanoseconds.  This
-    mismatch causes LALFrame to reject the write.
+    lalframe's FrameNew() sets the frame's start epoch by converting the
+    series' raw GPS float directly to a LIGOTimeGPS (a lossless
+    double->GPS conversion). gwpy's to_lal(), however, computes the
+    series epoch via gwpy.time.to_gps(), which round-trips the same float
+    through str() first. At GPS epochs around 1.26e9 seconds that string
+    round-trip loses the last significant digit(s), so the two epochs
+    disagree by tens to hundreds of nanoseconds - and whenever the series
+    epoch ends up earlier than the frame epoch, LALFrame rejects the
+    write ("Series start time ... is earlier than frame start time...").
+    This was intermittent (roughly a coin flip per event) because it
+    depends on which way the string round-trip happens to round.
 
-    The fix overrides to_lal() on the specific instance so it corrects the
-    epoch via the str/to_gps path before returning the LAL series.
+    The fix overrides to_lal() on the specific instance so its epoch is
+    computed the same way lalframe computes the frame epoch: a direct
+    double->LIGOTimeGPS conversion, with no string round-trip in between.
     """
     import types
     import lal
-    from gwpy.time import to_gps
 
     original_to_lal = injection.__class__.to_lal
 
     def _fixed_to_lal(self):
         lalts = original_to_lal(self)
-        gps = to_gps(self.t0)
-        lalts.epoch = lal.LIGOTimeGPS(gps.gpsSeconds, gps.gpsNanoSeconds)
+        lalts.epoch = lal.LIGOTimeGPS(float(self.t0.value))
         return lalts
 
     injection.to_lal = types.MethodType(_fixed_to_lal, injection)
