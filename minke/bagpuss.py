@@ -226,6 +226,8 @@ def make_blueprint(
     param: dict,
     name: str | None = None,
     chirp_mass_margin: float = 0.5,
+    frame_files: dict | None = None,
+    network_snr: float | None = None,
 ) -> dict:
     """Generate a minimal asimov event blueprint from a single injection.
 
@@ -253,6 +255,18 @@ def make_blueprint(
 
         Default 0.5 gives a range of [Mc/1.5, Mc*1.5] — broad enough to
         encompass typical measurement uncertainty at moderate SNR.
+    frame_files : dict or None, optional
+        Per-detector frame metadata as returned by
+        :func:`~minke.injection.make_injection` (its second return value),
+        keyed by detector abbreviation with ``"path"``, ``"channel"`` and
+        ``"snr"`` entries.  When given, the blueprint gains
+        ``interferometers``, ``data`` (channels and frame paths) and
+        ``injected.snr`` fields describing where to find the injection data.
+    network_snr : float or None, optional
+        Combined optimal SNR across detectors, as returned by
+        :func:`~minke.injection.make_injection` (its third return value).
+        Recorded under ``injected.network snr`` when *frame_files* is also
+        given.
 
     Returns
     -------
@@ -279,7 +293,7 @@ def make_blueprint(
 
     event_name = name if name is not None else f"inj_{gpstime:.3f}"
 
-    return {
+    bp: dict = {
         "kind":       "event",
         "name":       event_name,
         "event time": float(gpstime),
@@ -291,12 +305,31 @@ def make_blueprint(
         },
     }
 
+    if frame_files:
+        ifos = sorted(frame_files.keys())
+        bp["interferometers"] = ifos
+        bp["data"] = {
+            "channels":    {ifo: frame_files[ifo]["channel"] for ifo in ifos},
+            "data files": {ifo: [frame_files[ifo]["path"]]  for ifo in ifos},
+        }
+        injected: dict = {
+            "snr": {ifo: frame_files[ifo]["snr"] for ifo in ifos if "snr" in frame_files[ifo]},
+        }
+        if network_snr is not None:
+            injected["network snr"] = network_snr
+        if injected:
+            bp["injected"] = injected
+
+    return bp
+
 
 def write_blueprints(
     params: list[dict],
     path: str,
     name_prefix: str | None = None,
     chirp_mass_margin: float = 0.5,
+    frame_files: list[dict] | None = None,
+    network_snrs: list[float] | None = None,
 ) -> None:
     """Write asimov event blueprints for a list of injections to a YAML file.
 
@@ -316,6 +349,14 @@ def write_blueprints(
         time: ``inj_{gpstime:.3f}``.
     chirp_mass_margin : float, optional
         Passed to :func:`make_blueprint`.  Default 0.5.
+    frame_files : list[dict] or None, optional
+        Per-injection frame metadata, one entry per element of *params*, each
+        as returned by :func:`~minke.injection.make_injection` (its second
+        return value).  Passed through to :func:`make_blueprint`.
+    network_snrs : list[float] or None, optional
+        Per-injection combined optimal SNR, one entry per element of
+        *params*, as returned by :func:`~minke.injection.make_injection`
+        (its third return value).  Passed through to :func:`make_blueprint`.
 
     Examples
     --------
@@ -325,11 +366,10 @@ def write_blueprints(
     """
     blueprints = []
     for i, p in enumerate(params):
-        if name_prefix is not None:
-            name = f"{name_prefix}_{i:04d}"
-        else:
-            name = None
-        blueprints.append(make_blueprint(p, name=name, chirp_mass_margin=chirp_mass_margin))
+        name = f"{name_prefix}_{i:04d}" if name_prefix is not None else None
+        ff = frame_files[i] if frame_files is not None else None
+        snr = network_snrs[i] if network_snrs is not None else None
+        blueprints.append(make_blueprint(p, name=name, chirp_mass_margin=chirp_mass_margin, frame_files=ff, network_snr=snr))
 
     with open(path, "w") as f:
         yaml.safe_dump_all(blueprints, f, default_flow_style=False, sort_keys=False)
