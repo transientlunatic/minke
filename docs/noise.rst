@@ -83,7 +83,7 @@ The PSD can be accessed in the frequency domain, which is useful for understandi
 
    # Plot the PSD
    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-   ax.loglog(psd.frequencies, np.sqrt(psd.data))
+   ax.loglog(psd.frequencies, np.sqrt(psd.value))
    ax.set_xlabel('Frequency [Hz]')
    ax.set_ylabel('Strain Noise [1/√Hz]')
    ax.set_title('Advanced LIGO Design Sensitivity')

@@ -18,41 +18,41 @@ Quick Start Examples
 
 Here are some quick examples you can try.
 
-Creating a noise model::
+Creating a noise model:
 
    >>> from minke.noise import AdvancedLIGO
    >>> noise_model = AdvancedLIGO()
    >>> noise_model  # doctest: +ELLIPSIS
    <minke.noise.AdvancedLIGO object at 0x...>
 
-Generating colored noise::
+Generating colored noise:
 
    >>> import numpy as np
    >>> from minke.noise import AdvancedLIGO
    >>> noise_model = AdvancedLIGO()
    >>> noise_data = noise_model.time_series(duration=1, sample_rate=1024)
-   >>> len(noise_data.data)
+   >>> len(noise_data.value)
    1024
    >>> noise_data.times[0]
-   0.0
+   <Quantity 0. s>
    >>> noise_data.times[-1]  # doctest: +ELLIPSIS
-   0.999...
+   <Quantity 0.999... s>
 
-Getting the PSD in frequency domain::
+Getting the PSD in frequency domain:
 
    >>> from minke.noise import AdvancedLIGO
    >>> import numpy as np
    >>> noise_model = AdvancedLIGO()
    >>> frequencies = np.arange(10, 100, 10)
    >>> psd = noise_model.frequency_domain(frequencies=frequencies)
-   >>> len(psd.data)
+   >>> len(psd.value)
    9
-   >>> psd.frequencies[0]
-   10.0
-   >>> all(psd.data > 0)  # All PSD values should be positive
+   >>> psd.frequencies[0]  # doctest: +ELLIPSIS
+   <Quantity 10. Hz>
+   >>> all(psd.value > 0)  # All PSD values should be positive
    True
 
-Checking noise properties::
+Checking noise properties:
 
    >>> from minke.noise import AdvancedLIGO
    >>> noise_model = AdvancedLIGO()
@@ -60,10 +60,10 @@ Checking noise properties::
    >>> noise2 = noise_model.time_series(duration=1, sample_rate=1024)
    >>> # Each realization is different (random)
    >>> import numpy as np
-   >>> np.allclose(noise1.data, noise2.data)
+   >>> np.allclose(noise1.value, noise2.value)
    False
    >>> # But both have the same length
-   >>> len(noise1.data) == len(noise2.data)
+   >>> len(noise1.value) == len(noise2.value)
    True
 
 Basic Noise Generation
@@ -109,7 +109,7 @@ You can examine the power spectral density that's being used to color the noise:
 
    # Plot the PSD
    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-   ax.loglog(psd.frequencies, np.sqrt(psd.data))
+   ax.loglog(psd.frequencies, np.sqrt(psd.value))
    ax.set_xlabel('Frequency [Hz]')
    ax.set_ylabel('Strain noise [1/√Hz]')
    ax.set_title('Advanced LIGO Design Sensitivity')
@@ -215,19 +215,19 @@ Now let's create a complete example that generates a gravitational wave signal a
    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 10))
    
    # Plot noise
-   ax1.plot(noise_ts.times, noise_ts.data)
+   ax1.plot(noise_ts.times, noise_ts.value)
    ax1.set_ylabel('Strain')
    ax1.set_title('Colored Noise')
    ax1.grid(True, alpha=0.3)
-   
+
    # Plot signal
-   ax2.plot(projected_signal.times, projected_signal.data)
+   ax2.plot(projected_signal.times, projected_signal.value)
    ax2.set_ylabel('Strain')
    ax2.set_title('Gravitational Wave Signal')
    ax2.grid(True, alpha=0.3)
-   
+
    # Plot injection (noise + signal)
-   ax3.plot(injection.times, injection.data)
+   ax3.plot(injection.times, injection.value)
    ax3.set_xlabel('Time [s]')
    ax3.set_ylabel('Strain')
    ax3.set_title('Injection (Noise + Signal)')
@@ -321,16 +321,16 @@ You can calculate the expected signal-to-noise ratio (SNR) of your injection:
    from minke.filters import inner_product
 
    # Generate the signal in frequency domain
-   signal_f = np.fft.rfft(projected_signal.data) / sample_rate
+   signal_f = np.fft.rfft(projected_signal.value) / sample_rate
 
    # Get the PSD at the appropriate frequencies
-   N = len(noise_ts.data)
+   N = len(noise_ts.value)
    df = sample_rate / N
    frequencies = np.arange(0, N // 2 + 1) * df
    psd = noise_model.frequency_domain(frequencies=frequencies)
 
    # Calculate optimal SNR using matched filtering
-   optimal_snr = np.sqrt(inner_product(signal_f, signal_f, psd.data))
+   optimal_snr = np.sqrt(inner_product(signal_f, signal_f, psd.value))
    print(f"Optimal SNR: {optimal_snr:.2f}")
 
 Best Practices

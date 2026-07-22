@@ -1,6 +1,6 @@
 import sys
 import scipy
-from scipy import random
+from numpy import random
 import numpy
 
 import matplotlib.pyplot as plt

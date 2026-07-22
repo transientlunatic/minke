@@ -23,6 +23,40 @@ from .filters import inner_product
 
 logger = logging.getLogger("minke.injection")
 
+
+def _write_gwf_epoch_safe(injection, filename):
+    """Write a GWpy TimeSeries to a GWF file with correct epoch precision.
+
+    lalframe's FrameNew() sets the frame's start epoch by converting the
+    series' raw GPS float directly to a LIGOTimeGPS (a lossless
+    double->GPS conversion). gwpy's to_lal(), however, computes the
+    series epoch via gwpy.time.to_gps(), which round-trips the same float
+    through str() first. At GPS epochs around 1.26e9 seconds that string
+    round-trip loses the last significant digit(s), so the two epochs
+    disagree by tens to hundreds of nanoseconds - and whenever the series
+    epoch ends up earlier than the frame epoch, LALFrame rejects the
+    write ("Series start time ... is earlier than frame start time...").
+    This was intermittent (roughly a coin flip per event) because it
+    depends on which way the string round-trip happens to round.
+
+    The fix overrides to_lal() on the specific instance so its epoch is
+    computed the same way lalframe computes the frame epoch: a direct
+    double->LIGOTimeGPS conversion, with no string round-trip in between.
+    """
+    import types
+    import lal
+
+    original_to_lal = injection.__class__.to_lal
+
+    def _fixed_to_lal(self):
+        lalts = original_to_lal(self)
+        lalts.epoch = lal.LIGOTimeGPS(float(self.t0.value))
+        return lalts
+
+    injection.to_lal = types.MethodType(_fixed_to_lal, injection)
+    injection.write(filename, format="gwf.lalframe")
+
+
 def calculate_network_snr_for_distance(distance, waveform_model, parameters, detectors, psd_models, times):
     """Calculate the network SNR for a given luminosity distance."""
     params = parameters.copy()
@@ -37,14 +71,13 @@ def calculate_network_snr_for_distance(distance, waveform_model, parameters, det
         injection_data = waveform.project(detector)
         
         # Calculate SNR for this detector
-        injection_data_f = np.fft.fft(injection_data.data, n=len(times)//2) / sample_rate
-        
         N = len(times)
-        df = 1. / sample_rate
+        df = sample_rate / N
+        injection_data_f = np.fft.fft(injection_data.data)[:N//2] / sample_rate
         frequencies = np.arange(0, N // 2) * df
         psd_f = psd_model.frequency_domain(frequencies=frequencies)
-        
-        snr_squared = inner_product(injection_data_f, injection_data_f, np.array(psd_f.data))
+
+        snr_squared = inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)) * 2 * df
         network_snr_squared += snr_squared
     
     return np.sqrt(network_snr_squared)
@@ -123,6 +156,7 @@ def make_injection(
         logger.info(f"Required luminosity distance for network SNR: {parameters['luminosity_distance']:.2f}")
 
     injections = {}
+    frame_files = {}
     detector_snrs = {}
     for detector, psd_model in detectors.items():
         logger.info(f"Making injection for {detector}")
@@ -147,15 +181,13 @@ def make_injection(
         injection = data + injection_data
         injection.channel = channel_n
 
-        injection_data_f = np.fft.fft(injection_data.data, n=len(data.times)//2)/sample_rate
-        
         N = len(data.times)
-        df = 1./sample_rate
+        df = sample_rate / N
+        injection_data_f = np.fft.fft(injection_data.data)[:N//2] / sample_rate
         frequencies = np.arange(0, N // 2) * df
-        print(len(frequencies))
-        
-        psd_f = psd_model.frequency_domain(frequencies = frequencies)
-        det_snr = np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)))
+
+        psd_f = psd_model.frequency_domain(frequencies=frequencies)
+        det_snr = np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)) * 2 * df)
         detector_snrs[detector.abbreviation] = det_snr
         print(f"Optimal SNR for {detector.abbreviation}: {det_snr:.2f}")
         
@@ -174,16 +206,32 @@ def make_injection(
 
         
         if framefile:
-            filename = f"{detector.abbreviation}_{framefile}.gwf"
+            framedir = os.path.dirname(framefile)
+            framebase = os.path.basename(framefile)
+            filename = os.path.join(framedir, f"{detector.abbreviation}_{framebase}.gwf") if framedir else f"{detector.abbreviation}_{framefile}.gwf"
+            if framedir:
+                os.makedirs(framedir, exist_ok=True)
             logger.info(f"Saving framefile to {filename}")
-            injection.write(filename, format="gwf.lalframe")
+            _write_gwf_epoch_safe(injection, filename)
+            os.makedirs("cache", exist_ok=True)
+            abs_path = os.path.abspath(filename)
+            cache_entry = f"{detector.abbreviation}\t{framefile}\t{int(epoch)}\t{int(duration)}\tfile://localhost{abs_path}\n"
+            cache_path = os.path.join("cache", f"{detector.abbreviation}_{framebase}.cache")
+            with open(cache_path, "w") as cache_file:
+                cache_file.write(cache_entry)
+            logger.info(f"Wrote cache file to {cache_path}")
+            frame_files[detector.abbreviation] = {
+                "path": abs_path,
+                "channel": channel_n,
+                "snr": float(detector_snrs[detector.abbreviation]),
+            }
         injections[detector.abbreviation] = injection
 
     network_snr = np.sqrt(sum(snr**2 for snr in detector_snrs.values()))
     logger.info(f"Network SNR: {network_snr:.2f}")
     print(f"Network SNR: {network_snr:.2f}")
-    
-    return injections
+
+    return injections, frame_files, float(network_snr)
 
 
 def make_injection_zero_noise(
@@ -288,7 +336,7 @@ def injection(settings):
         report + "# Injection frames"
         report + settings
     
-    injections = make_injection(
+    injections, _, _ = make_injection(
         channel=settings['channel'],
         duration=settings['duration'],
         sample_rate=settings['sample_rate'],

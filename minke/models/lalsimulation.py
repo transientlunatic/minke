@@ -23,11 +23,35 @@ from . import WaveformApproximant, PSDApproximant
 
 
 class LALSimulationApproximant(WaveformApproximant):
-    """
-    This is the base class for LALSimulation-based approximants.
+    """Base class for LALSimulation-based waveform approximants.
+
+    Can be used directly by passing an approximant name, or subclassed for
+    named approximants (IMRPhenomXPHM, SEOBNRv3, …).
+
+    Parameters
+    ----------
+    approximant : str or None, optional
+        LALSimulation approximant name, e.g. ``'IMRPhenomXPHM'``.  If given,
+        the approximant is looked up via
+        ``lalsimulation.GetApproximantFromString``.  If *None* (default), the
+        approximant must be set by a subclass ``__init__``.
+
+    Raises
+    ------
+    RuntimeError
+        If *approximant* is not recognised by LALSimulation.
+
+    Examples
+    --------
+    >>> from minke.models.lalsimulation import LALSimulationApproximant
+    >>> model = LALSimulationApproximant("IMRPhenomXPHM")
+
+    >>> # Equivalent named subclass:
+    >>> from minke.models.lalsimulation import IMRPhenomXPHM
+    >>> model = IMRPhenomXPHM()
     """
 
-    def __init__(self):
+    def __init__(self, approximant: str | None = None):
         self._cache_key = {}
         self._args = {
             "m1": None,
@@ -51,6 +75,12 @@ class LALSimulationApproximant(WaveformApproximant):
             "approximant": None,
         }
         self.allowed_parameters = list(self._args.keys())
+
+        if approximant is not None:
+            # Raises RuntimeError from lalsimulation if the name is unknown.
+            self._args["approximant"] = lalsimulation.GetApproximantFromString(
+                approximant
+            )
 
         self.supported_converstions = {
             "mass_ratio",
@@ -183,6 +213,40 @@ class LALSimulationApproximant(WaveformApproximant):
 
         return self._cache
     
+def get_approximant(name: str) -> LALSimulationApproximant:
+    """Return an :class:`LALSimulationApproximant` for any LALSim approximant name.
+
+    This is the preferred way to create a model when the approximant is chosen
+    at runtime (e.g. read from a configuration file or injection set).  For
+    compile-time choices the named subclasses (``IMRPhenomXPHM``, etc.) are
+    equally valid and provide slightly clearer code.
+
+    Parameters
+    ----------
+    name : str
+        LALSimulation approximant name, e.g. ``'IMRPhenomXPHM'``,
+        ``'SEOBNRv4'``, ``'NRSur7dq4'``.  Any name accepted by
+        ``lalsimulation.GetApproximantFromString`` is valid.
+
+    Returns
+    -------
+    LALSimulationApproximant
+        Configured instance ready for waveform generation.
+
+    Raises
+    ------
+    RuntimeError
+        If *name* is not recognised by LALSimulation.
+
+    Examples
+    --------
+    >>> from minke.models.lalsimulation import get_approximant
+    >>> model = get_approximant("IMRPhenomXPHM")
+    >>> model = get_approximant("SEOBNRv4")
+    """
+    return LALSimulationApproximant(name)
+
+
 class IMRPhenomPv2(LALSimulationApproximant):
     def __init__(self):
         super().__init__()

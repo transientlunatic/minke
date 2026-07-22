@@ -80,6 +80,7 @@ Tutorials
    tutorial-hardware
    tutorial-noise-psd
    tutorial-asimov
+   tutorial-bagpuss
 
 Developer guide
 ===============
