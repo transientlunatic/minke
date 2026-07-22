@@ -45,7 +45,7 @@ docs = [
 minke = "minke.__main__:minke"
 
 [project.urls]
-"Source code" = "https://git.ligo.org/daniel-williams/minke"
+"Source code" = "https://github.com/transientlunatic/minke"
 
 [tool.setuptools]
 packages = [
