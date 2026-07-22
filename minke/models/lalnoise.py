@@ -149,4 +149,11 @@ class AdvancedLIGO(AdvancedLIGODesignSensitivity2018):
     pass
 
 
-KNOWN_PSDS = {"AdvancedLIGO": AdvancedLIGO}
+class AdvancedLIGOO4Sensitivity(LALSimulationPSD):
+    psd_function = lalsimulation.SimNoisePSDaLIGOAdVO4T1800545
+
+
+KNOWN_PSDS = {
+    "AdvancedLIGO": AdvancedLIGO,
+    "AdvancedLIGO_O4": AdvancedLIGOO4Sensitivity,
+}
