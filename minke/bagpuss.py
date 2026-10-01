@@ -37,7 +37,7 @@ Parameter name mapping
 | *spin transform*   | ``S1x``, ``S1y``, ``S1z`` | L-frame Cartesian components      |
 |                    | ``S2x``, ``S2y``, ``S2z`` |                                   |
 +--------------------+---------------------------+-----------------------------------+
-| *spin transform*   | ``iota``                  | L-frame inclination (radians)     |
+| *spin transform*   | ``inclination`` (``iota``)| L-frame inclination (radians)     |
 +--------------------+---------------------------+-----------------------------------+
 | ``geocent_time``   | ``gpstime``               | Geocentric GPS merger time (s)    |
 +--------------------+---------------------------+-----------------------------------+
@@ -149,7 +149,7 @@ def read_injection_parameters(
     ``lalsimulation.SimInspiralTransformPrecessingNewInitialConditions``
     once per event.
 
-    The returned ``iota`` is the inclination of the *orbital* angular momentum
+    The returned ``inclination`` (also available as ``iota``) is the inclination of the *orbital* angular momentum
     :math:`\mathbf{L}` relative to the line of sight — the quantity used by
     LALSimulation waveform generators.  This differs from the input
     ``theta_jn``, which is the angle between the *total* angular momentum
@@ -162,7 +162,7 @@ def read_injection_parameters(
     500
     >>> params[0].keys()
     dict_keys(['m1', 'm2', 'S1x', 'S1y', 'S1z', 'S2x', 'S2y', 'S2z',
-               'iota', 'luminosity_distance', 'ra', 'dec', 'psi',
+               'inclination', 'iota', 'luminosity_distance', 'ra', 'dec', 'psi',
                'gpstime', 'redshift'])
     """
     # ── 1. Load raw arrays from HDF5 ─────────────────────────────────────────
@@ -215,7 +215,10 @@ def read_injection_parameters(
             "S2x": float(s2x[i]),
             "S2y": float(s2y[i]),
             "S2z": float(s2z[i]),
-            # L-frame inclination (replaces theta_jn which was consumed above)
+            # L-frame inclination (replaces theta_jn which was consumed above).
+            # minke's waveform models read ``inclination``; ``iota`` is kept as
+            # an alias for code written against the old key.
+            "inclination": float(iota[i]),
             "iota": float(iota[i]),
             # Distance with units
             "luminosity_distance": float(raw["luminosity_distance"][i]) * u.Mpc,
