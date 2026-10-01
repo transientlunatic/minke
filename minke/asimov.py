@@ -37,14 +37,15 @@ class Asimov(asimov.pipeline.Pipeline):
         command = ["injection", "--settings", ini]
         full_command = executable + " " + " ".join(command)
         self.logger.info(full_command)
+        scheduler = self.production.meta.get("scheduler", {})
         description = {
             "executable": f"{executable}",
             "arguments": f"{' '.join(command)}",
             "output": f"{name}.out",
             "error": f"{name}.err",
             "log": f"{name}.log",
-            "request_disk": "1024",
-            "request_memory": "1024",
+            "request_disk": str(scheduler.get("request disk", 1024)),
+            "request_memory": str(scheduler.get("request memory", 2048)),
             "batch_name": f"{self.name}/{self.production.event.name}/{name}",
             "+flock_local": "True",
             "+DESIRED_Sites": classad.quote("nogrid"),
@@ -123,7 +124,12 @@ class Asimov(asimov.pipeline.Pipeline):
 
             outputs["frames"] = frames
 
-            self.production.event.meta['data']['data files'] = frames
+            # asimov's convention (and what e.g. asimov-simplepe expects) is a
+            # *list* of frame files per interferometer, and the event need not
+            # already have a ``data`` block.
+            self.production.event.meta.setdefault('data', {})['data files'] = {
+                ifo: [path] for ifo, path in frames.items()
+            }
 
         cache_dir = os.path.join(self.production.rundir, "cache")
         if os.path.exists(cache_dir):
@@ -135,7 +141,7 @@ class Asimov(asimov.pipeline.Pipeline):
 
             outputs["cache"] = cache
 
-            self.production.event.meta['data']['cache files'] = cache
+            self.production.event.meta.setdefault('data', {})['cache files'] = cache
 
         if os.path.exists(os.path.join(self.production.rundir)):
             results_dir = glob.glob(os.path.join(self.production.rundir, "*_psd.dat"))

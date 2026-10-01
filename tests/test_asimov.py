@@ -89,6 +89,27 @@ class TestCollectAssets(unittest.TestCase):
 
         self.assertIn("H1", self.pipeline.production.event.meta["data"]["data files"])
 
+    def test_data_files_are_lists_of_paths(self):
+        """asimov (and asimov-simplepe) expect ``{ifo: [path]}``, not ``{ifo: path}``."""
+        path = self._touch("H1_Injection.gwf")
+
+        self.pipeline.collect_assets()
+
+        files = self.pipeline.production.event.meta["data"]["data files"]
+        self.assertEqual(files["H1"], [path])
+
+    def test_event_without_data_block(self):
+        """An event blueprint need not already carry a ``data`` block."""
+        self._touch("H1_Injection.gwf")
+        self._write_cache("H1")
+        self.pipeline.production.event.meta = {"psds": {}}
+
+        self.pipeline.collect_assets()
+
+        meta = self.pipeline.production.event.meta
+        self.assertIn("H1", meta["data"]["data files"])
+        self.assertIn("H1", meta["data"]["cache files"])
+
     # ------------------------------------------------------------------
     # cache tests
     # ------------------------------------------------------------------
