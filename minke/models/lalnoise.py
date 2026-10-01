@@ -133,7 +133,8 @@ class LALSimulationPSD(PSDApproximant):
             dtype=float,
         )
         psd[~np.isfinite(psd)] = 0.0
-        psd[-1] = 0.0  # Nyquist bin
+        if N % 2 == 0:
+            psd[-1] = 0.0  # Nyquist bin (only present for even N)
 
         # E|X_k|^2 = S N fs / 2 gives <x^2> = int S df for numpy's irfft.
         sigma = 0.5 * np.sqrt(psd * N * fs)
