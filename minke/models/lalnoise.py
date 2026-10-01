@@ -109,36 +109,40 @@ class LALSimulationPSD(PSDApproximant):
         """
 
         if times is None and sample_rate is not None and duration is not None:
-            dt = 1./sample_rate
+            dt = 1. / sample_rate
             N = int(duration * sample_rate)
-            df = 1/duration
-            times = np.linspace(0, duration-dt, N)
-            T = duration
+            times = np.linspace(0, duration - dt, N)
         else:
-            dt = times[1] - times[0]
+            times = np.array(times, dtype=float)
+            dt = float(times[1] - times[0])
             N = len(times)
-            T = times[-1] - times[0]
-            df = 1 / T
-            
-        if TORCH_AVAILABLE:
-            frequencies = torch.arange(0, N // 2 + 1) * df
-        else:
-            frequencies = np.arange(0, N // 2 + 1) * df
-        reals = np.random.randn(len(frequencies))
-        imags = np.random.randn(len(frequencies))
-        psd = np.array(self.frequency_domain(df=df, frequencies=frequencies).data)
-        psd[-1] = psd[-2]
 
-        S = 0.5 * np.sqrt(psd)# / df) #* T inside sqrt # np.sqrt(N * N / 4 / (T) * psd.value)
+        fs = 1.0 / dt
+        df = fs / N
+        frequencies = np.arange(0, N // 2 + 1) * df
 
-        noise_r = S * (reals)
-        noise_i = S * (imags)
+        # One-sided PSD, zero below the lower cut-off. The LAL series must
+        # start at the first evaluated frequency or the PSD is shifted.
+        f_min = float(kwargs.get("lower_frequency", 20.0))
+        band = frequencies >= f_min
+        psd = np.zeros(len(frequencies))
+        psd[band] = np.asarray(
+            self.frequency_domain(
+                frequencies=frequencies[band], lower_frequency=frequencies[band][0]
+            ).data,
+            dtype=float,
+        )
+        psd[~np.isfinite(psd)] = 0.0
+        psd[-1] = 0.0  # Nyquist bin
 
-        noise_f = noise_r + 1j * noise_i
+        # E|X_k|^2 = S N fs / 2 gives <x^2> = int S df for numpy's irfft.
+        sigma = 0.5 * np.sqrt(psd * N * fs)
+        noise_f = sigma * (np.random.randn(len(frequencies)) + 1j * np.random.randn(len(frequencies)))
+        noise_f[0] = 0.0
 
-        times += (kwargs.get("epoch", 0))
+        times = times + kwargs.get("epoch", 0)
 
-        return TimeSeries(data=2*np.fft.irfft(noise_f, n=(N))*df*N, times=times, dt=dt)
+        return TimeSeries(data=np.fft.irfft(noise_f, n=N), times=times, dt=dt)
 
 
 class AdvancedLIGODesignSensitivity2018(LALSimulationPSD):

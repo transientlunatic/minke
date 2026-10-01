@@ -147,18 +147,24 @@ class WaveformDict:
             print(psi)
             response = detector.antenna_response(ra, dec, psi, time=time)
 
-            plus_prefactor = (
-                array_library.cos(phi_0)
-                * (1 + array_library.cos(iota) ** 2)
-                * response.plus
-                + array_library.sin(phi_0) * array_library.cos(iota) * response.cross
-            )
-            cross_prefactor = (
-                array_library.cos(phi_0) * array_library.cos(iota) * response.cross
-                - array_library.sin(phi_0)
-                * (1 + array_library.cos(iota) ** 2)
-                * response.plus
-            )
+            if "inclination" in self._parameters:
+                # The model already evaluated h+ and hx at this inclination
+                # (e.g. lalsimulation), so only the antenna response applies.
+                plus_prefactor = response.plus
+                cross_prefactor = response.cross
+            else:
+                plus_prefactor = (
+                    array_library.cos(phi_0)
+                    * (1 + array_library.cos(iota) ** 2)
+                    * response.plus
+                    + array_library.sin(phi_0) * array_library.cos(iota) * response.cross
+                )
+                cross_prefactor = (
+                    array_library.cos(phi_0) * array_library.cos(iota) * response.cross
+                    - array_library.sin(phi_0)
+                    * (1 + array_library.cos(iota) ** 2)
+                    * response.plus
+                )
 
             projected_data = (
                 self.waveforms["plus"].data * plus_prefactor
