@@ -25,36 +25,39 @@ logger = logging.getLogger("minke.injection")
 
 
 def _write_gwf_epoch_safe(injection, filename):
-    """Write a GWpy TimeSeries to a GWF file with correct epoch precision.
+    """Write a GWpy TimeSeries to a GWF file with a consistent epoch.
 
-    lalframe's FrameNew() sets the frame's start epoch by converting the
-    series' raw GPS float directly to a LIGOTimeGPS (a lossless
-    double->GPS conversion). gwpy's to_lal(), however, computes the
-    series epoch via gwpy.time.to_gps(), which round-trips the same float
-    through str() first. At GPS epochs around 1.26e9 seconds that string
-    round-trip loses the last significant digit(s), so the two epochs
-    disagree by tens to hundreds of nanoseconds - and whenever the series
-    epoch ends up earlier than the frame epoch, LALFrame rejects the
-    write ("Series start time ... is earlier than frame start time...").
-    This was intermittent (roughly a coin flip per event) because it
-    depends on which way the string round-trip happens to round.
+    gwpy's LALFrame writer builds the frame header from the series' span,
+    which gwpy converts to GPS via a float -> string -> GPS round trip, while
+    ``to_lal()`` converts the series epoch directly. At GPS times around
+    1.26e9 s the two can differ by tens of nanoseconds, and when the series
+    starts before the frame LALFrame rejects the write ("Series start time
+    ... is earlier than frame start time ..."). This failed for roughly half
+    of all epochs.
 
-    The fix overrides to_lal() on the specific instance so its epoch is
-    computed the same way lalframe computes the frame epoch: a direct
-    double->LIGOTimeGPS conversion, with no string round-trip in between.
+    Here the frame is created directly with LALFrame, using the epoch of the
+    LAL series itself as the frame start time, so the two cannot disagree.
     """
-    import types
-    import lal
+    import lalframe
+    from gwpy.utils import lal as lalutils
 
-    original_to_lal = injection.__class__.to_lal
+    lalseries = injection.to_lal()
+    duration = lalseries.data.length * lalseries.deltaT
 
-    def _fixed_to_lal(self):
-        lalts = original_to_lal(self)
-        lalts.epoch = lal.LIGOTimeGPS(float(self.t0.value))
-        return lalts
+    detectors = 0
+    ifo = getattr(injection.channel, "ifo", None)
+    detector_index = list(lalutils.LAL_DETECTORS.keys())
+    if ifo in detector_index:
+        detectors |= 1 << 2 * detector_index.index(ifo)
 
-    injection.to_lal = types.MethodType(_fixed_to_lal, injection)
-    injection.write(filename, format="gwf.lalframe")
+    frame = lalframe.FrameNew(lalseries.epoch, duration, "gwpy", 0, 0, detectors)
+
+    add_series = lalutils.find_typed_function(
+        injection.dtype, "FrameAdd", "TimeSeriesProcData", module=lalframe
+    )
+    add_series(frame, lalseries)
+
+    lalframe.FrameWrite(frame, str(filename))
 
 
 def calculate_network_snr_for_distance(distance, waveform_model, parameters, detectors, psd_models, times):

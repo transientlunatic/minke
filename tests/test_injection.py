@@ -259,7 +259,7 @@ class TestMakeInjection(unittest.TestCase):
         parameters = self.basic_parameters.copy()
         parameters['luminosity_distance'] = 100
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=self.detectors,
@@ -283,7 +283,7 @@ class TestMakeInjection(unittest.TestCase):
         parameters = self.basic_parameters.copy()
         parameters['snr'] = 20.0
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=self.detectors,
@@ -311,7 +311,7 @@ class TestMakeInjection(unittest.TestCase):
         
         times = np.linspace(0, self.duration, self.duration * self.sample_rate)
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=self.detectors,
@@ -328,7 +328,7 @@ class TestMakeInjection(unittest.TestCase):
         
         single_detector = {'AdvancedLIGOHanford': 'AdvancedLIGO'}
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=single_detector,
@@ -454,8 +454,8 @@ class TestCacheFileCreation(unittest.TestCase):
         self.tmpdir.cleanup()
 
     def _run_injection_with_mock_write(self, framefile="Injection"):
-        """Run make_injection with the TimeSeries.write method mocked out."""
-        with unittest.mock.patch("gwpy.timeseries.TimeSeries.write"):
+        """Run make_injection with the frame writer mocked out."""
+        with unittest.mock.patch("minke.injection._write_gwf_epoch_safe"):
             make_injection(
                 waveform=IMRPhenomXPHM,
                 injection_parameters=self.parameters,
@@ -476,14 +476,14 @@ class TestCacheFileCreation(unittest.TestCase):
         """One cache file per detector is written into cache/."""
         self._run_injection_with_mock_write()
         for ifo in ("H1", "L1"):
-            self.assertTrue(os.path.exists(os.path.join("cache", f"{ifo}.cache")))
+            self.assertTrue(os.path.exists(os.path.join("cache", f"{ifo}_Injection.cache")))
 
     def test_cache_file_format(self):
         """Cache file contains a tab-separated line with the correct fields."""
         framefile = "Injection"
         self._run_injection_with_mock_write(framefile=framefile)
 
-        cache_path = os.path.join("cache", "H1.cache")
+        cache_path = os.path.join("cache", "H1_Injection.cache")
         with open(cache_path) as f:
             line = f.readline().rstrip("\n")
 
@@ -500,7 +500,7 @@ class TestCacheFileCreation(unittest.TestCase):
 
     def test_no_cache_without_framefile(self):
         """No cache directory is created when framefile is not specified."""
-        with unittest.mock.patch("gwpy.timeseries.TimeSeries.write"):
+        with unittest.mock.patch("minke.injection._write_gwf_epoch_safe"):
             make_injection(
                 waveform=IMRPhenomXPHM,
                 injection_parameters=self.parameters,
@@ -570,6 +570,19 @@ class TestWriteGwfEpochSafe(unittest.TestCase):
                 filename = os.path.join(self.tmpdir.name, f"random_{i}.gwf")
                 _write_gwf_epoch_safe(ts, filename)
                 self.assertTrue(os.path.exists(filename))
+
+    def test_written_frame_round_trips(self):
+        """The file written must read back with the same epoch and length."""
+        epoch = 1264316116.9504638
+        ts = TimeSeries(
+            np.arange(4096 * 4, dtype=float), sample_rate=4096, epoch=epoch, channel="H1:TEST"
+        )
+        filename = os.path.join(self.tmpdir.name, "roundtrip.gwf")
+        _write_gwf_epoch_safe(ts, filename)
+        back = TimeSeries.read(filename, "H1:TEST")
+        self.assertEqual(len(back), len(ts))
+        self.assertAlmostEqual(back.t0.value, epoch, places=6)
+        np.testing.assert_allclose(back.value, ts.value)
 
 
 if __name__ == '__main__':
