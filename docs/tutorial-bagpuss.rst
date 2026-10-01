@@ -16,12 +16,12 @@ ready.
 Prerequisites
 -------------
 
-Both packages must be installed, along with ``puddin`` (for the spin
-frame transformation) and LALSuite:
+Both packages must be installed, along with LALSuite (used for the spin
+frame transformation):
 
 .. code-block:: bash
 
-    pip install bagpuss puddin
+    pip install bagpuss
     conda install -c conda-forge lalsuite
 
 Generating a bagpuss injection set
@@ -93,7 +93,7 @@ The function handles the spin parameterisation conversion automatically:
 bagpuss stores spins as tilt angles and magnitudes (bilby convention),
 while LALSimulation expects Cartesian components in the orbital frame.
 The conversion is performed via
-:func:`puddin.lalsim.spins_to_lalsim`.
+:func:`lalsimulation.SimInspiralTransformPrecessingNewInitialConditions`.
 
 .. code-block:: python
 

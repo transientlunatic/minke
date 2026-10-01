@@ -1,5 +1,6 @@
 import asimov.pipeline
 import importlib
+import importlib.resources
 import os
 import glob
 import warnings

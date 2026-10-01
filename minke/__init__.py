@@ -3,9 +3,9 @@
 __author__ = 'Daniel Williams'
 __email__ = 'daniel.williams@ligo.org'
 
-from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import version, PackageNotFoundError
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+    __version__ = version(__name__)
+except PackageNotFoundError:
     # package is not installed
     pass

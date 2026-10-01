@@ -42,7 +42,8 @@ class TestSNRCalculations(unittest.TestCase):
             'phase': 0,
             'm1': 30 * u.solMass,
             'm2': 30 * u.solMass,
-            'luminosity_distance': 100 * u.megaparsec
+            'luminosity_distance': 100 * u.megaparsec,
+            'gpstime': 3.0,
         }
         self.sample_rate = 4096
         self.duration = 4
@@ -82,6 +83,41 @@ class TestSNRCalculations(unittest.TestCase):
         self.assertIsInstance(snr, (float, np.floating))
         self.assertGreater(snr, 0)
         
+    def test_snr_matches_standard_definition(self):
+        """SNR must equal 4 int |h|^2/S df, as used by bilby and simple-pe."""
+        import lal
+        import lalsimulation
+
+        duration = 32
+        times = self.psd_models[0].time_series(
+            duration=duration, sample_rate=self.sample_rate, epoch=self.epoch
+        ).times
+        params = dict(self.parameters, gpstime=24.0)
+        snr = calculate_network_snr_for_distance(
+            400, self.waveform_model, params,
+            self.detectors[:1], self.psd_models[:1], times,
+        )
+
+        params["luminosity_distance"] = 400 * u.megaparsec
+        x = np.asarray(
+            self.waveform_model.time_domain(params, times=times)
+            .project(self.detectors[0]).data
+        )
+        freqs = np.fft.rfftfreq(len(x), 1.0 / self.sample_rate)
+        h = np.fft.rfft(x) / self.sample_rate
+        band = freqs >= 20
+        series = lal.CreateREAL8FrequencySeries(
+            None, lal.LIGOTimeGPS(0), 20.0, 1.0 / duration,
+            lal.HertzUnit, int(band.sum()),
+        )
+        lalsimulation.SimNoisePSDaLIGODesignSensitivityT1800044(series, 20.0)
+        psd = np.array(series.data.data)
+        ok = psd > 0
+        expected = np.sqrt(
+            4 * (1.0 / duration) * np.sum(np.abs(h[band][ok]) ** 2 / psd[ok])
+        )
+        self.assertAlmostEqual(snr / expected, 1.0, places=6)
+
     def test_network_snr_decreases_with_distance(self):
         """Test that SNR decreases as distance increases."""
         distance_near = 50  # Mpc
@@ -166,7 +202,7 @@ class TestSNRCalculations(unittest.TestCase):
         
     def test_find_distance_for_high_snr(self):
         """Test finding distance for a high SNR value."""
-        target_snr = 100.0
+        target_snr = 1000.0
         
         distance = find_distance_for_network_snr(
             target_snr,
@@ -182,7 +218,7 @@ class TestSNRCalculations(unittest.TestCase):
         
     def test_find_distance_for_low_snr(self):
         """Test finding distance for a low SNR value."""
-        target_snr = 5.0
+        target_snr = 20.0
         
         distance = find_distance_for_network_snr(
             target_snr,
@@ -194,7 +230,7 @@ class TestSNRCalculations(unittest.TestCase):
         )
         
         # Low SNR should allow larger distance
-        self.assertGreater(distance.value, 50)
+        self.assertGreater(distance.value, 1000)
 
 
 class TestMakeInjection(unittest.TestCase):
@@ -223,7 +259,7 @@ class TestMakeInjection(unittest.TestCase):
         parameters = self.basic_parameters.copy()
         parameters['luminosity_distance'] = 100
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=self.detectors,
@@ -247,7 +283,7 @@ class TestMakeInjection(unittest.TestCase):
         parameters = self.basic_parameters.copy()
         parameters['snr'] = 20.0
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=self.detectors,
@@ -275,7 +311,7 @@ class TestMakeInjection(unittest.TestCase):
         
         times = np.linspace(0, self.duration, self.duration * self.sample_rate)
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=self.detectors,
@@ -292,7 +328,7 @@ class TestMakeInjection(unittest.TestCase):
         
         single_detector = {'AdvancedLIGOHanford': 'AdvancedLIGO'}
         
-        injections = make_injection(
+        injections, _, _ = make_injection(
             waveform=IMRPhenomXPHM,
             injection_parameters=parameters,
             detectors=single_detector,
@@ -418,8 +454,8 @@ class TestCacheFileCreation(unittest.TestCase):
         self.tmpdir.cleanup()
 
     def _run_injection_with_mock_write(self, framefile="Injection"):
-        """Run make_injection with the TimeSeries.write method mocked out."""
-        with unittest.mock.patch("gwpy.timeseries.TimeSeries.write"):
+        """Run make_injection with the frame writer mocked out."""
+        with unittest.mock.patch("minke.injection._write_gwf_epoch_safe"):
             make_injection(
                 waveform=IMRPhenomXPHM,
                 injection_parameters=self.parameters,
@@ -440,14 +476,14 @@ class TestCacheFileCreation(unittest.TestCase):
         """One cache file per detector is written into cache/."""
         self._run_injection_with_mock_write()
         for ifo in ("H1", "L1"):
-            self.assertTrue(os.path.exists(os.path.join("cache", f"{ifo}.cache")))
+            self.assertTrue(os.path.exists(os.path.join("cache", f"{ifo}_Injection.cache")))
 
     def test_cache_file_format(self):
         """Cache file contains a tab-separated line with the correct fields."""
         framefile = "Injection"
         self._run_injection_with_mock_write(framefile=framefile)
 
-        cache_path = os.path.join("cache", "H1.cache")
+        cache_path = os.path.join("cache", "H1_Injection.cache")
         with open(cache_path) as f:
             line = f.readline().rstrip("\n")
 
@@ -464,7 +500,7 @@ class TestCacheFileCreation(unittest.TestCase):
 
     def test_no_cache_without_framefile(self):
         """No cache directory is created when framefile is not specified."""
-        with unittest.mock.patch("gwpy.timeseries.TimeSeries.write"):
+        with unittest.mock.patch("minke.injection._write_gwf_epoch_safe"):
             make_injection(
                 waveform=IMRPhenomXPHM,
                 injection_parameters=self.parameters,
@@ -534,6 +570,19 @@ class TestWriteGwfEpochSafe(unittest.TestCase):
                 filename = os.path.join(self.tmpdir.name, f"random_{i}.gwf")
                 _write_gwf_epoch_safe(ts, filename)
                 self.assertTrue(os.path.exists(filename))
+
+    def test_written_frame_round_trips(self):
+        """The file written must read back with the same epoch and length."""
+        epoch = 1264316116.9504638
+        ts = TimeSeries(
+            np.arange(4096 * 4, dtype=float), sample_rate=4096, epoch=epoch, channel="H1:TEST"
+        )
+        filename = os.path.join(self.tmpdir.name, "roundtrip.gwf")
+        _write_gwf_epoch_safe(ts, filename)
+        back = TimeSeries.read(filename, "H1:TEST")
+        self.assertEqual(len(back), len(ts))
+        self.assertAlmostEqual(back.t0.value, epoch, places=6)
+        np.testing.assert_allclose(back.value, ts.value)
 
 
 if __name__ == '__main__':

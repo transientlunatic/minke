@@ -19,42 +19,45 @@ from .models.lalsimulation import SEOBNRv3, IMRPhenomPv2, IMRPhenomXPHM
 from .models.lalnoise import KNOWN_PSDS
 from .detector import KNOWN_IFOS
 from .utils import load_yaml
-from .filters import inner_product
+from .filters import optimal_snr_squared
 
 logger = logging.getLogger("minke.injection")
 
 
 def _write_gwf_epoch_safe(injection, filename):
-    """Write a GWpy TimeSeries to a GWF file with correct epoch precision.
+    """Write a GWpy TimeSeries to a GWF file with a consistent epoch.
 
-    lalframe's FrameNew() sets the frame's start epoch by converting the
-    series' raw GPS float directly to a LIGOTimeGPS (a lossless
-    double->GPS conversion). gwpy's to_lal(), however, computes the
-    series epoch via gwpy.time.to_gps(), which round-trips the same float
-    through str() first. At GPS epochs around 1.26e9 seconds that string
-    round-trip loses the last significant digit(s), so the two epochs
-    disagree by tens to hundreds of nanoseconds - and whenever the series
-    epoch ends up earlier than the frame epoch, LALFrame rejects the
-    write ("Series start time ... is earlier than frame start time...").
-    This was intermittent (roughly a coin flip per event) because it
-    depends on which way the string round-trip happens to round.
+    gwpy's LALFrame writer builds the frame header from the series' span,
+    which gwpy converts to GPS via a float -> string -> GPS round trip, while
+    ``to_lal()`` converts the series epoch directly. At GPS times around
+    1.26e9 s the two can differ by tens of nanoseconds, and when the series
+    starts before the frame LALFrame rejects the write ("Series start time
+    ... is earlier than frame start time ..."). This failed for roughly half
+    of all epochs.
 
-    The fix overrides to_lal() on the specific instance so its epoch is
-    computed the same way lalframe computes the frame epoch: a direct
-    double->LIGOTimeGPS conversion, with no string round-trip in between.
+    Here the frame is created directly with LALFrame, using the epoch of the
+    LAL series itself as the frame start time, so the two cannot disagree.
     """
-    import types
-    import lal
+    import lalframe
+    from gwpy.utils import lal as lalutils
 
-    original_to_lal = injection.__class__.to_lal
+    lalseries = injection.to_lal()
+    duration = lalseries.data.length * lalseries.deltaT
 
-    def _fixed_to_lal(self):
-        lalts = original_to_lal(self)
-        lalts.epoch = lal.LIGOTimeGPS(float(self.t0.value))
-        return lalts
+    detectors = 0
+    ifo = getattr(injection.channel, "ifo", None)
+    detector_index = list(lalutils.LAL_DETECTORS.keys())
+    if ifo in detector_index:
+        detectors |= 1 << 2 * detector_index.index(ifo)
 
-    injection.to_lal = types.MethodType(_fixed_to_lal, injection)
-    injection.write(filename, format="gwf.lalframe")
+    frame = lalframe.FrameNew(lalseries.epoch, duration, "gwpy", 0, 0, detectors)
+
+    add_series = lalutils.find_typed_function(
+        injection.dtype, "FrameAdd", "TimeSeriesProcData", module=lalframe
+    )
+    add_series(frame, lalseries)
+
+    lalframe.FrameWrite(frame, str(filename))
 
 
 def calculate_network_snr_for_distance(distance, waveform_model, parameters, detectors, psd_models, times):
@@ -65,19 +68,14 @@ def calculate_network_snr_for_distance(distance, waveform_model, parameters, det
     waveform = waveform_model.time_domain(params, times=times)
     
     network_snr_squared = 0.0
-    sample_rate = 1.0 / (times[1] - times[0])
+    sample_rate = float(u.Quantity(1.0 / (times[1] - times[0]), u.Hz).value)
     
     for detector, psd_model in zip(detectors, psd_models):
         injection_data = waveform.project(detector)
         
-        # Calculate SNR for this detector
-        N = len(times)
-        df = sample_rate / N
-        injection_data_f = np.fft.fft(injection_data.data)[:N//2] / sample_rate
-        frequencies = np.arange(0, N // 2) * df
-        psd_f = psd_model.frequency_domain(frequencies=frequencies)
-
-        snr_squared = inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)) * 2 * df
+        snr_squared = optimal_snr_squared(
+            injection_data.data, psd_model, sample_rate
+        )
         network_snr_squared += snr_squared
     
     return np.sqrt(network_snr_squared)
@@ -181,13 +179,11 @@ def make_injection(
         injection = data + injection_data
         injection.channel = channel_n
 
-        N = len(data.times)
-        df = sample_rate / N
-        injection_data_f = np.fft.fft(injection_data.data)[:N//2] / sample_rate
-        frequencies = np.arange(0, N // 2) * df
-
-        psd_f = psd_model.frequency_domain(frequencies=frequencies)
-        det_snr = np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)) * 2 * df)
+        det_snr = np.sqrt(optimal_snr_squared(
+            injection_data.data,
+            psd_model,
+            float(u.Quantity(1.0 / data.dt, u.Hz).value),
+        ))
         detector_snrs[detector.abbreviation] = det_snr
         print(f"Optimal SNR for {detector.abbreviation}: {det_snr:.2f}")
         

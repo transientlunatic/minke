@@ -10,7 +10,7 @@ This module bridges the two packages:
 1. Reads the HDF5 file produced by ``bagpuss.injection.InjectionSet.to_hdf5``.
 2. Converts the bilby-style spin parameterisation to the Cartesian spin
    components that LALSimulation expects, using
-   :func:`puddin.lalsim.spins_to_lalsim`.
+   :func:`lalsimulation.SimInspiralTransformPrecessingNewInitialConditions`.
 3. Returns a list of parameter dicts, one per injection, that can be passed
    directly to :func:`minke.injection.make_injection`.
 
@@ -102,7 +102,13 @@ except ImportError as exc:
         "Install it via 'conda install -c conda-forge lalsuite'."
     ) from exc
 
-from puddin import lalsim as _puddin_lalsim
+try:
+    import lalsimulation as _lalsim
+except ImportError as exc:
+    raise ImportError(
+        "minke.bagpuss requires lalsimulation.  "
+        "Install it via 'conda install -c conda-forge lalsuite'."
+    ) from exc
 
 __all__ = ["read_injection_parameters", "make_blueprint", "write_blueprints"]
 
@@ -115,7 +121,7 @@ def read_injection_parameters(
     r"""Read a bagpuss ``InjectionSet`` HDF5 file and return minke-ready dicts.
 
     Loads all events from *path*, performs the bilby-to-LALSimulation spin
-    frame transformation via :func:`puddin.lalsim.spins_to_lalsim`, and
+    frame transformation via :func:`lalsimulation.SimInspiralTransformPrecessingNewInitialConditions`, and
     returns one parameter dict per injection.
 
     Parameters
@@ -141,8 +147,7 @@ def read_injection_parameters(
     -----
     The spin transformation calls
     ``lalsimulation.SimInspiralTransformPrecessingNewInitialConditions``
-    for precessing spins and uses an analytic fast path for aligned/anti-aligned
-    spins; see :func:`puddin.lalsim.spins_to_lalsim` for details.
+    once per event.
 
     The returned ``iota`` is the inclination of the *orbital* angular momentum
     :math:`\mathbf{L}` relative to the line of sight — the quantity used by
@@ -177,19 +182,24 @@ def read_injection_parameters(
     m2_kg = raw["m2_source"] * _lal.MSUN_SI
 
     # ── 4. Spin frame transformation: J-frame → L-frame Cartesian ────────────
-    iota, s1x, s1y, s1z, s2x, s2y, s2z = _puddin_lalsim.spins_to_lalsim(
-        theta_jn=raw["theta_jn"],
-        phi_jl=raw["phi_jl"],
-        tilt1=tilt1,
-        tilt2=tilt2,
-        phi12=raw["phi12"],
-        a1=raw["a1"],
-        a2=raw["a2"],
-        m1=m1_kg,
-        m2=m2_kg,
-        f_ref=np.full(n, float(f_ref)),
-        phase=np.full(n, float(phase)),
-    )
+    # lalsimulation transforms one event at a time.
+    transformed = np.array([
+        _lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+            float(raw["theta_jn"][i]),
+            float(raw["phi_jl"][i]),
+            float(tilt1[i]),
+            float(tilt2[i]),
+            float(raw["phi12"][i]),
+            float(raw["a1"][i]),
+            float(raw["a2"][i]),
+            float(m1_kg[i]),
+            float(m2_kg[i]),
+            float(f_ref),
+            float(phase),
+        )
+        for i in range(n)
+    ]).reshape(n, 7)
+    iota, s1x, s1y, s1z, s2x, s2y, s2z = transformed.T
 
     # ── 5. Build per-event parameter dicts ───────────────────────────────────
     params = []

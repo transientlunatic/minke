@@ -129,9 +129,12 @@ class WaveformDict:
             dt = detector.geocentre_delay(ra=ra, dec=dec, times=time)
         if "plus" in self.waveforms and "cross" in self.waveforms:
             
+            # A model which already evaluated h+/hx at an inclination does not
+            # need theta_jn here.
+            already_inclined = "inclination" in self._parameters
             if not iota and "theta_jn" in self._parameters:
                 iota = self._parameters["theta_jn"]
-            elif isinstance(iota, type(None)):
+            elif isinstance(iota, type(None)) and not already_inclined:
                 raise ValueError("Theta_jn must be specified!")
 
             if not phi_0 and "phase" in self._parameters:
@@ -147,18 +150,32 @@ class WaveformDict:
             print(psi)
             response = detector.antenna_response(ra, dec, psi, time=time)
 
-            plus_prefactor = (
-                array_library.cos(phi_0)
-                * (1 + array_library.cos(iota) ** 2)
-                * response.plus
-                + array_library.sin(phi_0) * array_library.cos(iota) * response.cross
-            )
-            cross_prefactor = (
-                array_library.cos(phi_0) * array_library.cos(iota) * response.cross
-                - array_library.sin(phi_0)
-                * (1 + array_library.cos(iota) ** 2)
-                * response.plus
-            )
+            if already_inclined:
+                # The model already evaluated h+ and hx at this inclination
+                # (e.g. lalsimulation), so the inclination factors are omitted.
+                # The phase mixing is kept: lalsimulation drops `phase` before
+                # generating the waveform.
+                plus_prefactor = (
+                    array_library.cos(phi_0) * response.plus
+                    + array_library.sin(phi_0) * response.cross
+                )
+                cross_prefactor = (
+                    array_library.cos(phi_0) * response.cross
+                    - array_library.sin(phi_0) * response.plus
+                )
+            else:
+                plus_prefactor = (
+                    array_library.cos(phi_0)
+                    * (1 + array_library.cos(iota) ** 2)
+                    * response.plus
+                    + array_library.sin(phi_0) * array_library.cos(iota) * response.cross
+                )
+                cross_prefactor = (
+                    array_library.cos(phi_0) * array_library.cos(iota) * response.cross
+                    - array_library.sin(phi_0)
+                    * (1 + array_library.cos(iota) ** 2)
+                    * response.plus
+                )
 
             projected_data = (
                 self.waveforms["plus"].data * plus_prefactor

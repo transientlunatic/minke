@@ -4,7 +4,7 @@ Exercises:
 - read_injection_parameters: loads an InjectionSet HDF5 and returns a list
   of parameter dicts that minke/LALSimulation can consume.
 - Parameter name mapping (m1_source → m1, cos_tilt → tilt, etc.)
-- Spin conversion via puddin.lalsim
+- Spin conversion via lalsimulation
 - Astropy unit attachment for masses and distances
 
 Run with: python -m pytest tests/test_bagpuss.py

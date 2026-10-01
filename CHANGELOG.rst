@@ -3,6 +3,43 @@ Minke Changelog
 
 Please accept my apologies for the rattiness of this CHANGELOG; this is an old project and it didn't have the most organised of starts.
 
+2.2.1
+=====
+
+This is a bug-fix release. Injections made by earlier releases had incorrect SNRs and noise levels, and ``WaveformDict.project`` applied the inclination factors twice for lalsimulation models, so results produced with 2.2.0 and earlier should be regenerated. It also fixes the GWF frame-writing failure which the 2.2.0 workaround did not resolve, and removes the dependency on ``puddin``.
+
+Bug fixes
+---------
+
+**Optimal SNR**
+  ``calculate_network_snr_for_distance`` and ``make_injection`` truncated the FFT to ``N // 2`` points and used ``df = 1 / sample_rate``, so the PSD was evaluated at 0-16 Hz and SNRs came out roughly 100x too low (the 2.2.0 "fix" for this did not resolve it). A new ``minke.filters.optimal_snr_squared`` computes the standard :math:`4 \int |h(f)|^2 / S(f) \, df` over the in-band frequencies, matching bilby and simple-pe to 0.1%.
+
+**Noise normalisation**
+  ``LALSimulationPSD.time_series`` produced noise with power :math:`4/T` times the requested PSD (1/16 for a 64 s segment), and evaluated the PSD 20 Hz too high because the LAL frequency series started at ``lower_frequency`` while the frequency axis started at 0. The generated noise now reproduces the requested PSD independent of segment length. The Nyquist bin is only zeroed for even-length series.
+
+**Projection**
+  ``WaveformDict.project`` applied the :math:`(1 + \cos^2\iota)` and :math:`\cos\iota` factors a second time for models which already evaluate :math:`h_+` and :math:`h_\times` at an inclination (those with an ``inclination`` parameter, i.e. lalsimulation models). Only the antenna response and the phase mixing are now applied to such waveforms, and ``theta_jn`` is no longer required when ``inclination`` is given.
+
+**GWF frame writing**
+  The 2.2.0 epoch workaround had no effect with gwpy 4, and roughly half of all epochs still failed with "Series start time is earlier than frame start time". ``_write_gwf_epoch_safe`` now creates the frame directly with LALFrame, using the epoch of the LAL series as the frame start time, so the two cannot disagree.
+
+**Python and packaging**
+  ``minke.__version__`` is now read with ``importlib.metadata`` rather than ``pkg_resources``, which is no longer shipped with recent setuptools. ``minke.asimov`` now imports ``importlib.resources`` explicitly, which fixes an ``AttributeError`` on Python 3.10.
+
+Changes
+-------
+
+**``puddin`` is no longer required**
+  ``minke.bagpuss.read_injection_parameters`` now calls ``lalsimulation.SimInspiralTransformPrecessingNewInitialConditions`` directly for the spin frame transformation instead of ``puddin.lalsim.spins_to_lalsim``. The bagpuss tutorial no longer asks for ``puddin`` to be installed.
+
+**Tests**
+  Added tests for the optimal SNR (against an independent LAL PSD reference), noise PSD recovery, projection, and GWF round-tripping. Updated the ``make_injection`` and cache-file tests, which predated ``make_injection`` returning ``(injections, frame_files, network_snr)`` and the ``<ifo>_<framefile>.cache`` naming.
+
+Known issues
+------------
+
+Lalsimulation models only accept ``inclination``; an ``iota`` key (as returned by ``minke.bagpuss.read_injection_parameters``) is silently dropped, giving face-on waveforms. ``minke.bagpuss`` also passes ``m1_source``/``m2_source`` without applying (1 + z).
+
 2.2.0
 =====
 
