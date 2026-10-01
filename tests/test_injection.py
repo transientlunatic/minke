@@ -42,7 +42,8 @@ class TestSNRCalculations(unittest.TestCase):
             'phase': 0,
             'm1': 30 * u.solMass,
             'm2': 30 * u.solMass,
-            'luminosity_distance': 100 * u.megaparsec
+            'luminosity_distance': 100 * u.megaparsec,
+            'gpstime': 3.0,
         }
         self.sample_rate = 4096
         self.duration = 4
@@ -82,6 +83,41 @@ class TestSNRCalculations(unittest.TestCase):
         self.assertIsInstance(snr, (float, np.floating))
         self.assertGreater(snr, 0)
         
+    def test_snr_matches_standard_definition(self):
+        """SNR must equal 4 int |h|^2/S df, as used by bilby and simple-pe."""
+        import lal
+        import lalsimulation
+
+        duration = 32
+        times = self.psd_models[0].time_series(
+            duration=duration, sample_rate=self.sample_rate, epoch=self.epoch
+        ).times
+        params = dict(self.parameters, gpstime=24.0)
+        snr = calculate_network_snr_for_distance(
+            400, self.waveform_model, params,
+            self.detectors[:1], self.psd_models[:1], times,
+        )
+
+        params["luminosity_distance"] = 400 * u.megaparsec
+        x = np.asarray(
+            self.waveform_model.time_domain(params, times=times)
+            .project(self.detectors[0]).data
+        )
+        freqs = np.fft.rfftfreq(len(x), 1.0 / self.sample_rate)
+        h = np.fft.rfft(x) / self.sample_rate
+        band = freqs >= 20
+        series = lal.CreateREAL8FrequencySeries(
+            None, lal.LIGOTimeGPS(0), 20.0, 1.0 / duration,
+            lal.HertzUnit, int(band.sum()),
+        )
+        lalsimulation.SimNoisePSDaLIGODesignSensitivityT1800044(series, 20.0)
+        psd = np.array(series.data.data)
+        ok = psd > 0
+        expected = np.sqrt(
+            4 * (1.0 / duration) * np.sum(np.abs(h[band][ok]) ** 2 / psd[ok])
+        )
+        self.assertAlmostEqual(snr / expected, 1.0, places=6)
+
     def test_network_snr_decreases_with_distance(self):
         """Test that SNR decreases as distance increases."""
         distance_near = 50  # Mpc
@@ -166,7 +202,7 @@ class TestSNRCalculations(unittest.TestCase):
         
     def test_find_distance_for_high_snr(self):
         """Test finding distance for a high SNR value."""
-        target_snr = 100.0
+        target_snr = 1000.0
         
         distance = find_distance_for_network_snr(
             target_snr,
@@ -182,7 +218,7 @@ class TestSNRCalculations(unittest.TestCase):
         
     def test_find_distance_for_low_snr(self):
         """Test finding distance for a low SNR value."""
-        target_snr = 5.0
+        target_snr = 20.0
         
         distance = find_distance_for_network_snr(
             target_snr,
@@ -194,7 +230,7 @@ class TestSNRCalculations(unittest.TestCase):
         )
         
         # Low SNR should allow larger distance
-        self.assertGreater(distance.value, 50)
+        self.assertGreater(distance.value, 1000)
 
 
 class TestMakeInjection(unittest.TestCase):

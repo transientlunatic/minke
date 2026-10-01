@@ -19,7 +19,7 @@ from .models.lalsimulation import SEOBNRv3, IMRPhenomPv2, IMRPhenomXPHM
 from .models.lalnoise import KNOWN_PSDS
 from .detector import KNOWN_IFOS
 from .utils import load_yaml
-from .filters import inner_product
+from .filters import optimal_snr_squared
 
 logger = logging.getLogger("minke.injection")
 
@@ -65,19 +65,14 @@ def calculate_network_snr_for_distance(distance, waveform_model, parameters, det
     waveform = waveform_model.time_domain(params, times=times)
     
     network_snr_squared = 0.0
-    sample_rate = 1.0 / (times[1] - times[0])
+    sample_rate = float(u.Quantity(1.0 / (times[1] - times[0]), u.Hz).value)
     
     for detector, psd_model in zip(detectors, psd_models):
         injection_data = waveform.project(detector)
         
-        # Calculate SNR for this detector
-        N = len(times)
-        df = sample_rate / N
-        injection_data_f = np.fft.fft(injection_data.data)[:N//2] / sample_rate
-        frequencies = np.arange(0, N // 2) * df
-        psd_f = psd_model.frequency_domain(frequencies=frequencies)
-
-        snr_squared = inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)) * 2 * df
+        snr_squared = optimal_snr_squared(
+            injection_data.data, psd_model, sample_rate
+        )
         network_snr_squared += snr_squared
     
     return np.sqrt(network_snr_squared)
@@ -181,13 +176,11 @@ def make_injection(
         injection = data + injection_data
         injection.channel = channel_n
 
-        N = len(data.times)
-        df = sample_rate / N
-        injection_data_f = np.fft.fft(injection_data.data)[:N//2] / sample_rate
-        frequencies = np.arange(0, N // 2) * df
-
-        psd_f = psd_model.frequency_domain(frequencies=frequencies)
-        det_snr = np.sqrt(inner_product(injection_data_f, injection_data_f, np.array(psd_f.data)) * 2 * df)
+        det_snr = np.sqrt(optimal_snr_squared(
+            injection_data.data,
+            psd_model,
+            float(u.Quantity(1.0 / data.dt, u.Hz).value),
+        ))
         detector_snrs[detector.abbreviation] = det_snr
         print(f"Optimal SNR for {detector.abbreviation}: {det_snr:.2f}")
         
