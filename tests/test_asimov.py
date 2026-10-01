@@ -111,6 +111,39 @@ class TestCollectAssets(unittest.TestCase):
         self.assertIn("H1", meta["data"]["cache files"])
 
     # ------------------------------------------------------------------
+    # completion detection
+    # ------------------------------------------------------------------
+
+    def test_not_complete_before_any_output(self):
+        """The run directory existing is not enough to call the job complete."""
+        self.pipeline.production.event.meta = {
+            "interferometers": ["H1", "L1"],
+            "data": {},
+        }
+        self.assertFalse(self.pipeline.detect_completion())
+
+    def test_not_complete_with_partial_output(self):
+        """A frame for only some of the interferometers is not complete."""
+        self.pipeline.production.event.meta = {
+            "interferometers": ["H1", "L1"],
+            "data": {},
+        }
+        self._touch("H1_Injection.gwf")
+        self._write_cache("H1_Injection")
+        self.assertFalse(self.pipeline.detect_completion())
+
+    def test_complete_with_all_interferometers(self):
+        """Frames and caches for every interferometer mean the job is done."""
+        self.pipeline.production.event.meta = {
+            "interferometers": ["H1", "L1"],
+            "data": {},
+        }
+        for ifo in ("H1", "L1"):
+            self._touch(f"{ifo}_Injection.gwf")
+            self._write_cache(f"{ifo}_Injection")
+        self.assertTrue(self.pipeline.detect_completion())
+
+    # ------------------------------------------------------------------
     # cache tests
     # ------------------------------------------------------------------
 

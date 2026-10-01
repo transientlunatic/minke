@@ -98,12 +98,19 @@ class Asimov(asimov.pipeline.Pipeline):
     def detect_completion(self):
         self.logger.info("Checking for completion.")
         assets = self.collect_assets()
-        if len(list(assets.keys())) > 0:
+        # ``collect_assets`` always returns its keys (empty if nothing has been
+        # written yet), so completion means that a frame and its cache entry
+        # exist for every interferometer the event expects. Minke writes each
+        # detector's frame and cache in turn, so the last detector's cache
+        # being present means the job has finished.
+        ifos = set(self.production.event.meta.get("interferometers", []))
+        frames = set(assets.get("frames", {}))
+        caches = {name.split("_")[0] for name in assets.get("cache", {})}
+        if frames and ifos <= frames and ifos <= caches:
             self.logger.info("Outputs detected, job complete.")
             return True
-        else:
-            self.logger.info(f"{self.name} job completion was not detected.")
-            return False
+        self.logger.info(f"{self.name} job completion was not detected.")
+        return False
 
     def after_completion(self):
         self.production.status = "uploaded"
