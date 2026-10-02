@@ -28,7 +28,8 @@ Parameter name mapping
 +--------------------+---------------------------+-----------------------------------+
 | ``a1``, ``a2``     | consumed                  | Used in spin conversion           |
 +--------------------+---------------------------+-----------------------------------+
-| ``theta_jn``       | consumed → ``iota``       | Transformed by ``spins_to_lalsim``|
+| ``theta_jn``       | consumed → ``inclination``| Transformed by ``spins_to_lalsim``|
+|                    | (alias ``iota``)          |                                   |
 +--------------------+---------------------------+-----------------------------------+
 | ``phi_jl``         | consumed                  | Used in spin conversion           |
 +--------------------+---------------------------+-----------------------------------+
