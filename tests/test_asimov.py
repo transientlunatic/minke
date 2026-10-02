@@ -36,6 +36,7 @@ def _make_mock_production(rundir):
     production = unittest.mock.MagicMock()
     production.rundir = rundir
     production.event.meta = {"data": {}, "psds": {}}
+    production.meta = {}
     return production
 
 
@@ -142,6 +143,37 @@ class TestCollectAssets(unittest.TestCase):
             self._touch(f"{ifo}_Injection.gwf")
             self._write_cache(f"{ifo}_Injection")
         self.assertTrue(self.pipeline.detect_completion())
+
+    def _write_all_outputs(self, ifos):
+        for ifo in ifos:
+            self._touch(f"{ifo}_Injection.gwf")
+            self._write_cache(f"{ifo}_Injection")
+
+    def test_completion_uses_production_detectors(self):
+        """Detectors configured only on the production are still required."""
+        self.pipeline.production.meta = {"injection": {"interferometers": ["H1", "L1"]}}
+        self.pipeline.production.event.meta = {"data": {}}
+        self._write_all_outputs(["H1"])
+        self.assertFalse(self.pipeline.detect_completion())
+        self._write_all_outputs(["L1"])
+        self.assertTrue(self.pipeline.detect_completion())
+
+    def test_not_complete_without_detector_configuration(self):
+        """With no configured detectors the job cannot be called complete."""
+        self.pipeline.production.meta = {}
+        self.pipeline.production.event.meta = {"data": {}}
+        self._write_all_outputs(["H1"])
+        self.assertFalse(self.pipeline.detect_completion())
+
+    # ------------------------------------------------------------------
+    # scheduler options
+    # ------------------------------------------------------------------
+
+    def test_scheduler_option_accepts_both_spellings(self):
+        opt = Asimov._scheduler_option
+        self.assertEqual(opt({"request memory": 1}, "request memory", 9), 1)
+        self.assertEqual(opt({"request_memory": 2}, "request memory", 9), 2)
+        self.assertEqual(opt({}, "request memory", 9), 9)
 
     # ------------------------------------------------------------------
     # cache tests

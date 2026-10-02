@@ -27,6 +27,26 @@ class Asimov(asimov.pipeline.Pipeline):
         config_template = template_file
     _pipeline_command = "minke"
 
+    @staticmethod
+    def _scheduler_option(scheduler, key, default):
+        """
+        Look up a scheduler option, accepting both the spaced key
+        (``request memory``) and the underscored one (``request_memory``).
+        """
+        for candidate in (key, key.replace(" ", "_")):
+            if candidate in scheduler:
+                return scheduler[candidate]
+        return default
+
+    def _expected_ifos(self):
+        """
+        The interferometers this job should produce frames for: the
+        production's configured detectors, falling back to the event's.
+        """
+        injection = self.production.meta.get("injection", {}) or {}
+        ifos = injection.get("interferometers") or self.production.event.meta.get("interferometers") or []
+        return set(ifos)
+
     def build_dag(self, dryrun=False):
         """
         Create a condor submission description.
@@ -44,8 +64,8 @@ class Asimov(asimov.pipeline.Pipeline):
             "output": f"{name}.out",
             "error": f"{name}.err",
             "log": f"{name}.log",
-            "request_disk": str(scheduler.get("request disk", 1024)),
-            "request_memory": str(scheduler.get("request memory", 2048)),
+            "request_disk": str(self._scheduler_option(scheduler, "request disk", 1024)),
+            "request_memory": str(self._scheduler_option(scheduler, "request memory", 2048)),
             "batch_name": f"{self.name}/{self.production.event.name}/{name}",
             "+flock_local": "True",
             "+DESIRED_Sites": classad.quote("nogrid"),
@@ -103,10 +123,10 @@ class Asimov(asimov.pipeline.Pipeline):
         # exist for every interferometer the event expects. Minke writes each
         # detector's frame and cache in turn, so the last detector's cache
         # being present means the job has finished.
-        ifos = set(self.production.event.meta.get("interferometers", []))
+        ifos = self._expected_ifos()
         frames = set(assets.get("frames", {}))
         caches = {name.split("_")[0] for name in assets.get("cache", {})}
-        if frames and ifos <= frames and ifos <= caches:
+        if ifos and ifos <= frames and ifos <= caches:
             self.logger.info("Outputs detected, job complete.")
             return True
         self.logger.info(f"{self.name} job completion was not detected.")
