@@ -36,6 +36,7 @@ def _make_mock_production(rundir):
     production = unittest.mock.MagicMock()
     production.rundir = rundir
     production.event.meta = {"data": {}, "psds": {}}
+    production.meta = {}
     return production
 
 
@@ -88,6 +89,91 @@ class TestCollectAssets(unittest.TestCase):
         self.pipeline.collect_assets()
 
         self.assertIn("H1", self.pipeline.production.event.meta["data"]["data files"])
+
+    def test_data_files_are_lists_of_paths(self):
+        """asimov (and asimov-simplepe) expect ``{ifo: [path]}``, not ``{ifo: path}``."""
+        path = self._touch("H1_Injection.gwf")
+
+        self.pipeline.collect_assets()
+
+        files = self.pipeline.production.event.meta["data"]["data files"]
+        self.assertEqual(files["H1"], [path])
+
+    def test_event_without_data_block(self):
+        """An event blueprint need not already carry a ``data`` block."""
+        self._touch("H1_Injection.gwf")
+        self._write_cache("H1")
+        self.pipeline.production.event.meta = {"psds": {}}
+
+        self.pipeline.collect_assets()
+
+        meta = self.pipeline.production.event.meta
+        self.assertIn("H1", meta["data"]["data files"])
+        self.assertIn("H1", meta["data"]["cache files"])
+
+    # ------------------------------------------------------------------
+    # completion detection
+    # ------------------------------------------------------------------
+
+    def test_not_complete_before_any_output(self):
+        """The run directory existing is not enough to call the job complete."""
+        self.pipeline.production.event.meta = {
+            "interferometers": ["H1", "L1"],
+            "data": {},
+        }
+        self.assertFalse(self.pipeline.detect_completion())
+
+    def test_not_complete_with_partial_output(self):
+        """A frame for only some of the interferometers is not complete."""
+        self.pipeline.production.event.meta = {
+            "interferometers": ["H1", "L1"],
+            "data": {},
+        }
+        self._touch("H1_Injection.gwf")
+        self._write_cache("H1_Injection")
+        self.assertFalse(self.pipeline.detect_completion())
+
+    def test_complete_with_all_interferometers(self):
+        """Frames and caches for every interferometer mean the job is done."""
+        self.pipeline.production.event.meta = {
+            "interferometers": ["H1", "L1"],
+            "data": {},
+        }
+        for ifo in ("H1", "L1"):
+            self._touch(f"{ifo}_Injection.gwf")
+            self._write_cache(f"{ifo}_Injection")
+        self.assertTrue(self.pipeline.detect_completion())
+
+    def _write_all_outputs(self, ifos):
+        for ifo in ifos:
+            self._touch(f"{ifo}_Injection.gwf")
+            self._write_cache(f"{ifo}_Injection")
+
+    def test_completion_uses_production_detectors(self):
+        """Detectors configured only on the production are still required."""
+        self.pipeline.production.meta = {"injection": {"interferometers": ["H1", "L1"]}}
+        self.pipeline.production.event.meta = {"data": {}}
+        self._write_all_outputs(["H1"])
+        self.assertFalse(self.pipeline.detect_completion())
+        self._write_all_outputs(["L1"])
+        self.assertTrue(self.pipeline.detect_completion())
+
+    def test_not_complete_without_detector_configuration(self):
+        """With no configured detectors the job cannot be called complete."""
+        self.pipeline.production.meta = {}
+        self.pipeline.production.event.meta = {"data": {}}
+        self._write_all_outputs(["H1"])
+        self.assertFalse(self.pipeline.detect_completion())
+
+    # ------------------------------------------------------------------
+    # scheduler options
+    # ------------------------------------------------------------------
+
+    def test_scheduler_option_accepts_both_spellings(self):
+        opt = Asimov._scheduler_option
+        self.assertEqual(opt({"request memory": 1}, "request memory", 9), 1)
+        self.assertEqual(opt({"request_memory": 2}, "request memory", 9), 2)
+        self.assertEqual(opt({}, "request memory", 9), 9)
 
     # ------------------------------------------------------------------
     # cache tests
