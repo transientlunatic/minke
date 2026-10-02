@@ -4,6 +4,7 @@ import numpy as np
 
 from minke.models.lalnoise import (
     KNOWN_PSDS,
+    AdvancedLIGO,
     AdvancedLIGOO4Sensitivity,
     AdvancedVirgoO4Sensitivity,
 )
@@ -24,6 +25,16 @@ class TestAdvancedLIGOAndVirgoO4AreDistinct(unittest.TestCase):
             AdvancedVirgoO4Sensitivity().frequency_domain(frequencies=frequencies).data
         )
         self.assertFalse(np.array_equal(ligo, virgo))
+
+    def test_ligo_o4_psd_is_the_alig_design_curve(self):
+        frequencies = np.arange(20, 1024, 1)
+        o4 = np.asarray(
+            AdvancedLIGOO4Sensitivity().frequency_domain(frequencies=frequencies).data
+        )
+        design = np.asarray(
+            AdvancedLIGO().frequency_domain(frequencies=frequencies).data
+        )
+        self.assertTrue(np.array_equal(o4, design))
 
 
 class TestAdvancedVirgoO4Sensitivity(unittest.TestCase):

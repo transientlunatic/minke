@@ -12,6 +12,8 @@ observation window.
 from __future__ import annotations
 
 import bisect
+import functools
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -52,6 +54,11 @@ class DutyCycleSchedule:
 
     segments: tuple[DutyCycleSegment, ...]
 
+    @functools.cached_property
+    def _starts(self) -> list[float]:
+        # Built once per schedule so each ``is_active`` query is O(log n).
+        return [segment.start for segment in self.segments]
+
     def is_active(self, t: float) -> bool:
         """Return whether the detector is locked at GPS time *t*.
 
@@ -66,7 +73,7 @@ class DutyCycleSchedule:
         ValueError
             If *t* falls outside the schedule's window.
         """
-        starts = [segment.start for segment in self.segments]
+        starts = self._starts
         if t < starts[0] or t > self.segments[-1].end:
             raise ValueError(
                 f"t={t!r} is outside the schedule's window "
@@ -123,8 +130,16 @@ def generate_duty_cycle_schedule(
     ------
     ValueError
         If ``duty_cycle`` is outside ``[0, 1]``, ``mean_lock_duration`` is
-        not positive, or ``t_end <= t_start``.
+        not positive, ``t_end <= t_start``, or any argument is non-finite.
     """
+    for label, value in (
+        ("duty_cycle", duty_cycle),
+        ("mean_lock_duration", mean_lock_duration),
+        ("t_start", t_start),
+        ("t_end", t_end),
+    ):
+        if not math.isfinite(value):
+            raise ValueError(f"{label} must be finite, got {value!r}")
     if not (0.0 <= duty_cycle <= 1.0):
         raise ValueError(f"duty_cycle must be in [0, 1], got {duty_cycle!r}")
     if mean_lock_duration <= 0.0:

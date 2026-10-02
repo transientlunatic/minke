@@ -92,6 +92,29 @@ class TestGenerateDutyCycleSchedule(unittest.TestCase):
         with self.assertRaises(ValueError):
             schedule.is_active(10_001.0)
 
+    def test_non_finite_inputs_are_rejected(self):
+        base = dict(
+            duty_cycle=0.5, mean_lock_duration=1000.0, t_start=0.0, t_end=10_000.0
+        )
+        for key in base:
+            for bad in (float("nan"), float("inf"), float("-inf")):
+                with self.subTest(key=key, value=bad):
+                    with self.assertRaises(ValueError):
+                        generate_duty_cycle_schedule(
+                            **{**base, key: bad}, rng=self.rng
+                        )
+
+    def test_starts_are_cached_between_queries(self):
+        schedule = generate_duty_cycle_schedule(
+            duty_cycle=0.5,
+            mean_lock_duration=1000.0,
+            t_start=0.0,
+            t_end=10_000.0,
+            rng=self.rng,
+        )
+        schedule.is_active(5.0)
+        self.assertIs(schedule._starts, schedule._starts)
+
     def test_duty_cycle_of_one_is_always_active(self):
         schedule = generate_duty_cycle_schedule(
             duty_cycle=1.0,
