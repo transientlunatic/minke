@@ -104,7 +104,8 @@ The conversion is performed via
     print(f"Loaded {len(params)} injections")
     print("First event keys:", list(params[0].keys()))
     # ['m1', 'm2', 'S1x', 'S1y', 'S1z', 'S2x', 'S2y', 'S2z',
-    #  'iota', 'luminosity_distance', 'ra', 'dec', 'psi', 'gpstime', 'redshift']
+    #  'inclination', 'iota', 'luminosity_distance', 'ra', 'dec', 'psi', 'gpstime',
+    #  'redshift']
 
 The ``f_ref`` argument sets the gravitational-wave reference frequency
 (in Hz) at which the spin components are defined.  20 Hz is the standard
@@ -340,7 +341,8 @@ The table below lists every key in the dicts returned by
 | ``S1z``, ``S2x``,       |                                     | components; \|S\| = *a*          |
 | ``S2y``, ``S2z``        |                                     |                                  |
 +-------------------------+-------------------------------------+----------------------------------+
-| ``iota``                | ``float`` (radians)                 | Inclination of **L** to l.o.s.   |
+| ``inclination``,        | ``float`` (radians)                 | Inclination of **L** to l.o.s.   |
+| ``iota``                |                                     | (``iota`` is an alias)           |
 +-------------------------+-------------------------------------+----------------------------------+
 | ``luminosity_distance`` | ``astropy.Quantity`` (``Mpc``)      | Luminosity distance              |
 +-------------------------+-------------------------------------+----------------------------------+
@@ -355,7 +357,7 @@ The table below lists every key in the dicts returned by
 
 .. note::
 
-    The spin components ``S1x`` … ``S2z`` and ``iota`` are derived from the
+    The spin components ``S1x`` … ``S2z`` and ``inclination`` are derived from the
     bagpuss parameters ``a1``, ``a2``, ``cos_tilt1``, ``cos_tilt2``,
     ``phi12``, ``phi_jl``, and ``theta_jn`` via the LALSimulation frame
     transformation.  The original bilby-convention parameters are consumed

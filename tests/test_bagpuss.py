@@ -176,6 +176,12 @@ class TestReadInjectionParameters:
         assert "iota" in params[0]
         assert "theta_jn" not in params[0]
 
+    def test_inclination_key_matches_iota(self, aligned_hdf5):
+        """The waveform models read ``inclination``, so it must be returned."""
+        from minke.bagpuss import read_injection_parameters
+        for p in read_injection_parameters(aligned_hdf5):
+            assert p["inclination"] == p["iota"]
+
     def test_geocent_time_renamed_to_gpstime(self, aligned_hdf5):
         """geocent_time is renamed to gpstime for LALSim compatibility."""
         from minke.bagpuss import read_injection_parameters
@@ -287,3 +293,36 @@ class TestReadInjectionParameters:
         from minke.bagpuss import read_injection_parameters
         params = read_injection_parameters(aligned_hdf5, f_ref=40.0)
         assert len(params) == _N
+
+
+# ---------------------------------------------------------------------------
+# The inclination must actually reach the waveform
+# ---------------------------------------------------------------------------
+
+class TestInclinationReachesWaveform:
+    """Regression test: ``iota`` was returned but ignored, so every event was face-on."""
+
+    def _snr(self, tmp_path, theta_jn):
+        from minke.bagpuss import read_injection_parameters
+        from minke.injection import make_injection
+
+        data = _make_aligned_data(1)
+        data["theta_jn"] = np.array([theta_jn])
+        data["luminosity_distance"] = np.array([400.0])
+        path = tmp_path / f"inj_{theta_jn:.3f}.h5"
+        _write_injection_hdf5(path, data)
+        (params,) = read_injection_parameters(str(path))
+        _, _, network_snr = make_injection(
+            injection_parameters=params,
+            detectors={"AdvancedLIGOHanford": "AdvancedLIGO"},
+            duration=8,
+            sample_rate=2048,
+            epoch=params["gpstime"] - 6,
+        )
+        return network_snr
+
+    def test_snr_depends_on_inclination(self, tmp_path):
+        """A face-on event is louder than an edge-on one at the same distance."""
+        face_on = self._snr(tmp_path, 0.0)
+        edge_on = self._snr(tmp_path, math.pi / 2)
+        assert face_on > 1.3 * edge_on
