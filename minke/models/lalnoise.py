@@ -155,10 +155,23 @@ class AdvancedLIGO(AdvancedLIGODesignSensitivity2018):
 
 
 class AdvancedLIGOO4Sensitivity(LALSimulationPSD):
-    psd_function = lalsimulation.SimNoisePSDaLIGOAdVO4T1800545
+    # NOTE: lalsimulation.SimNoisePSDaLIGOAdVO4T1800545 looks like an aLIGO
+    # curve by name but is a *deprecated alias for Virgo's* O4 design curve
+    # (LALSimNoisePSD.c: "DEPRECATED_PSD(XLALSimNoisePSDaLIGOAdVO4T1800545,
+    # XLALSimNoisePSDAdVO4T1800545)") -- confirmed bytewise-identical to
+    # AdvancedVirgoO4Sensitivity below. lalsimulation has no curve
+    # specifically labelled "aLIGO O4"; this reuses the aLIGO design
+    # sensitivity curve (aLIGO was close to design sensitivity during O4,
+    # unlike Virgo) rather than silently using Virgo's curve for both.
+    psd_function = lalsimulation.SimNoisePSDaLIGODesignSensitivityT1800044
+
+
+class AdvancedVirgoO4Sensitivity(LALSimulationPSD):
+    psd_function = lalsimulation.SimNoisePSDAdVO4T1800545
 
 
 KNOWN_PSDS = {
     "AdvancedLIGO": AdvancedLIGO,
     "AdvancedLIGO_O4": AdvancedLIGOO4Sensitivity,
+    "AdvancedVirgo_O4": AdvancedVirgoO4Sensitivity,
 }
