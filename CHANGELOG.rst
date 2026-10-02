@@ -3,14 +3,27 @@ Minke Changelog
 
 Please accept my apologies for the rattiness of this CHANGELOG; this is an old project and it didn't have the most organised of starts.
 
-Unreleased
-==========
+2.3.0
+=====
+
+This is a new feature release, which adds detector duty cycles and fixes a bug with PSDs for O4. It is not believed to introduce any breaking changes.
+
+Changes
+-------
 
 **Detector duty cycles**
   A new ``minke.duty_cycle`` module models each detector as a two-state (locked/unlocked) renewal process with exponentially-distributed segment durations. ``generate_duty_cycle_schedule`` draws a schedule over an observation window for a target duty cycle and mean lock duration, and ``active_detectors`` restricts a detector network to those locked at a given GPS time, so that which detectors observe an injection varies realistically (and with time-correlation) across a run.
 
+Bug-fixes
+---------
+
 **O4 PSDs**
   ``"AdvancedLIGO_O4"`` previously resolved to ``lalsimulation.SimNoisePSDaLIGOAdVO4T1800545``, which is a deprecated alias for *Virgo's* O4 curve, so LIGO detectors were silently given Virgo's sensitivity. It now uses the aLIGO design-sensitivity curve, and a new ``"AdvancedVirgo_O4"`` PSD provides Virgo's O4 curve explicitly.
+
+Breaking changes
+----------------
+
+This release is not believed to introduce any breaking changes.
 
 2.2.1
 =====
